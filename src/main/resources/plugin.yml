@@ -1,0 +1,19 @@
+name: SkyNodes
+version: '0.1.0'
+main: com.github.lukesky19.skynodes.SkyNodes
+api-version: '1.20'
+authors: [ lukeskywlker19 ]
+softdepend:
+  - WorldEdit
+  - FastAsyncWorldEdit
+
+commands:
+  skynodes:
+    description: The base command.
+permissions:
+  skynodes.commands.paste:
+    description: Used to paste schematics. Debug only.
+    default: op
+  skynodes.commands.reload:
+    description: Used to reload the plugin.
+    default: op

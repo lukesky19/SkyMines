@@ -1,0 +1,13 @@
+# The delay between pasting in schematics. Mitigates performance issues.
+delay_between_nodes: 60
+nodes:
+  0:
+    world: "build"
+    locations:
+      - -119 -60 109
+    schematics:
+      - "sandpile01.schem"
+      - "sandpile02.schem"
+      - "sandpile03.schem"
+    # The cooldown time (in seconds) to reset the node.
+    timer: 300

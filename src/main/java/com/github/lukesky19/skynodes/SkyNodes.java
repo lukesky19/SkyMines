@@ -64,12 +64,15 @@ public final class SkyNodes extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        task.cancel();
+        if(task != null) {
+            task.cancel();
+        }
     }
 
-
     public static void reload() {
-        task.cancel();
+        if(task != null) {
+            task.cancel();
+        }
         ConfigUtil.copyDefaultConfig();
         CommentedConfigurationNode nodeConfig = ConfigRecord.getConfig().nodeConfig();
 

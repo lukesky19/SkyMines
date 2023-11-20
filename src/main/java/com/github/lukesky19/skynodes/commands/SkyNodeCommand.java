@@ -20,7 +20,6 @@ package com.github.lukesky19.skynodes.commands;
 import com.github.lukesky19.skynodes.SchematicLoader;
 import com.github.lukesky19.skynodes.SkyNodes;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -72,7 +71,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                                         Double.parseDouble(args[5]));
                             }
                             try {
-                                SchematicLoader.paste(location, file);
+                                SchematicLoader.paste(Objects.requireNonNull(location), file);
                                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Node pasted successfully."));
                             } catch (Exception e) {
                                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red><bold>AN ERROR HAS OCCURED:."));
@@ -95,7 +94,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                                         Double.parseDouble(args[5]));
                             }
                             try {
-                                SchematicLoader.paste(location, file);
+                                SchematicLoader.paste(Objects.requireNonNull(location), file);
                                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Node pasted successfully."));
                             } catch (Exception e) {
                                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red><bold>AN ERROR HAS OCCURED:."));

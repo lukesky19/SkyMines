@@ -41,7 +41,7 @@ import java.util.Random;
 
 public final class SkyNodes extends JavaPlugin {
 
-    static List<BukkitTask> list = new ArrayList<>();
+    static BukkitTask task;
     private static SkyNodes instance;
     static ComponentLogger logger;
     public static SkyNodes getInstance() {
@@ -58,23 +58,18 @@ public final class SkyNodes extends JavaPlugin {
         logger = instance.getComponentLogger();
         reload();
         Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setExecutor(new SkyNodeCommand());
-        Bukkit.getPluginCommand("skynodes").setTabCompleter(new SkyNodeCommand());
+        Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setTabCompleter(new SkyNodeCommand());
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        for(BukkitTask t : list) {
-            t.cancel();
-        }
+        task.cancel();
     }
 
 
     public static void reload() {
-        for(BukkitTask t : list) {
-            t.cancel();
-        }
-        list = new ArrayList<>();
+        task.cancel();
         ConfigUtil.copyDefaultConfig();
         CommentedConfigurationNode nodeConfig = ConfigRecord.getConfig().nodeConfig();
 
@@ -85,10 +80,9 @@ public final class SkyNodes extends JavaPlugin {
             s++;
         }
 
-
         int finalCount = count;
         final int[] r = new int[1];
-        BukkitTask newTask = new BukkitRunnable() {
+        task = new BukkitRunnable() {
             @Override public void run() {
                 r[0] = new Random().nextInt(finalCount);
                 Location location = getRandomLocation(parseLocations(r[0]));
@@ -96,7 +90,7 @@ public final class SkyNodes extends JavaPlugin {
                 if(finalFile != null) {
                     try {
                         SchematicLoader.paste(location, finalFile);
-                        logger.info(MiniMessage.miniMessage().deserialize("<red>Node " + String.valueOf(r[0] - 1) + " has pasted successfully."));
+                        logger.info(MiniMessage.miniMessage().deserialize("<red>Node " + (r[0] - 1) + " has pasted successfully."));
                     } catch (Exception e) {
                         logger.error(MiniMessage.miniMessage().deserialize("<red><bold>AN ERROR HAS OCCURED:"));
                         throw new RuntimeException(e);
@@ -128,11 +122,9 @@ public final class SkyNodes extends JavaPlugin {
                 if (XYZ.size() == 3) {
                     String worldName = nodeConfig.node("nodes", i, "world").getString();
                     File worldFile = new File(Bukkit.getServer().getWorldContainer() + File.separator + worldName);
-                    World world = null;
+                    World world;
                     if(worldFile.isDirectory() && worldFile.exists()) {
-                        world = new WorldCreator(worldName).createWorld();
-                    }
-                    if(world != null) {
+                        world = new WorldCreator(Objects.requireNonNull(worldName)).createWorld();
                         Location loc = new Location(
                                 world,
                                 XYZ.get(0),
@@ -140,8 +132,6 @@ public final class SkyNodes extends JavaPlugin {
                                 XYZ.get(2));
                         locations.add(loc);
                     } else {
-                        logger.info(MiniMessage.miniMessage().deserialize(String.valueOf(world)));
-                        logger.info(MiniMessage.miniMessage().deserialize(world.getName()));
                         logger.error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The world for node " + i + " is invalid."));
                     }
                 } else {
@@ -163,11 +153,10 @@ public final class SkyNodes extends JavaPlugin {
         List<File> schemFiles = new ArrayList<>();
 
         if(!nodeConfig.node("nodes", i).virtual()) {
-            File file = null;
+            File file;
             try {
                 schemNames = nodeConfig.node("nodes", i, "schematics").getList(String.class);
             } catch (SerializationException e) {
-                schemNames = null;
                 throw new RuntimeException(e);
             }
 

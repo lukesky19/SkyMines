@@ -1,13 +1,12 @@
 # The delay between pasting in schematics. Mitigates performance issues.
-delay_between_nodes: 60
+time-delay: 60
 nodes:
-  0:
-    world: "build"
+  # ID should be a number (0, 1, 2, etc)
+  # Capitalized text are placeholders.
+  # X Y Z is the format for the X Y and Z coordinates.
+  EXAMPLE:
+    world: "WORLD_NAME"
     locations:
-      - -119 -60 109
+      - 0 0 0
     schematics:
-      - "sandpile01.schem"
-      - "sandpile02.schem"
-      - "sandpile03.schem"
-    # The cooldown time (in seconds) to reset the node.
-    timer: 300
+      - "SCHEMATIC_NAME.schem"

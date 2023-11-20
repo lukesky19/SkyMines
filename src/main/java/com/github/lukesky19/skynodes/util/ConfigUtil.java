@@ -14,34 +14,42 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+*/
 package com.github.lukesky19.skynodes.util;
- 
+
 import com.github.lukesky19.skynodes.SkyNodes;
-import java.nio.file.Path;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
-    public class ConfigUtil {
-        public static final Path nodeConfigPath = Path.of(SkyNodes.getInstance().getDataFolder() + "/nodes.yml");
-        private static YamlConfigurationLoader buildYCL() {
-        return (YamlConfigurationLoader.builder().nodeStyle(NodeStyle.BLOCK).path(nodeConfigPath)).build();
-        }
-        public static CommentedConfigurationNode loadConfig() {
-            CommentedConfigurationNode commentedConfigurationNode;
-            YamlConfigurationLoader loader = buildYCL();
- 
-            try {
-                commentedConfigurationNode = loader.load();
-            } catch (ConfigurateException e) {
-                throw new RuntimeException(e);
-            }
-            return commentedConfigurationNode;
-        }
 
-        public static void copyDefaultConfig() {
-            if (!nodeConfigPath.toFile().exists())
-                SkyNodes.getInstance().saveResource("nodes.yml", false);
+import java.nio.file.Path;
+
+public class ConfigUtil {
+
+    public static final Path nodeConfigPath = Path.of(SkyNodes.getInstance().getDataFolder() + "/nodes.yml");
+
+    private static YamlConfigurationLoader buildYCL() {
+        return YamlConfigurationLoader.builder()
+                .nodeStyle(NodeStyle.BLOCK).path(ConfigUtil.nodeConfigPath).build();
+    }
+
+    public static CommentedConfigurationNode loadConfig() {
+        YamlConfigurationLoader loader = buildYCL();
+        CommentedConfigurationNode commentedConfigurationNode;
+
+        try {
+            commentedConfigurationNode = loader.load();
+        } catch (ConfigurateException e) {
+            throw new RuntimeException(e);
+        }
+        return commentedConfigurationNode;
+    }
+
+    public static void copyDefaultConfig() {
+        if (!nodeConfigPath.toFile().exists()) {
+            SkyNodes.getInstance().saveResource("nodes.yml", false);
         }
     }
+
+}

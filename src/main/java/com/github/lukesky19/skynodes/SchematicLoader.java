@@ -30,25 +30,24 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import static com.github.lukesky19.skynodes.SkyNodes.getSkyNodesLogger;
+
 public class SchematicLoader {
+
     public static void paste(Location location, File file) {
         ClipboardFormat clipboardFormat = ClipboardFormats.findByFile(file);
         Clipboard clipboard;
         BlockVector3 blockVector3 = BlockVector3.at(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
-        if (clipboardFormat != null)
-            try {
-                ClipboardReader clipboardReader = clipboardFormat.getReader(new FileInputStream(file));
-                if (location.getWorld() == null) {
-                    throw new NullPointerException("Failed to paste schematic due to world being null");
-                }
-
+        if (clipboardFormat != null) {
+            try (ClipboardReader clipboardReader = clipboardFormat.getReader(new FileInputStream(file))) {
                 World world = BukkitAdapter.adapt(location.getWorld());
                 EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(world).build();
                 clipboard = clipboardReader.read();
@@ -62,10 +61,13 @@ public class SchematicLoader {
                     Operations.complete(operation);
                     editSession.close();
                 } catch (WorldEditException e) {
-                    e.printStackTrace();
+                    getSkyNodesLogger().error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The operation failed to complete."));
+                    getSkyNodesLogger().error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] " + e.getCause()));
                 }
             } catch (IOException e) {
-                    e.printStackTrace();
+                getSkyNodesLogger().error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Unable to load to clipboard."));
+                getSkyNodesLogger().error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] " + e.getCause()));
             }
+        }
     }
 }

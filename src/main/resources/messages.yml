@@ -5,7 +5,7 @@ Help:
   - "<aqua>Skynodes is developed by <white><bold>lukeskywlker19<reset><aqua>."
   - "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</click><reset><aqua>."
   - " "
-  - "<aqua<bold>List of Commands:"
+  - "<aqua><bold>List of Commands:"
   - "<white>/<aqua>skynodes <yellow>help"
   - "<white>/<aqua>skynodes <yellow>reload"
   - "<white>/<aqua>skynodes <yellow>paste <white><<red>schematic name<white>> <white><<red>world<white>> <white><<red>X<white>> <white><<red>Y<white>> <white><<red>Z<white>>"

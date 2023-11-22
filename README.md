@@ -4,17 +4,17 @@ This plugin takes configured schematics from WorldEdit or FastAsyncWorldEdit and
 
 ## Features
 * Supports WorldEdit and FastAsyncWorldEdit
-* Multiple schematics per node (chosen randomly).
-* Multiple locations per node (chosen randomly).
+* Restricts block breaking within a node to a configured list of blocks.
+* Teleports player to safety before a node is pasted. (Doesn't apply when pasting using the /skynodes paste command)
+* Multiple schematics can be configured for one location. The plugin will pick one at random.
 
-## Disclaimer
+## Disclaimers
 * Paper and forks of Paper are only supported at this time.
 * I only use Paper or forks of Paper for servers I work on, but I may add Spigot support in the future.
 
 ## TO-DO
-### V0.3.0
-* Add a check for the player within the region a schematic is placed and teleport them to safety.
-* Make all messages sent to console or the player configurable.
+### v0.4.0
+* Add the ability to undo pastes with the /skynodes paste command.
 
 ## Building
 ```./gradlew build```

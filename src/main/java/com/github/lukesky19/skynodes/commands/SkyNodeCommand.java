@@ -17,10 +17,12 @@
 */
 package com.github.lukesky19.skynodes.commands;
 
-import com.github.lukesky19.skynodes.SchematicLoader;
+import com.github.lukesky19.skynodes.data.ConfigMessages;
+import com.github.lukesky19.skynodes.managers.ConfigManager;
+import com.github.lukesky19.skynodes.managers.SchematicManager;
 import com.github.lukesky19.skynodes.SkyNodes;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -36,80 +38,72 @@ import java.util.*;
 import static org.bukkit.Bukkit.getServer;
 
 public class SkyNodeCommand implements CommandExecutor, TabCompleter {
+    static final MiniMessage mm = MiniMessage.miniMessage();
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        // args[0] = paste
-        // args[1] = schematic
-        // args[2] = world
-        // args[3,4,5] = coords
-        if (label.equalsIgnoreCase("skynodes")) {
-            if (args.length == 1) {
-                if (args[0].equalsIgnoreCase("reload")) {
-                    SkyNodes.reload();
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The plugin has been reloaded."));
-                } else if(args[0].equalsIgnoreCase("help")) {
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Skynodes is developed by <white><bold>lukeskywlker19<reset><red>."));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><white><underlined><bold>https://github.com/lukesky19</click><reset><red>."));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] "));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>List of Commands:"));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <white>/<aqua>skynodes <red>paste <white><<yellow>schematic name<white>> <white><<yellow>world<white>> <white><<yellow>X<white>> <white><<yellow>Y<white>> <white><<yellow>Z<white>>"));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <white>/<aqua>skynodes <red>reload"));
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <white>/<aqua>skynodes <red>help"));
-                }
-            } else if (args.length == 6) {
-                if (args[0].equalsIgnoreCase("paste")) {
-                    Location location = null;
-                    if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-                        File file = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
-                        if (file.exists()) {
-                            World world = SkyNodes.getInstance().getServer().getWorld(args[2]);
-                            if(world != null) {
-                                location = new Location(
-                                        world,
-                                        Double.parseDouble(args[3]),
-                                        Double.parseDouble(args[4]),
-                                        Double.parseDouble(args[5]));
-                            }
-                            try {
-                                SchematicLoader.paste(Objects.requireNonNull(location), file);
-                                sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Node pasted successfully."));
-                            } catch (Exception e) {
-                                sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red><bold>AN ERROR HAS OCCURED:."));
-                                throw new RuntimeException(e);
-                            }
-                            return true;
-                        } else {
-                            sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The schematic name provided is invalid or doesn't exist."));
-                            return false;
+        ConfigMessages configMessages = ConfigManager.getConfigMessages();
+        if(args.length == 1) {
+            switch(args[0]) {
+                case "reload":
+                    if(sender.hasPermission("skynodes.commands.reload")) {
+                        try {
+                            SkyNodes.reloadConfigFiles();
+                            SkyNodes.reloadTasks();
+                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.reloadMessage()));
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
                         }
-                    } else if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-                        File file = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1] + ".schem");
-                        if (file.exists()) {
-                            World world = SkyNodes.getInstance().getServer().getWorld(args[2]);
-                            if(world != null) {
-                                location = new Location(
-                                        world,
-                                        Double.parseDouble(args[3]),
-                                        Double.parseDouble(args[4]),
-                                        Double.parseDouble(args[5]));
-                            }
-                            try {
-                                SchematicLoader.paste(Objects.requireNonNull(location), file);
-                                sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Node pasted successfully."));
-                            } catch (Exception e) {
-                                sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red><bold>AN ERROR HAS OCCURED:."));
-                                throw new RuntimeException(e);
-                            }
+                    } else {
+                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                    }
+                    break;
+                case "help":
+                    if(sender.hasPermission("skynodes.commands.help")) {
+                        List<String> helpMessage = configMessages.helpMessage();
+                        for(String msg : helpMessage) {
+                            sender.sendMessage(mm.deserialize(msg));
+                        }
+                    } else {
+                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                    }
+                    break;
+                default:
+                    sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.unknownArgumentMessage()));
+                    break;
+            }
+        } else if(args.length == 6) {
+            if(sender.hasPermission("skynodes.commands.paste")) {
+                if (Bukkit.getServer().getPluginManager().getPlugin("WorldEdit") != null) {
+                    File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
+                    if (file.exists()) {
+                        try {
+                            SchematicManager.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
+                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteSuccessMessage()));
                             return true;
-                        } else {
-                            sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The schematic name provided is invalid or doesn't exist."));
+                        } catch (Exception e) {
+                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteFailureMessage()));
                             return false;
                         }
                     } else {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>Worldedit or FastAsyncWorldEdit is not installed. Please install one."));
+                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerSchematicNotFoundMessage()));
                         return false;
                     }
                 }
+
+                File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
+                if(file.exists()) {
+                    try {
+                        SchematicManager.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
+                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteSuccessMessage()));
+                        return true;
+                    } catch (Exception e) {
+                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteFailureMessage()));
+                        return false;
+                    }
+                }
+            } else {
+                sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                return false;
             }
         }
         return false;
@@ -117,17 +111,23 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        // args[0] = paste
-        // args[1] = schematic
-        // args[2] = world
-        // args[3,4,5] = coords
-        if (label.equals("skynodes")) {
-            Player p = (Player) sender;
-            switch(args.length) {
-                case 1:
-                    return Arrays.asList("paste", "help", "reload");
-                case 2:
-                    if(args[0].equalsIgnoreCase("paste")) {
+        Player p = (Player) sender;
+        switch (args.length) {
+            case 1:
+                ArrayList<String> subCmds = new ArrayList<>();
+                if(p.hasPermission("skynodes.commands.help")) {
+                    subCmds.add("help");
+                }
+                if(p.hasPermission("skynodes.commands.paste")) {
+                    subCmds.add("paste");
+                }
+                if(p.hasPermission("skynodes.commands.reload")) {
+                    subCmds.add("reload");
+                }
+                return subCmds;
+            case 2:
+                if (args[0].equalsIgnoreCase("paste")) {
+                    if (p.hasPermission("skynodes.commands.paste")) {
                         File directory = null;
                         List<String> schematicNames = new ArrayList<>();
                         if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
@@ -144,8 +144,10 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     } else {
                         return Collections.emptyList();
                     }
-                case 3:
-                    if(args[0].equalsIgnoreCase("paste")) {
+                }
+            case 3:
+                if (args[0].equalsIgnoreCase("paste")) {
+                    if (p.hasPermission("skynodes.commands.paste")) {
                         List<World> worlds = SkyNodes.getInstance().getServer().getWorlds();
                         List<String> worldNames = new ArrayList<>();
                         for (World w : worlds) {
@@ -155,29 +157,33 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     } else {
                         return Collections.emptyList();
                     }
-                case 4:
-                    if(args[0].equalsIgnoreCase("paste")) {
-                        return List.of(String.valueOf(p.getLocation().getX()));
+                }
+            case 4:
+                if (args[0].equalsIgnoreCase("paste")) {
+                    if (p.hasPermission("skynodes.commands.paste")) {
+                        return List.of(String.valueOf((int) p.getLocation().getX()));
                     } else {
                         return Collections.emptyList();
                     }
-                case 5:
-                    if(args[0].equalsIgnoreCase("paste")) {
-                        return List.of(String.valueOf(p.getLocation().getY()));
+                }
+            case 5:
+                if (args[0].equalsIgnoreCase("paste")) {
+                    if (p.hasPermission("skynodes.commands.paste")) {
+                        return List.of(String.valueOf((int) p.getLocation().getY()));
                     } else {
                         return Collections.emptyList();
                     }
-                case 6:
-                    if(args[0].equalsIgnoreCase("paste")) {
-                        return List.of(String.valueOf(p.getLocation().getZ()));
+                }
+            case 6:
+                if (args[0].equalsIgnoreCase("paste")) {
+                    if (p.hasPermission("skynodes.commands.paste")) {
+                        return List.of(String.valueOf((int) p.getLocation().getZ()));
                     } else {
                         return Collections.emptyList();
                     }
-                default:
-                    return Collections.emptyList();
-            }
+                }
+            default:
+                return Collections.emptyList();
         }
-        return null;
     }
-
 }

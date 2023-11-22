@@ -1,12 +1,21 @@
-# The delay between pasting in schematics. Mitigates performance issues.
-time-delay: 60
+# Should debug messages be displayed?
+# Recommended to NOT change this.
+debug: false
+# The delay between pasting in schematics.
+# Default pastes 1 node every 5 minutes.
+time-delay: 300
 nodes:
-  # ID should be a number (0, 1, 2, etc)
-  # Capitalized text are placeholders.
-  # X Y Z is the format for the X Y and Z coordinates.
-  EXAMPLE:
-    world: "WORLD_NAME"
-    locations:
-      - 0 0 0
-    schematics:
-      - "SCHEMATIC_NAME.schem"
+## Example
+  # ID:
+    # world: WORLD_NAME
+    # location: 0 0 0
+    # safe-location: 0 0 0
+    # schematics:
+      # - "SCHEMATIC_NAME.schem"
+      # - "SCHEMATIC_NAME.schem"
+      # - "SCHEMATIC_NAME.schem"
+    # region: REGION_NAME
+    # blocks-allowed:
+      # - BLOCK_ID
+      # - BLOCK_ID
+      # - BLOCK_ID

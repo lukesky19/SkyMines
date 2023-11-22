@@ -18,172 +18,125 @@
 package com.github.lukesky19.skynodes;
 
 import com.github.lukesky19.skynodes.commands.SkyNodeCommand;
-import com.github.lukesky19.skynodes.util.ConfigRecord;
-import com.github.lukesky19.skynodes.util.ConfigUtil;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import com.github.lukesky19.skynodes.data.ConfigMessages;
+import com.github.lukesky19.skynodes.data.ConfigSettings;
+import com.github.lukesky19.skynodes.data.Node;
+import com.github.lukesky19.skynodes.listeners.NodeBlockBreakListener;
+import com.github.lukesky19.skynodes.managers.ConfigManager;
+import com.github.lukesky19.skynodes.managers.NodeManager;
+import com.github.lukesky19.skynodes.managers.SchematicManager;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.WorldCreator;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
-import org.spongepowered.configurate.CommentedConfigurationNode;
-import org.spongepowered.configurate.serialize.SerializationException;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public final class SkyNodes extends JavaPlugin {
-
+    static SkyNodes instance;
     static BukkitTask task;
-    private static SkyNodes instance;
-    static ComponentLogger logger;
+    static final MiniMessage mm = MiniMessage.miniMessage();
+
+
     public static SkyNodes getInstance() {
-        return SkyNodes.instance;
-    }
-    public static ComponentLogger getSkyNodesLogger() {
-        return logger;
+        return instance;
     }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        SkyNodes.instance = this;
-        logger = instance.getComponentLogger();
-        reload();
+        // Store plugin main instance.
+        instance = this;
+
+        // (Re-)load config files.
+        // (Re-)initializes data from config files.
+        reloadConfigFiles();
+        // Get plugin messages.
+        ConfigMessages configMessages = ConfigManager.getConfigMessages();
+
+        // Check if WorldEdit or FastAsyncWorldEdit is enabled.
+        if (!Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("WorldEdit")).isEnabled() || !Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit")).isEnabled()) {
+            instance.getComponentLogger().error(mm.deserialize(configMessages.missingWorldEditorFastAsyncWorldEditMessage()));
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+
+        // (Re-)load the plugin.
+        // (Re-)Initializes the plugin function(s), aka the BukkitTask/BukkitRunnable.
+        try {
+            reloadTasks();
+            instance.getComponentLogger().info(mm.deserialize(configMessages.reloadMessage()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // Set skynodes command executor and tabcompleter.
         Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setExecutor(new SkyNodeCommand());
         Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setTabCompleter(new SkyNodeCommand());
+        // Register blockBreakListener.
+        Bukkit.getPluginManager().registerEvents(new NodeBlockBreakListener(), this);
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        // Cancel the BukkitTask on shutdown.
         if(task != null) {
             task.cancel();
         }
     }
 
-    public static void reload() {
-        if(task != null) {
-            task.cancel();
-        }
-        ConfigUtil.copyDefaultConfig();
-        CommentedConfigurationNode nodeConfig = ConfigRecord.getConfig().nodeConfig();
+    public static void reloadConfigFiles() {
+        // Copy default config if needed.
+        ConfigManager.copyDefaultConfig();
 
-        int s = 0;
-        int count = 0;
-        while(!nodeConfig.node("nodes", s).virtual()) {
-            count++;
-            s++;
-        }
-
-        int finalCount = count;
-        final int[] r = new int[1];
-        task = new BukkitRunnable() {
-            @Override public void run() {
-                r[0] = new Random().nextInt(finalCount);
-                Location location = getRandomLocation(parseLocations(r[0]));
-                File finalFile = getRandomSchematic(parseSchematics(r[0]));
-                if(finalFile != null) {
-                    try {
-                        SchematicLoader.paste(location, finalFile);
-                        logger.info(MiniMessage.miniMessage().deserialize("<red>Node " + (r[0] - 1) + " has pasted successfully."));
-                    } catch (Exception e) {
-                        logger.error(MiniMessage.miniMessage().deserialize("<red><bold>AN ERROR HAS OCCURED:"));
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }.runTaskTimer(instance, 20L, 20L * nodeConfig.node("time-delay").getLong());
-    }
-
-    public static @NotNull List<Location> parseLocations(int i) {
-        CommentedConfigurationNode nodeConfig = ConfigRecord.getConfig().nodeConfig();
-        List<Double> XYZ = new ArrayList<>();
-        List<Location> locations = new ArrayList<>();
-
-        List<String> stringCoordsList;
+        // (Re-)load config
         try {
-            stringCoordsList = nodeConfig.node("nodes", i, "locations").getList(String.class);
-        } catch (SerializationException e) {
+            ConfigManager.loadConfig();
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        if(stringCoordsList != null) {
-            for (String str : stringCoordsList) {
-                String[] split = str.split(" ");
 
-                for (String s : split) {
-                    XYZ.add(Double.valueOf(s));
-                }
-
-                if (XYZ.size() == 3) {
-                    String worldName = nodeConfig.node("nodes", i, "world").getString();
-                    File worldFile = new File(Bukkit.getServer().getWorldContainer() + File.separator + worldName);
-                    World world;
-                    if(worldFile.isDirectory() && worldFile.exists()) {
-                        world = new WorldCreator(Objects.requireNonNull(worldName)).createWorld();
-                        Location loc = new Location(
-                                world,
-                                XYZ.get(0),
-                                XYZ.get(1),
-                                XYZ.get(2));
-                        locations.add(loc);
-                    } else {
-                        logger.error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The world for node " + i + " is invalid."));
-                    }
-                } else {
-                    logger.error(MiniMessage.miniMessage().deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>] <red>The coordinates for node " + i + " are invalid."));
-                }
-            }
+        // (Re-)load, (re-)build, and (re-)store configured node data.
+        try {
+            NodeManager.loadNodes();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return locations;
     }
 
-    public static Location getRandomLocation(@NotNull List<Location> locations) {
-        Random random = new Random();
-        return locations.get(random.nextInt(locations.size()));
-    }
+    public static void reloadTasks() {
+        // Cancel previous BukkitTask if it exists.
+        if (task != null) {
+            task.cancel();
+        }
 
-    public static @NotNull List<File> parseSchematics(int i) {
-        CommentedConfigurationNode nodeConfig = ConfigRecord.getConfig().nodeConfig();
-        List<String> schemNames;
-        List<File> schemFiles = new ArrayList<>();
+        // Get plugin settings
+        ConfigSettings configSettings = ConfigManager.getConfigSettings();
+        // Get plugin messages
+        ConfigMessages configMessages = ConfigManager.getConfigMessages();
+        // Get stored node data.
+        ArrayList<Node> nodeDataList = NodeManager.getNodeDataArrayList();
+        if(nodeDataList.isEmpty()) {
+            instance.getComponentLogger().warn(configMessages.noNodesFoundMessage());
+            return;
+        }
 
-        if(!nodeConfig.node("nodes", i).virtual()) {
-            File file;
-            try {
-                schemNames = nodeConfig.node("nodes", i, "schematics").getList(String.class);
-            } catch (SerializationException e) {
-                throw new RuntimeException(e);
-            }
-
-            if (schemNames != null) {
-                for(String s : schemNames) {
-                    if (instance.getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-                        file = new File(Objects.requireNonNull(instance.getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
-                    } else if (instance.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-                        file = new File(Objects.requireNonNull(instance.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
-                    } else {
-                        logger.error(MiniMessage.miniMessage().deserialize("<red>Worldedit or FastAsyncWorldEdit is not installed OR the schematic name configured at node " + i + " is invalid."));
-                        file = null;
-                    }
-                    if(file != null) {
-                        schemFiles.add(file);
-                    }
+        // Create new BukkitRunnable that repeats for the configured time.
+        // It selects a random node and picks a random schematic to paste for that node.
+        task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Node nodeData = nodeDataList.get(new Random().nextInt(nodeDataList.size()));
+                try {
+                    SchematicManager.pasteFromConfig(nodeData);
+                    SkyNodes.instance.getComponentLogger().info(mm.deserialize(configMessages.consoleNodePasteSuccessMessage(), Placeholder.parsed("nodeid", nodeData.nodeId())));
+                } catch (Exception e) {
+                    SkyNodes.instance.getComponentLogger().info(mm.deserialize(configMessages.consoleNodePasteFailureMessage(), Placeholder.parsed("nodeid", nodeData.nodeId())));
+                    throw new RuntimeException(e);
                 }
             }
-        }
-        return schemFiles;
-    }
-
-    public static File getRandomSchematic(@NotNull List<File> schematics) {
-        Random random = new Random();
-        return schematics.get(random.nextInt(schematics.size()));
+        }.runTaskTimer(instance, 1, 20L * configSettings.timeDelay());
     }
 }

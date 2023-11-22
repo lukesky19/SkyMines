@@ -3,6 +3,8 @@ version: '${version}'
 main: com.github.lukesky19.skynodes.SkyNodes
 api-version: '1.20'
 authors: [ lukeskywlker19 ]
+depend:
+  - WorldGuard
 softdepend:
   - WorldEdit
   - FastAsyncWorldEdit
@@ -11,9 +13,21 @@ commands:
   skynodes:
     description: The base command.
 permissions:
+  skynodes.commands.skynode:
+    description: The base command permission.
+    default: op
   skynodes.commands.paste:
     description: Used to paste schematics. Debug only.
     default: op
   skynodes.commands.reload:
     description: Used to reload the plugin.
+    default: op
+  skynodes.commands.help:
+    description: Used to paste schematics. Debug only.
+    default: op
+  skynodes.bypass.safeteleport:
+    description: Bypasses the check for safe teleport when pasting a schematic.
+    default: op
+  skynodes.bypass.blockbreakcheck:
+    description: Bypasses the check for safe teleport when pasting a schematic.
     default: op

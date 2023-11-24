@@ -18,77 +18,57 @@
 package com.github.lukesky19.skynodes.managers;
 
 import com.github.lukesky19.skynodes.SkyNodes;
-import com.github.lukesky19.skynodes.data.ConfigSettings;
-import com.github.lukesky19.skynodes.data.ConfigMessages;
+import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.nio.file.Path;
 
 public class ConfigManager {
-    static final Path nodeConfigPath = Path.of(SkyNodes.getInstance().getDataFolder() + "/nodes.yml");
-    static final Path messagesConfigPath = Path.of(SkyNodes.getInstance().getDataFolder() + "/messages.yml");
-
-    static CommentedConfigurationNode nodeConfig;
-    static CommentedConfigurationNode messagesConfig;
-    static ConfigSettings configSettings;
-    static ConfigMessages configMessages;
-    public static CommentedConfigurationNode getNodeConfig() {
-        return nodeConfig;
+    final SkyNodes plugin;
+    final ConfigurateUtil confUtil;
+    public ConfigManager(SkyNodes plugin) {
+        this.plugin = plugin;
+        confUtil = plugin.getConfUtil();
+        nodeConfigPath = Path.of(plugin.getDataFolder() + "/nodes.yml");
+        messagesConfigPath = Path.of(plugin.getDataFolder() + "/messages.yml");
     }
-    public static CommentedConfigurationNode getMessagesConfig() {
+    final Path nodeConfigPath;
+    final Path messagesConfigPath;
+    CommentedConfigurationNode nodesConfig;
+    CommentedConfigurationNode messagesConfig;
+
+    public CommentedConfigurationNode getNodesConfig() {
+        return nodesConfig;
+    }
+    public CommentedConfigurationNode getMessagesConfig() {
         return messagesConfig;
     }
-    public static ConfigSettings getConfigSettings() {
-        return configSettings;
-    }
-    public static ConfigMessages getConfigMessages() {
-        return configMessages;
-    }
 
-    public static void loadConfig() {
-        // Node Config
+    public void reloadConfig() {
+        saveDefaultConfig();
+        // Load Node Config
         YamlConfigurationLoader loader;
-        loader = YamlConfigurationLoader.builder()
-                .nodeStyle(NodeStyle.BLOCK)
-                .path(nodeConfigPath)
-                .build();
+        loader = confUtil.getYamlConfigurationLoader(nodeConfigPath);
         try {
-            nodeConfig = loader.load();
+            nodesConfig = loader.load();
         } catch (ConfigurateException e) {
             throw new RuntimeException(e);
         }
-        // Messages Config
-        loader = YamlConfigurationLoader.builder()
-                .nodeStyle(NodeStyle.BLOCK)
-                .path(messagesConfigPath)
-                .build();
+        // Load Messages Config
+        loader = confUtil.getYamlConfigurationLoader(messagesConfigPath);
         try {
             messagesConfig = loader.load();
         } catch (ConfigurateException e) {
             throw new RuntimeException(e);
         }
-
-        // Load plugin settings.
-        try {
-            configSettings = ConfigSettings.loadConfigSettings(getNodeConfig());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        // Load plugin messages.
-        try {
-            configMessages = ConfigMessages.loadPluginMessages(getMessagesConfig());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    public static void copyDefaultConfig() {
+    private void saveDefaultConfig() {
         if (!nodeConfigPath.toFile().exists())
-            SkyNodes.getInstance().saveResource("nodes.yml", false);
+            plugin.saveResource("nodes.yml", false);
         if (!messagesConfigPath.toFile().exists())
-            SkyNodes.getInstance().saveResource("messages.yml", false);
+            plugin.saveResource("messages.yml", false);
     }
 }

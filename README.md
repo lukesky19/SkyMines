@@ -14,7 +14,14 @@ This plugin takes configured schematics from WorldEdit or FastAsyncWorldEdit and
 
 ## TO-DO
 ### v0.4.0
-* Add the ability to undo pastes with the /skynodes paste command.
+* Add the ability to undo pastes with the /skynodes paste command (/skynodes undo).
+* ~~Add the option for multiple simultaneous tasks where nodes are pasted for different locations.~~
+* Clean up and optimize code.
+* Add separate time delays per task.
+* Add skynodes.debug permission.
+* Add more debug messages.
+* Add more robust error checking.
+* Add more robust error messages.
 
 ## Building
 ```./gradlew build```

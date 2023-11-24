@@ -3,19 +3,23 @@
 debug: false
 # The delay between pasting in schematics.
 # Default pastes 1 node every 5 minutes.
+# Each task will have a separate 5 minute delay.
 time-delay: 300
-nodes:
+# A task picks a random node from that task and places it.
+tasks:
 ## Example
-  # ID:
-    # world: WORLD_NAME
-    # location: 0 0 0
-    # safe-location: 0 0 0
-    # schematics:
-      # - "SCHEMATIC_NAME.schem"
-      # - "SCHEMATIC_NAME.schem"
-      # - "SCHEMATIC_NAME.schem"
-    # region: REGION_NAME
-    # blocks-allowed:
-      # - BLOCK_ID
-      # - BLOCK_ID
-      # - BLOCK_ID
+  # TASKID:
+    # nodes:
+      # ID:
+        # world: WORLD_NAME
+        # location: 0 0 0
+        # safe-location: 0 0 0
+        # schematics:
+          # - "SCHEMATIC_NAME.schem"
+          # - "SCHEMATIC_NAME.schem"
+          # - "SCHEMATIC_NAME.schem"
+        # region: REGION_NAME
+        # blocks-allowed:
+          # - BLOCK_ID
+          # - BLOCK_ID
+          # - BLOCK_ID

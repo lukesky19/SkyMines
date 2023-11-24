@@ -1,6 +1,7 @@
 # Plugin Messages
 Prefix: "<gray>[<yellow><bold>SkyNodes<reset><gray>] "
 Reload: "<aqua>The plugin has reloaded successfully."
+StartTasksSuccess: "<aqua>The plugin has started all tasks successfully."
 Help:
   - "<aqua>Skynodes is developed by <white><bold>lukeskywlker19<reset><aqua>."
   - "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</click><reset><aqua>."

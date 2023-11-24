@@ -17,11 +17,11 @@
 */
 package com.github.lukesky19.skynodes.commands;
 
-import com.github.lukesky19.skynodes.data.ConfigMessages;
-import com.github.lukesky19.skynodes.managers.ConfigManager;
+import com.github.lukesky19.skynodes.managers.MessagesManager;
+import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.managers.SchematicManager;
 import com.github.lukesky19.skynodes.SkyNodes;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -38,37 +38,44 @@ import java.util.*;
 import static org.bukkit.Bukkit.getServer;
 
 public class SkyNodeCommand implements CommandExecutor, TabCompleter {
-    static final MiniMessage mm = MiniMessage.miniMessage();
+    final SkyNodes plugin;
+    final MessagesManager msgsMgr;
+    final SchematicManager schemMgr;
+    public SkyNodeCommand(SkyNodes plugin) {
+        this.plugin = plugin;
+        msgsMgr = plugin.getMsgsMgr();
+        schemMgr = plugin.getSchemMgr();
+    }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        ConfigMessages configMessages = ConfigManager.getConfigMessages();
+        Messages configMessages = msgsMgr.getMessages();
         if(args.length == 1) {
             switch(args[0]) {
                 case "reload":
                     if(sender.hasPermission("skynodes.commands.reload")) {
                         try {
-                            SkyNodes.reloadConfigFiles();
-                            SkyNodes.reloadTasks();
-                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.reloadMessage()));
+                            plugin.reload();
+                            plugin.startTasks();
+                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.reloadMessage()));
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
                     }
                     break;
                 case "help":
                     if(sender.hasPermission("skynodes.commands.help")) {
-                        List<String> helpMessage = configMessages.helpMessage();
-                        for(String msg : helpMessage) {
-                            sender.sendMessage(mm.deserialize(msg));
+                        List<Component> helpMessage = configMessages.helpMessage();
+                        for(Component msg : helpMessage) {
+                            sender.sendMessage(msg);
                         }
                     } else {
-                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
                     }
                     break;
                 default:
-                    sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.unknownArgumentMessage()));
+                    sender.sendMessage(configMessages.prefixMessage().append(configMessages.unknownArgumentMessage()));
                     break;
             }
         } else if(args.length == 6) {
@@ -77,15 +84,15 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
                     if (file.exists()) {
                         try {
-                            SchematicManager.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteSuccessMessage()));
+                            schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
+                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteSuccessMessage()));
                             return true;
                         } catch (Exception e) {
-                            sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteFailureMessage()));
+                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteFailureMessage()));
                             return false;
                         }
                     } else {
-                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerSchematicNotFoundMessage()));
+                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerSchematicNotFoundMessage()));
                         return false;
                     }
                 }
@@ -93,16 +100,16 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                 File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
                 if(file.exists()) {
                     try {
-                        SchematicManager.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteSuccessMessage()));
+                        schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
+                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteSuccessMessage()));
                         return true;
                     } catch (Exception e) {
-                        sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.playerNodePasteFailureMessage()));
+                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteFailureMessage()));
                         return false;
                     }
                 }
             } else {
-                sender.sendMessage(mm.deserialize(configMessages.prefixMessage() + configMessages.noPermissionMessage()));
+                sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
                 return false;
             }
         }
@@ -148,7 +155,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
             case 3:
                 if (args[0].equalsIgnoreCase("paste")) {
                     if (p.hasPermission("skynodes.commands.paste")) {
-                        List<World> worlds = SkyNodes.getInstance().getServer().getWorlds();
+                        List<World> worlds = plugin.getServer().getWorlds();
                         List<String> worldNames = new ArrayList<>();
                         for (World w : worlds) {
                             worldNames.add(w.getName());

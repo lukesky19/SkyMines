@@ -15,16 +15,43 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.data;
+package com.github.lukesky19.skynodes.managers;
 
+import com.github.lukesky19.skynodes.SkyNodes;
+import com.github.lukesky19.skynodes.records.Settings;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
-public record ConfigSettings(Boolean debug, Integer timeDelay) {
-    public static ConfigSettings loadConfigSettings(CommentedConfigurationNode commentedConfigurationNode) {
+public class SettingsManager {
+    // Constructor(s)
+    public SettingsManager(SkyNodes plugin) {
+        this.plugin = plugin;
+        cfgMgr = plugin.getCfgMgr();
+    }
+
+    // Variable(s)
+    final SkyNodes plugin;
+    final ConfigManager cfgMgr;
+    Settings settings;
+
+    // Getter(s)
+    public Settings getSettings() {
+        return settings;
+    }
+
+    // Methods
+    // Loads the settings from the nodes.yml file.
+    private void loadSettings(CommentedConfigurationNode comConfNode) {
         try {
-            return new ConfigSettings(commentedConfigurationNode.node("debug").getBoolean(), commentedConfigurationNode.node("time-delay").getInt());
+            settings = new Settings(
+                    comConfNode.node("debug").getBoolean(),
+                    comConfNode.node("time-delay").getInt());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // (Re-)loads the settings
+    public void reloadSettings() {
+        loadSettings(cfgMgr.getNodesConfig());
     }
 }

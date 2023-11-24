@@ -18,13 +18,14 @@
 package com.github.lukesky19.skynodes;
 
 import com.github.lukesky19.skynodes.commands.SkyNodeCommand;
-import com.github.lukesky19.skynodes.data.ConfigMessages;
-import com.github.lukesky19.skynodes.data.ConfigSettings;
-import com.github.lukesky19.skynodes.data.Node;
+import com.github.lukesky19.skynodes.managers.*;
+import com.github.lukesky19.skynodes.records.Messages;
+import com.github.lukesky19.skynodes.records.Settings;
+import com.github.lukesky19.skynodes.records.Node;
 import com.github.lukesky19.skynodes.listeners.NodeBlockBreakListener;
-import com.github.lukesky19.skynodes.managers.ConfigManager;
-import com.github.lukesky19.skynodes.managers.NodeManager;
-import com.github.lukesky19.skynodes.managers.SchematicManager;
+import com.github.lukesky19.skynodes.records.Task;
+import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
@@ -35,108 +36,115 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 
 public final class SkyNodes extends JavaPlugin {
-    static SkyNodes instance;
-    static BukkitTask task;
-    static final MiniMessage mm = MiniMessage.miniMessage();
+    // Variables
+    ConfigManager cfgMgr;
+    NodeManager nodeMgr;
+    MessagesManager msgsMgr;
+    SettingsManager settingsMgr;
+    TaskManager taskMgr;
+    ConfigurateUtil confUtil;
+    NodeBlockBreakListener nodeBlockBreakListener;
+    SchematicManager schemMgr;
+    SkyNodeCommand skyNodeCmd;
+    Settings settings;
+    Messages messages;
+    BukkitTask bukkitTask;
+    final MiniMessage mm = MiniMessage.miniMessage();
+    ComponentLogger logger;
 
-
-    public static SkyNodes getInstance() {
-        return instance;
+    // Getter(s)
+    public ConfigManager getCfgMgr() {
+        return cfgMgr;
+    }
+    public NodeManager getNodeMgr() {
+        return nodeMgr;
+    }
+    public MessagesManager getMsgsMgr() {
+        return msgsMgr;
+    }
+    public SettingsManager getSettingsMgr() {
+        return settingsMgr;
+    }
+    public TaskManager getTaskMgr() {
+        return taskMgr;
+    }
+    public ConfigurateUtil getConfUtil() {
+        return confUtil;
+    }
+    public SchematicManager getSchemMgr() {
+        return schemMgr;
+    }
+    public SkyNodeCommand getSkyNodeCmd() {
+        return skyNodeCmd;
     }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
         // Store plugin main instance.
-        instance = this;
+        logger = this.getComponentLogger();
+        confUtil = new ConfigurateUtil(this);
+        cfgMgr = new ConfigManager(this);
+        msgsMgr = new MessagesManager(this);
+        settingsMgr = new SettingsManager(this);
+        nodeMgr = new NodeManager(this);
+        taskMgr = new TaskManager(this);
+        schemMgr = new SchematicManager(this);
+        skyNodeCmd = new SkyNodeCommand(this);
+        nodeBlockBreakListener = new NodeBlockBreakListener(this);
 
-        // (Re-)load config files.
-        // (Re-)initializes data from config files.
-        reloadConfigFiles();
-        // Get plugin messages.
-        ConfigMessages configMessages = ConfigManager.getConfigMessages();
+        reload();
 
         // Check if WorldEdit or FastAsyncWorldEdit is enabled.
         if (!Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("WorldEdit")).isEnabled() || !Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit")).isEnabled()) {
-            instance.getComponentLogger().error(mm.deserialize(configMessages.missingWorldEditorFastAsyncWorldEditMessage()));
+            logger.error(messages.missingWorldEditorFastAsyncWorldEditMessage());
             Bukkit.getPluginManager().disablePlugin(this);
         }
 
-        // (Re-)load the plugin.
-        // (Re-)Initializes the plugin function(s), aka the BukkitTask/BukkitRunnable.
+        // Start the task of pasting nodes.
         try {
-            reloadTasks();
-            instance.getComponentLogger().info(mm.deserialize(configMessages.reloadMessage()));
+            startTasks();
+            logger.info(messages.reloadMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         // Set skynodes command executor and tabcompleter.
-        Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setExecutor(new SkyNodeCommand());
-        Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setTabCompleter(new SkyNodeCommand());
+        Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setExecutor(skyNodeCmd);
+        Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setTabCompleter(skyNodeCmd);
         // Register blockBreakListener.
-        Bukkit.getPluginManager().registerEvents(new NodeBlockBreakListener(), this);
+        Bukkit.getPluginManager().registerEvents(nodeBlockBreakListener, this);
     }
 
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
-        // Cancel the BukkitTask on shutdown.
-        if(task != null) {
-            task.cancel();
-        }
+    public void reload() {
+        cfgMgr.reloadConfig();
+        settingsMgr.reloadSettings();
+        settings = settingsMgr.getSettings();
+        msgsMgr.reloadMessages();
+        messages = msgsMgr.getMessages();
+        taskMgr.reloadTasks();
     }
 
-    public static void reloadConfigFiles() {
-        // Copy default config if needed.
-        ConfigManager.copyDefaultConfig();
-
-        // (Re-)load config
-        try {
-            ConfigManager.loadConfig();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        // (Re-)load, (re-)build, and (re-)store configured node data.
-        try {
-            NodeManager.loadNodes();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void reloadTasks() {
+    public void startTasks() {
         // Cancel previous BukkitTask if it exists.
-        if (task != null) {
-            task.cancel();
+        if (bukkitTask != null) {
+            bukkitTask.cancel();
         }
-
-        // Get plugin settings
-        ConfigSettings configSettings = ConfigManager.getConfigSettings();
-        // Get plugin messages
-        ConfigMessages configMessages = ConfigManager.getConfigMessages();
-        // Get stored node data.
-        ArrayList<Node> nodeDataList = NodeManager.getNodeDataArrayList();
-        if(nodeDataList.isEmpty()) {
-            instance.getComponentLogger().warn(configMessages.noNodesFoundMessage());
-            return;
-        }
-
-        // Create new BukkitRunnable that repeats for the configured time.
-        // It selects a random node and picks a random schematic to paste for that node.
-        task = new BukkitRunnable() {
+        bukkitTask = new BukkitRunnable() {
             @Override
             public void run() {
-                Node nodeData = nodeDataList.get(new Random().nextInt(nodeDataList.size()));
-                try {
-                    SchematicManager.pasteFromConfig(nodeData);
-                    SkyNodes.instance.getComponentLogger().info(mm.deserialize(configMessages.consoleNodePasteSuccessMessage(), Placeholder.parsed("nodeid", nodeData.nodeId())));
-                } catch (Exception e) {
-                    SkyNodes.instance.getComponentLogger().info(mm.deserialize(configMessages.consoleNodePasteFailureMessage(), Placeholder.parsed("nodeid", nodeData.nodeId())));
-                    throw new RuntimeException(e);
+                ArrayList<Task> tasksList = taskMgr.getTasksList();
+                for (Task task : tasksList) {
+                    Node currentNode = task.nodeList().get(new Random().nextInt(task.nodeList().size()));
+                    try {
+                        schemMgr.pasteFromConfig(currentNode);
+                        logger.info(mm.deserialize(messages.consoleNodePasteSuccessMessage(), Placeholder.parsed("nodeid", currentNode.nodeId())));
+                    } catch (Exception e) {
+                        logger.info(mm.deserialize(messages.consoleNodePasteFailureMessage(), Placeholder.parsed("nodeid", currentNode.nodeId())));
+                        throw new RuntimeException(e);
+                    }
                 }
             }
-        }.runTaskTimer(instance, 1, 20L * configSettings.timeDelay());
+        }.runTaskTimer(this,1,20L*settings.timeDelay());
     }
 }

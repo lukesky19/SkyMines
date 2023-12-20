@@ -25,6 +25,7 @@ import com.github.lukesky19.skynodes.records.Node;
 import com.github.lukesky19.skynodes.listeners.NodeBlockBreakListener;
 import com.github.lukesky19.skynodes.records.Task;
 import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
+import com.onarandombox.MultiverseCore.MultiverseCore;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -94,6 +95,11 @@ public final class SkyNodes extends JavaPlugin {
         nodeBlockBreakListener = new NodeBlockBreakListener(this);
 
         reload();
+
+        if(Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core") == null) {
+            logger.error(mm.deserialize("Multiverse-Core not found. Disabling..."));
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
 
         // Check if WorldEdit or FastAsyncWorldEdit is enabled.
         if (!Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("WorldEdit")).isEnabled() || !Objects.requireNonNull(Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit")).isEnabled()) {

@@ -39,17 +39,19 @@ public class TaskManager {
     final ConfigManager cfgMgr;
     final NodeManager nodeMgr;
     final ConfigurateUtil confUtil;
-    final ArrayList<Task> tasksList = new ArrayList<>();
-    final ArrayList<Node> nodesList = new ArrayList<>();
+    ArrayList<Task> tasksList = new ArrayList<>();
+    ArrayList<Node> nodesList = new ArrayList<>();
     // Getter(s)
     public ArrayList<Task> getTasksList() {
         return tasksList;
     }
 
     private void loadTasks() {
+        tasksList = new ArrayList<>();
         ArrayList<CommentedConfigurationNode> comConfNode_Tasks = confUtil.getConfigSection(cfgMgr.getNodesConfig(), "tasks");
         for(CommentedConfigurationNode task : comConfNode_Tasks) {
             ArrayList<CommentedConfigurationNode> comConfNode_Nodes = confUtil.getConfigSection(task, "nodes");
+            nodesList = new ArrayList<>();
             for(CommentedConfigurationNode node : comConfNode_Nodes) {
                 nodesList.add(nodeMgr.createNode(node));
             }

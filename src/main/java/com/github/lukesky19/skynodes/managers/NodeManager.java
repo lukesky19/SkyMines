@@ -20,6 +20,7 @@ package com.github.lukesky19.skynodes.managers;
 import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.Node;
+import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -50,6 +51,7 @@ public class NodeManager {
     }
 
     public Node createNode(CommentedConfigurationNode configNode) {
+        MultiverseCore core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
         Messages messages = msgsMgr.getMessages();
 
         String nodeId;
@@ -66,13 +68,7 @@ public class NodeManager {
         // Get the world the node is in.
         String worldName = configNode.node("world").getString();
         File worldFile = new File(plugin.getServer().getWorldContainer() + File.separator + worldName);
-        if(worldFile.isDirectory() && worldFile.exists()) {
-            nodeWorld = new WorldCreator(Objects.requireNonNull(worldName)).createWorld();
-        } else {
-            logger.error(mm.deserialize(messages.worldNotFoundMessage(),
-                    Placeholder.parsed("nodeid", nodeId)));
-            return null;
-        }
+        nodeWorld = core.getMVWorldManager().getMVWorld(worldName).getCBWorld();
 
         // Get the location where the node will be pasted.
         // X, Y, and Z coordinates.

@@ -17,22 +17,10 @@
 */
 package com.github.lukesky19.skynodes.records;
 
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
-
-import java.io.File;
 import java.util.List;
 
-public record Node(
-        String nodeId,
-        World nodeWorld,
-        int nodeX,
-        int nodeY,
-        int nodeZ,
-        List<File> nodeSchems,
-        ProtectedRegion region,
-        Location safeLocation,
-        List<Material> materials) {
+public record SkyTask(
+        String taskId,
+        int delaySeconds,
+        List<SkyNode> skyNodes) {
 }

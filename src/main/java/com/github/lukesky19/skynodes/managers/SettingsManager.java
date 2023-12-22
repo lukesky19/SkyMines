@@ -41,13 +41,15 @@ public class SettingsManager {
     // Methods
     // Loads the settings from the nodes.yml file.
     private void loadSettings(CommentedConfigurationNode comConfNode) {
-        try {
-            settings = new Settings(
-                    comConfNode.node("debug").getBoolean(),
-                    comConfNode.node("time-delay").getInt());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        boolean debug;
+
+        if(!comConfNode.node("debug").isNull()) {
+            debug = comConfNode.node("debug").getBoolean();
+        } else {
+            debug = false;
         }
+
+        settings = new Settings(debug);
     }
 
     // (Re-)loads the settings

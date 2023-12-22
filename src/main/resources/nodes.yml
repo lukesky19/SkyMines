@@ -1,24 +1,31 @@
 # Should debug messages be displayed?
 # Recommended to NOT change this.
 debug: false
-# The delay between pasting in schematics.
-# Default pastes 1 node every 5 minutes.
-# Each task will have a separate 5 minute delay.
-time-delay: 300
-# A task picks a random node from that task and places it.
 tasks:
 ## Example
+  ## TASKID can be any alphanumeric string.
   # TASKID:
+    ## The delay (in seconds) between pasting in schematics.
+    ## Default: 300.
+    # delay: 300
     # nodes:
-      # ID:
+      ## NODEID can be any alphanumeric string.
+      # NODEID:
+        ## World needs to be a valid and loaded World.
         # world: WORLD_NAME
+        ## A X, Y, and Z coordinate.
         # location: 0 0 0
+        ## A X, Y, and Z coordinate.
         # safe-location: 0 0 0
+        ## Any schematic here must exist inside WorldEdit/schematics or FastAsyncWorldEdit/schematics.
         # schematics:
           # - "SCHEMATIC_NAME.schem"
           # - "SCHEMATIC_NAME.schem"
           # - "SCHEMATIC_NAME.schem"
+        ## Region must be a valid WorldGuard region in the World above.
         # region: REGION_NAME
+        ## Must be a valid Material
+        ## See: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
         # blocks-allowed:
           # - BLOCK_ID
           # - BLOCK_ID

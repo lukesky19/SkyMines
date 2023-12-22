@@ -21,74 +21,83 @@ import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.managers.*;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.Settings;
-import com.github.lukesky19.skynodes.records.Node;
-import com.github.lukesky19.skynodes.records.Task;
+import com.github.lukesky19.skynodes.records.SkyNode;
+import com.github.lukesky19.skynodes.records.SkyTask;
+import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
 import com.sk89q.worldedit.math.BlockVector3;
 
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.w3c.dom.Node;
 
 public class NodeBlockBreakListener implements Listener {
     final SkyNodes plugin;
     final ConfigManager cfgMgr;
     final NodeManager nodeMgr;
+    final SkyTaskManager taskMgr;
     final MessagesManager msgsMgr;
     final SettingsManager settingsMgr;
-    final TaskManager taskMgr;
-    Messages messages;
-    Settings settings;
+    final ConfigurateUtil confUtil;
+    final MiniMessage mm = MiniMessage.miniMessage();
+
     public NodeBlockBreakListener(SkyNodes plugin) {
         this.plugin = plugin;
         cfgMgr = plugin.getCfgMgr();
         nodeMgr = plugin.getNodeMgr();
+        taskMgr = plugin.getTaskMgr();
         msgsMgr = plugin.getMsgsMgr();
         settingsMgr = plugin.getSettingsMgr();
-        taskMgr = plugin.getTaskMgr();
+        confUtil = plugin.getConfUtil();
     }
-    static final MiniMessage mm = MiniMessage.miniMessage();
+
     @EventHandler
     public void onNodeBreak(BlockBreakEvent e) {
         // Check if the block broken is:
-        // a. within the defined region for a node.
-        // b. on the allowed-blocks list for a node.
-        Location location = e.getBlock().getLocation();
-        messages = msgsMgr.getMessages();
-        settings = settingsMgr.getSettings();
+        // a. within the world for a SkyNode
+        // b. within the region for a SkyNode.
+        // c. on the allowed-blocks list for a SkyNode.
+        Messages messages = msgsMgr.getMessages();
+        Settings settings = settingsMgr.getSettings();
+        BlockVector3 blockVector3 = BlockVector3.at(e.getBlock().getLocation().getX(), e.getBlock().getLocation().getY(), e.getBlock().getLocation().getZ());
+        List<SkyNode> allSkyNodes = nodeMgr.getAllSkyNodes();
 
-        ArrayList<Task> tasksList = taskMgr.getTasksList();
-        for (Task task : tasksList) {
-            for(Node node : task.nodeList()) {
-                if (Objects.equals(e.getBlock().getWorld(), node.nodeWorld())) {
-                    BlockVector3 blockVector3 = BlockVector3.at(location.getX(), location.getY(), location.getZ());
-                    if (node.region().contains(blockVector3)) {
-                        // Check if player has the bypass permission for block break protections.
-                        if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
-                            if(settings.debug()) {
-                                e.getPlayer().sendMessage(messages.prefixMessage().append(messages.bypassedBlockBreakCheckMessage()));
+        for(SkyNode skyNode : allSkyNodes) {
+            World world = skyNode.nodeWorld();
+            ProtectedRegion region = skyNode.region();
+            List<Material> materials = skyNode.materials();
+
+            // World Check
+            if(Objects.equals(e.getBlock().getWorld(), world)) {
+                // Region Check
+                if(region.contains(blockVector3)) {
+                    if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
+                        if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                            e.getPlayer().sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
+                        }
+                        return;
+                    }
+
+                    // Material Check
+                    for(Material mat : materials) {
+                        if(Objects.equals(e.getBlock().getType(), mat)) {
+                            if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                                e.getPlayer().sendMessage(messages.prefix().append(messages.canMine()));
                             }
                             return;
-                        }
-
-                        for(Material mat : node.materials()) {
-                            if(!Objects.equals(e.getBlock().getType(), mat)) {
-                                if (settings.debug()) {
-                                    e.getPlayer().sendMessage(messages.prefixMessage().append(messages.canMineMessage()));
-                                }
-                                return;
+                        } else {
+                            if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                                e.getPlayer().sendMessage(messages.prefix().append(messages.canNotMine()));
                             }
+                            e.setCancelled(true);
+                            return;
                         }
-
-                        if (settings.debug()) {
-                            e.getPlayer().sendMessage(messages.prefixMessage().append(messages.canNotMineMessage()));
-                        }
-                        e.setCancelled(true);
                     }
                 }
             }

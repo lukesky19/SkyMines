@@ -17,5 +17,5 @@
 */
 package com.github.lukesky19.skynodes.records;
 
-public record Settings(boolean debug, int timeDelay) {
+public record Settings(boolean debug) {
 }

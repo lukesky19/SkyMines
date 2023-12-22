@@ -17,7 +17,21 @@
 */
 package com.github.lukesky19.skynodes.records;
 
-import java.util.ArrayList;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 
-public record Task(String taskId, ArrayList<Node> nodeList) {
+import java.io.File;
+import java.util.List;
+
+public record SkyNode(
+        String nodeId,
+        World nodeWorld,
+        BlockVector3 blockVector3,
+        List<File> nodeSchems,
+        ProtectedRegion region,
+        Location safeLocation,
+        List<Material> materials) {
 }

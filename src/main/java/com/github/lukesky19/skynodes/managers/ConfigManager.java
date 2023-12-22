@@ -54,6 +54,7 @@ public class ConfigManager {
         try {
             nodesConfig = loader.load();
         } catch (ConfigurateException e) {
+            nodesConfig = null;
             throw new RuntimeException(e);
         }
         // Load Messages Config
@@ -61,6 +62,7 @@ public class ConfigManager {
         try {
             messagesConfig = loader.load();
         } catch (ConfigurateException e) {
+            messagesConfig = null;
             throw new RuntimeException(e);
         }
     }

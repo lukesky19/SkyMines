@@ -20,8 +20,6 @@ package com.github.lukesky19.skynodes.managers;
 import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.Settings;
-import com.github.lukesky19.skynodes.records.Node;
-import com.github.lukesky19.skynodes.records.Task;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
@@ -43,6 +41,7 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.io.File;
@@ -56,47 +55,51 @@ public class SchematicManager {
         this.plugin = plugin;
         msgsMgr = plugin.getMsgsMgr();
         settingsMgr = plugin.getSettingsMgr();
-        taskMgr = plugin.getTaskMgr();
         logger = plugin.getComponentLogger();
     }
     final SkyNodes plugin;
     final MessagesManager msgsMgr;
     final SettingsManager settingsMgr;
-    final TaskManager taskMgr;
     final ComponentLogger logger;
     final MiniMessage mm = MiniMessage.miniMessage();
 
-    // Method is used for automated pasting of nodes/schematics.
-    public void pasteFromConfig(Node node) {
+    /**
+     * Checks if the player is within a region and pastes a schematic.
+     * @param skyNode A SkyNode object.
+     */
+    public void pasteFromConfig(World world, BlockVector3 blockVector3, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation) {
         Messages configMessages = msgsMgr.getMessages();
-        BlockVector3 blockVector3 = BlockVector3.at(node.nodeX(), node.nodeY(), node.nodeZ());
-        File file = node.nodeSchems().get(new Random().nextInt(node.nodeSchems().size()));
+        File file = schemList.get(new Random().nextInt(schemList.size()));
         // Prepare the clipboard.
         ClipboardReader reader = prepareClipboardReader(file);
         // Prepare the EditSession
-        EditSession session = prepareEditSession(node.nodeWorld());
+        EditSession session = prepareEditSession(world);
         // Prepare the Operation.
         Operation operation = prepareOperation(reader, session, blockVector3);
 
         // Check for player in region before pasting.
-        ArrayList<Task> tasksList = taskMgr.getTasksList();
-        for(Task task : tasksList) {
-            playerCheck(task.nodeList());
-        }
+        playerCheck(region, safeLocation);
 
         // Attempt to paste the schematic/node.
         try {
             Operations.complete(operation);
             session.close();
         } catch (WorldEditException e) {
-            logger.error(configMessages.operationFailureMessage());
+            logger.error(configMessages.operationFailure());
             logger.error(mm.deserialize(e.getMessage()));
         }
     }
 
-    // Method is used for manual pasting of nodes/schematics.
+    /**
+     * Pastes a schematic based on a World, X, Y, and Z coordinates, and a schematic File.
+     * @param world A Bukkit World.
+     * @param x A X coordinate.
+     * @param y A Y coordinate.
+     * @param z A Z coordinate.
+     * @param file A schematic file.
+     */
     public void pasteFromCommand(org.bukkit.World world, int x, int y, int z, File file) {
-        Messages configMessages = msgsMgr.getMessages();
+        Messages messages = msgsMgr.getMessages();
         BlockVector3 blockVector3 = BlockVector3.at(x, y, z);
         ClipboardReader reader = prepareClipboardReader(file);
         EditSession session = prepareEditSession(world);
@@ -106,22 +109,22 @@ public class SchematicManager {
             Operations.complete(operation);
             session.close();
         } catch (WorldEditException e) {
-            logger.error(configMessages.operationFailureMessage());
+            logger.error(messages.operationFailure());
             logger.error(mm.deserialize(e.getMessage()));
         }
     }
 
     private ClipboardReader prepareClipboardReader(File file) {
-        Messages configMessages = msgsMgr.getMessages();
+        Messages messages = msgsMgr.getMessages();
         ClipboardFormat clipboardFormat = ClipboardFormats.findByFile(file);
         ClipboardReader clipboardReader = null;
         try {
             clipboardReader = Objects.requireNonNull(clipboardFormat).getReader(new FileInputStream(file));
         } catch (FileNotFoundException e) {
-            logger.error(configMessages.schematicNotFoundMessage());
+            logger.error(messages.consoleSchematicNotFound());
             logger.error(mm.deserialize(e.getMessage()));
         } catch (IOException e) {
-            logger.error(configMessages.clipboardLoadFailureMessage());
+            logger.error(messages.clipboardLoadFailure());
             logger.error(mm.deserialize(e.getMessage()));
         }
         return clipboardReader;
@@ -132,44 +135,45 @@ public class SchematicManager {
         return WorldEdit.getInstance().newEditSessionBuilder().world(weWorld).build();
     }
 
-    private Operation prepareOperation(ClipboardReader reader, EditSession session, BlockVector3 blockVector3) {
-        Messages configMessages = msgsMgr.getMessages();
+    private Operation prepareOperation(ClipboardReader clipboardReader, EditSession editSession, BlockVector3 blockVector3) {
+        Messages messages = msgsMgr.getMessages();
         Operation operation;
         Clipboard clipboard = null;
         try {
-            clipboard = reader.read();
+            clipboard = clipboardReader.read();
         } catch (IOException e) {
-            logger.error(configMessages.clipboardLoadFailureMessage());
+            logger.error(messages.clipboardLoadFailure());
             logger.error(mm.deserialize(e.getMessage()));
         }
         operation = new ClipboardHolder(Objects.requireNonNull(clipboard))
-                        .createPaste(session)
+                        .createPaste(editSession)
                         .to(blockVector3)
                         .ignoreAirBlocks(true)
                         .build();
         return operation;
     }
 
-    private void playerCheck(ArrayList<Node> nodeList) {
-        Messages configMessages = msgsMgr.getMessages();
-        Settings configSettings = settingsMgr.getSettings();
-        // Check for online players in node region before pasting.
+    private void playerCheck(ProtectedRegion skyNodeRegion, org.bukkit.Location safeLocation) {
+        Messages messages = msgsMgr.getMessages();
+        Settings settings = settingsMgr.getSettings();
+
+        // Get a list of all online players.
         Collection<? extends Player> playerList = Bukkit.getOnlinePlayers();
         for (Player p : playerList) {
+            // Get all regions the player is in
             Location loc = BukkitAdapter.adapt(p.getLocation());
             RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
             RegionQuery query = container.createQuery();
             ApplicableRegionSet set = query.getApplicableRegions(loc);
 
+            // Check if player is in the region for the provided SkyNode.
             for (ProtectedRegion region : set) {
-                for (Node node : nodeList) {
-                    if (Objects.equals(region, node.region())) {
-                        if (!p.hasPermission("skynodes.bypass.safeteleport")) {
-                            p.teleport(node.safeLocation());
-                        } else {
-                            if (configSettings.debug()) {
-                                p.sendMessage(configMessages.prefixMessage().append(configMessages.bypassedSafeTeleportMessage()));
-                            }
+                if (Objects.equals(region, skyNodeRegion)) {
+                    if (!p.hasPermission("skynodes.bypass.safeteleport")) {
+                        p.teleport(safeLocation);
+                    } else {
+                        if (settings.debug()) {
+                            p.sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
                         }
                     }
                 }

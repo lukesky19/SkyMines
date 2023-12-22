@@ -55,27 +55,26 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     if(sender.hasPermission("skynodes.commands.reload")) {
                         try {
                             plugin.reload();
-                            plugin.startTasks();
-                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.reloadMessage()));
+                            sender.sendMessage(configMessages.prefix().append(configMessages.reload()));
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     } else {
-                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
+                        sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
                     }
                     break;
                 case "help":
                     if(sender.hasPermission("skynodes.commands.help")) {
-                        List<Component> helpMessage = configMessages.helpMessage();
+                        List<Component> helpMessage = configMessages.help();
                         for(Component msg : helpMessage) {
                             sender.sendMessage(msg);
                         }
                     } else {
-                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
+                        sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
                     }
                     break;
                 default:
-                    sender.sendMessage(configMessages.prefixMessage().append(configMessages.unknownArgumentMessage()));
+                    sender.sendMessage(configMessages.prefix().append(configMessages.unknownArgument()));
                     break;
             }
         } else if(args.length == 6) {
@@ -85,14 +84,14 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     if (file.exists()) {
                         try {
                             schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteSuccessMessage()));
+                            sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteSuccess()));
                             return true;
                         } catch (Exception e) {
-                            sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteFailureMessage()));
+                            sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteFailure()));
                             return false;
                         }
                     } else {
-                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerSchematicNotFoundMessage()));
+                        sender.sendMessage(configMessages.prefix().append(configMessages.playerSchematicNotFound()));
                         return false;
                     }
                 }
@@ -101,15 +100,15 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                 if(file.exists()) {
                     try {
                         schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteSuccessMessage()));
+                        sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteSuccess()));
                         return true;
                     } catch (Exception e) {
-                        sender.sendMessage(configMessages.prefixMessage().append(configMessages.playerNodePasteFailureMessage()));
+                        sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteFailure()));
                         return false;
                     }
                 }
             } else {
-                sender.sendMessage(configMessages.prefixMessage().append(configMessages.noPermissionMessage()));
+                sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
                 return false;
             }
         }

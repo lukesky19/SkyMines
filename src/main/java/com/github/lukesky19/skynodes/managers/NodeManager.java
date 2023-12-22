@@ -18,13 +18,17 @@
 package com.github.lukesky19.skynodes.managers;
 
 import com.github.lukesky19.skynodes.SkyNodes;
-import com.github.lukesky19.skynodes.data.ConfigMessages;
-import com.github.lukesky19.skynodes.data.Node;
+import com.github.lukesky19.skynodes.records.Messages;
+import com.github.lukesky19.skynodes.records.SkyNode;
+import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
+import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
@@ -35,132 +39,169 @@ import java.io.File;
 import java.util.*;
 
 public class NodeManager {
-    static final MiniMessage mm = MiniMessage.miniMessage();
-    private static ArrayList<Node> nodeDataList;
-    public static ArrayList<Node> getNodeDataArrayList() {
-        return nodeDataList;
+    final SkyNodes plugin;
+    final ComponentLogger logger;
+    final ConfigManager cfgMgr;
+    final MessagesManager msgsMgr;
+    final ConfigurateUtil confUtil;
+    final MiniMessage mm = MiniMessage.miniMessage();
+    List<SkyNode> allSkyNodes;
+    public List<SkyNode> getAllSkyNodes() {
+        return allSkyNodes;
+    }
+    public void setAllSkyNodes(List<SkyNode> list) {
+        this.allSkyNodes = list;
     }
 
-    public static void loadNodes() {
-        CommentedConfigurationNode nodeConfig = ConfigManager.getNodeConfig();
-        ConfigMessages configMessages = ConfigManager.getConfigMessages();
-        // Get a Map of every CommentedConfigurationNode node.
-        Map<Object, CommentedConfigurationNode> configNodeList = nodeConfig.node("nodes").childrenMap();
-        nodeDataList = new ArrayList<>();
+    public NodeManager(SkyNodes plugin) {
+        this.plugin = plugin;
+        logger = this.plugin.getComponentLogger();
+        cfgMgr = plugin.getCfgMgr();
+        msgsMgr = plugin.getMsgsMgr();
+        confUtil = plugin.getConfUtil();
+    }
 
-        for (Map.Entry<Object, CommentedConfigurationNode> nodeEntry : configNodeList.entrySet()) {
-            CommentedConfigurationNode currentNode = nodeEntry.getValue();
-            String nodeId = Objects.requireNonNull(currentNode.key()).toString();
-            World nodeWorld;
-            List<String> schemNames, materialIds;
-
-            String worldName = currentNode.node("world").getString();
-            File worldFile = new File(Bukkit.getServer().getWorldContainer() + File.separator + worldName);
-
-            // Check if world of the node is actually a world.
-            // If so, get that world by loading it using WorldCreator.
-            if (worldFile.isDirectory() && worldFile.exists()) {
-                nodeWorld = new WorldCreator(Objects.requireNonNull(worldName)).createWorld();
-            } else {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.worldNotFoundMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
-
-            // Get the list of schematics that can be pasted for the node.
-            List<File> schemFiles = new ArrayList<>();
-            try {
-                schemNames = currentNode.node("schematics").getList(String.class);
-            } catch (SerializationException e) {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.schematicsListErrorMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
-
-            // Looks for the schematic on disk, either in the WorldEdit/schematics or FastAsyncWorldEdit/schematics folder.
-            if(schemNames != null) {
-                for (String s : schemNames) {
-                    File file;
-                    if (SkyNodes.getInstance().getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-                        file = new File(Objects.requireNonNull(SkyNodes.getInstance().getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
-                    } else if (SkyNodes.getInstance().getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-                        file = new File(Objects.requireNonNull(SkyNodes.getInstance().getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
-                    } else {
-                        SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.schematicNotFoundMessage(),
-                                Placeholder.parsed("nodeid", nodeId)));
-                        return;
-                    }
-
-                    // If the schematic exists on disk, add it to the list of schematic files.
-                    schemFiles.add(file);
+    /**
+     * Loads, and stores all configured SkyNodes into memory.
+     * Will not store any null SkyNodes (invalid configuration).
+     */
+    public List<SkyNode> loadSkyNodes(CommentedConfigurationNode task) {
+        List<CommentedConfigurationNode> nodesList = confUtil.getConfigSection(task, "nodes");
+        List<SkyNode> skyNodesList = new ArrayList<>();
+            for(CommentedConfigurationNode skyNodeComConfNode : nodesList) {
+                SkyNode skyNode = createSkyNode(task.key().toString(), skyNodeComConfNode);
+                if (skyNode != null) {
+                    skyNodesList.add(skyNode);
+                    allSkyNodes.add(skyNode);
                 }
             }
+        return skyNodesList;
+    }
 
-            // Get the node's X Y and Z coordinates where the paste the node.
-            int nodeX;
-            int nodeY;
-            int nodeZ;
-            try {
-                String[] locationXYZ = Objects.requireNonNull(currentNode.node("location").getString()).split(" ");
-                nodeX = Integer.parseInt(locationXYZ[0]);
-                nodeY = Integer.parseInt(locationXYZ[1]);
-                nodeZ = Integer.parseInt(locationXYZ[2]);
-            } catch (NumberFormatException e) {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.invalidLocationMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
+    /**
+     * Loads all necessary data for a specific SkyNode from the config file nodes.yml.
+     * @param nodeConfig The CommentedConfigurationNode associated with a specific SkyNode.
+     * @return A new SkyNode object or null.
+     */
+    private SkyNode createSkyNode(String taskId, CommentedConfigurationNode nodeConfig) {
+        // Plugin Messages
+        Messages messages = msgsMgr.getMessages();
 
-            // Get the region for the node.
-            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-            RegionManager regions = container.get(BukkitAdapter.adapt(Objects.requireNonNull(nodeWorld)));
-            ProtectedRegion region;
-            if(Objects.requireNonNull(regions).hasRegion(currentNode.node("region").getString())) {
-                region = regions.getRegion(Objects.requireNonNull(currentNode.node("region").getString()));
-            } else {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.invalidRegionMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
+        // Variables for data necessary for a new Node object.
+        String nodeId = nodeConfig.key().toString();
+        World nodeWorld;
+        BlockVector3 vector;
+        int nodeX, nodeY, nodeZ;
+        List<File> nodeSchematics = new ArrayList<>();
+        ProtectedRegion nodeRegion;
+        Location safeLocation;
+        List<Material> materialsList = new ArrayList<>();
 
-            // Get the safe location for the node.
-            Location safeLocation;
-            try {
-                String[] safeLocationXYZ = Objects.requireNonNull(currentNode.node("safe-location").getString()).split(" ");
-                safeLocation = new Location(nodeWorld, Integer.parseInt(safeLocationXYZ[0]), Integer.parseInt(safeLocationXYZ[1]), Integer.parseInt(safeLocationXYZ[2]));
-            } catch (NumberFormatException e) {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.invalidSafeLocationMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
-
-            // Get the list of materials names that will be allowed to be broken in the region.
-            List<Material> materialList = new ArrayList<>();
-            try {
-                materialIds = currentNode.node("blocks-allowed").getList(String.class);
-            } catch (SerializationException e) {
-                SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.blocksAllowedListErrorMessage(),
-                        Placeholder.parsed("nodeid", nodeId)));
-                return;
-            }
-
-            // If material name is a valid material, add it to the material list.
-            for(String id : Objects.requireNonNull(materialIds)) {
-                try {
-                    materialList.add(Material.matchMaterial(id));
-                } catch (Exception e) {
-                    SkyNodes.getInstance().getComponentLogger().error(mm.deserialize(configMessages.invalidBlockMaterialMessage(),
-                            Placeholder.parsed("nodeid", nodeId)));
-                    SkyNodes.getInstance().getComponentLogger().error(MiniMessage.miniMessage().deserialize(e.getMessage()));
-                    return;
-                }
-            }
-
-            // Create Node using all the data from above.
-            Node nodeData = Node.createNode(nodeId, nodeWorld, nodeX, nodeY, nodeZ, schemFiles, region, safeLocation, materialList);
-
-            // Add node to the list of nodes.
-            nodeDataList.add(nodeData);
+        // Get the configured world for the node
+        MultiverseCore core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
+        nodeWorld = core.getMVWorldManager().getMVWorld(nodeConfig.node("world").getString()).getCBWorld();
+        if(nodeWorld == null) {
+            logger.error(mm.deserialize(messages.worldNotFound(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
         }
+
+        try {
+            String[] coords = Objects.requireNonNull(nodeConfig.node("location").getString()).split(" ");
+            vector = BlockVector3.at(
+                    Integer.parseInt(coords[0]),
+                    Integer.parseInt(coords[1]),
+                    Integer.parseInt(coords[2]));
+        } catch (NumberFormatException e) {
+            logger.error(mm.deserialize(messages.invalidLocation(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
+        }
+
+        // Get the list of schematics for the node.
+        List<String> schemNames;
+        try {
+            schemNames = nodeConfig.node("schematics").getList(String.class);
+        } catch (SerializationException e) {
+            logger.error(mm.deserialize(messages.schematicsListError(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
+        }
+
+        // Looks for the schematic on disk, either in the WorldEdit/schematics or FastAsyncWorldEdit/schematics folder.
+        if(schemNames != null) {
+            for (String s : schemNames) {
+                File file;
+                if (plugin.getServer().getPluginManager().getPlugin("WorldEdit") != null) {
+                    file = new File(Objects.requireNonNull(plugin.getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
+                } else if (plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
+                    file = new File(Objects.requireNonNull(plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
+                } else {
+                    logger.error(mm.deserialize(messages.consoleSchematicNotFound(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId)));
+                    return null;
+                }
+                // If the schematic exists on disk, add it to the list of schematic files.
+                nodeSchematics.add(file);
+            }
+        }
+
+        // Get the region for the node.
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionManager regions = container.get(BukkitAdapter.adapt(Objects.requireNonNull(nodeWorld)));
+        if(Objects.requireNonNull(regions).hasRegion(nodeConfig.node("region").getString())) {
+            nodeRegion = regions.getRegion(Objects.requireNonNull(nodeConfig.node("region").getString()));
+        } else {
+            logger.error(mm.deserialize(messages.invalidRegion(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
+        }
+
+        // Get the safe location for the node.
+        try {
+            String[] safeLocationXYZ = Objects.requireNonNull(
+                    nodeConfig.node("safe-location").getString()).split(" ");
+            safeLocation = new Location(
+                    nodeWorld,
+                    Integer.parseInt(safeLocationXYZ[0]),
+                    Integer.parseInt(safeLocationXYZ[1]),
+                    Integer.parseInt(safeLocationXYZ[2]));
+        } catch (NumberFormatException e) {
+            logger.error(mm.deserialize(messages.invalidSafeLocation(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
+        }
+
+        // Get the list of materials names that will be allowed to be broken in the region.
+        List<String> materialIds;
+        try {
+            materialIds = nodeConfig.node("blocks-allowed").getList(String.class);
+        } catch (SerializationException e) {
+            logger.error(mm.deserialize(messages.blocksAllowedListError(),
+                    Placeholder.parsed("taskid", taskId),
+                    Placeholder.parsed("nodeid", nodeId)));
+            return null;
+        }
+
+        // If material name is a valid material, add it to the material list.
+        for(String id : Objects.requireNonNull(materialIds)) {
+            try {
+                materialsList.add(Material.matchMaterial(id));
+            } catch (Exception e) {
+                logger.error(mm.deserialize(messages.invalidBlockMaterial(),
+                        Placeholder.parsed("taskid", taskId),
+                        Placeholder.parsed("nodeid", nodeId)));
+                return null;
+            }
+        }
+
+        return new SkyNode(nodeId, nodeWorld, vector, nodeSchematics, nodeRegion, safeLocation, materialsList);
     }
+
 }

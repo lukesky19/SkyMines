@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.github.lukesky19'
-version = '0.3.1'
+version = '0.4.0'
 
 repositories {
     mavenCentral()
@@ -19,6 +19,10 @@ repositories {
         name = "enginehub"
         url = "https://maven.enginehub.org/repo/"
     }
+    maven {
+        name = "onarandombox"
+        url = "https://repo.onarandombox.com/content/groups/public/"
+    }
 }
 
 dependencies {
@@ -26,6 +30,7 @@ dependencies {
     compileOnly "com.sk89q.worldedit:worldedit-bukkit:7.2.7"
     compileOnly "org.spongepowered:configurate-yaml:4.1.2"
     compileOnly "com.sk89q.worldguard:worldguard-bukkit:7.0.7"
+    compileOnly 'com.onarandombox.multiversecore:multiverse-core:4.3.12'
 }
 
 def targetJavaVersion = 17

@@ -5,6 +5,7 @@ api-version: '1.20'
 authors: [ lukeskywlker19 ]
 depend:
   - WorldGuard
+  - Multiverse-Core
 softdepend:
   - WorldEdit
   - FastAsyncWorldEdit
@@ -16,13 +17,13 @@ permissions:
   skynodes.commands.skynode:
     description: The base command permission.
     default: op
-  skynodes.commands.paste:
+  skynodes.commands.skynode.paste:
     description: Used to paste schematics. Debug only.
     default: op
-  skynodes.commands.reload:
+  skynodes.commands.skynode.reload:
     description: Used to reload the plugin.
     default: op
-  skynodes.commands.help:
+  skynodes.commands.skynode.help:
     description: Used to paste schematics. Debug only.
     default: op
   skynodes.bypass.safeteleport:
@@ -30,4 +31,7 @@ permissions:
     default: op
   skynodes.bypass.blockbreakcheck:
     description: Bypasses the check for safe teleport when pasting a schematic.
+    default: op
+  skynodes.debug:
+    description: If the debug settings is enabled, those with this permission will receive debug messages.
     default: op

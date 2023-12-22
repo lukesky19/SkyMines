@@ -15,16 +15,23 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.data;
+package com.github.lukesky19.skynodes.records;
 
-import org.spongepowered.configurate.CommentedConfigurationNode;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 
-public record ConfigSettings(Boolean debug, Integer timeDelay) {
-    public static ConfigSettings loadConfigSettings(CommentedConfigurationNode commentedConfigurationNode) {
-        try {
-            return new ConfigSettings(commentedConfigurationNode.node("debug").getBoolean(), commentedConfigurationNode.node("time-delay").getInt());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+import java.io.File;
+import java.util.List;
+
+public record SkyNode(
+        String nodeId,
+        World nodeWorld,
+        BlockVector3 blockVector3,
+        List<File> nodeSchems,
+        ProtectedRegion region,
+        Location safeLocation,
+        List<Material> materials) {
 }

@@ -15,20 +15,12 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.data;
+package com.github.lukesky19.skynodes.records;
 
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.jetbrains.annotations.NotNull;
-
-import java.io.File;
 import java.util.List;
 
-public record Node(String nodeId, World nodeWorld, int nodeX, int nodeY, int nodeZ, List<File> nodeSchems, ProtectedRegion region, Location safeLocation, List<Material> materials) {
-    @NotNull
-    public static Node createNode(String nodeId, World nodeWorld, int nodeX, int nodeY, int nodeZ, List<File> nodeSchems, ProtectedRegion region, Location safeLocation, List<Material> materials) {
-        return new Node(nodeId, nodeWorld, nodeX, nodeY, nodeZ, nodeSchems, region, safeLocation, materials);
-    }
+public record SkyTask(
+        String taskId,
+        int delaySeconds,
+        List<SkyNode> skyNodes) {
 }

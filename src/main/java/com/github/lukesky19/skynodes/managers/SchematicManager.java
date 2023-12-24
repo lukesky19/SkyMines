@@ -41,9 +41,10 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -55,18 +56,20 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SchematicManager {
     public SchematicManager(SkyNodes plugin) {
         this.plugin = plugin;
         msgsMgr = plugin.getMsgsMgr();
         settingsMgr = plugin.getSettingsMgr();
-        logger = plugin.getComponentLogger();
+        logger = plugin.getLogger();
     }
     final SkyNodes plugin;
     final MessagesManager msgsMgr;
     final SettingsManager settingsMgr;
-    final ComponentLogger logger;
+    final Logger logger;
     final MiniMessage mm = MiniMessage.miniMessage();
 
     /**
@@ -98,7 +101,7 @@ public class SchematicManager {
             try {
                 Operations.complete(operation);
             } catch (WorldEditException e) {
-                logger.error(configMessages.operationFailure());
+                logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(configMessages.operationFailure()));
                 throw new RuntimeException(e);
             } finally {
                 session.close();
@@ -119,6 +122,7 @@ public class SchematicManager {
      */
     public void undo(Player player) {
         Messages messages = msgsMgr.getMessages();
+        BukkitAudiences audiences = plugin.getAudiences();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if(player != null) {
@@ -131,9 +135,9 @@ public class SchematicManager {
                     EditSession undoSession = localSession.undo(blockBag, actor);
                     if(undoSession != null) {
                         localSession.remember(undoSession);
-                        player.sendMessage(messages.prefix().append(messages.undo()));
+                        audiences.player(player).sendMessage(messages.prefix().append(messages.undo()));
                     } else {
-                        player.sendMessage(messages.prefix().append(messages.noUndo()));
+                        audiences.player(player).sendMessage(messages.prefix().append(messages.noUndo()));
                     }
                 }
             }
@@ -146,6 +150,7 @@ public class SchematicManager {
      */
     public void redo(Player player) {
         Messages messages = msgsMgr.getMessages();
+        BukkitAudiences audiences = plugin.getAudiences();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (player != null) {
@@ -159,9 +164,9 @@ public class SchematicManager {
                         EditSession redoSession = localSession.redo(blockBag, actor);
                         if(redoSession != null) {
                             localSession.remember(redoSession);
-                            player.sendMessage(messages.prefix().append(messages.redo()));
+                            audiences.player(player).sendMessage(messages.prefix().append(messages.redo()));
                         } else {
-                            player.sendMessage(messages.prefix().append(messages.noRedo()));
+                            audiences.player(player).sendMessage(messages.prefix().append(messages.noRedo()));
                         }
                     }
                 } catch (Exception e) {
@@ -175,19 +180,27 @@ public class SchematicManager {
         Messages messages = msgsMgr.getMessages();
         ClipboardFormat clipboardFormat = ClipboardFormats.findByFile(file);
         ClipboardReader clipboardReader = null;
+        FileInputStream fileInputStream;
         try {
-            clipboardReader = Objects.requireNonNull(clipboardFormat).getReader(new FileInputStream(file));
+            fileInputStream = new FileInputStream(file);
         } catch (FileNotFoundException e) {
-            logger.error(mm.deserialize(messages.schematicNotFound(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
-            logger.error(mm.deserialize(e.getMessage()));
-        } catch (IOException e) {
-            logger.error(mm.deserialize(messages.clipboardLoadFailure(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
-            logger.error(mm.deserialize(e.getMessage()));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.schematicNotFound(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
+            throw new RuntimeException(e);
         }
+
+        try {
+            clipboardReader = Objects.requireNonNull(clipboardFormat).getReader(fileInputStream);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                            mm.deserialize(messages.clipboardLoadFailure(),
+                                    Placeholder.parsed("taskid", taskId),
+                                    Placeholder.parsed("nodeid", nodeId))));
+            throw new RuntimeException(e);
+        }
+
         return clipboardReader;
     }
 
@@ -203,11 +216,13 @@ public class SchematicManager {
         try {
             clipboard = clipboardReader.read();
         } catch (IOException e) {
-            logger.error(mm.deserialize(messages.clipboardLoadFailure(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
-            logger.error(mm.deserialize(e.getMessage()));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                            mm.deserialize(messages.clipboardLoadFailure(),
+                                    Placeholder.parsed("taskid", taskId),
+                                    Placeholder.parsed("nodeid", nodeId))));
+            throw new RuntimeException(e);
         }
+
         operation = new ClipboardHolder(Objects.requireNonNull(clipboard))
                         .createPaste(editSession)
                         .to(blockVector3)
@@ -219,6 +234,7 @@ public class SchematicManager {
     private void playerCheck(ProtectedRegion skyNodeRegion, org.bukkit.Location safeLocation) {
         Messages messages = msgsMgr.getMessages();
         Settings settings = settingsMgr.getSettings();
+        BukkitAudiences audiences = plugin.getAudiences();
 
         // Get a list of all online players.
         Collection<? extends Player> playerList = Bukkit.getOnlinePlayers();
@@ -236,7 +252,7 @@ public class SchematicManager {
                         p.teleport(safeLocation);
                     } else {
                         if (settings.debug() && p.hasPermission("skynodes.debug")) {
-                            p.sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
+                            audiences.player(p).sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
                         }
                     }
                 }

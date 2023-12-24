@@ -25,15 +25,20 @@ import com.github.lukesky19.skynodes.records.SkyNode;
 import com.github.lukesky19.skynodes.listeners.NodeBlockBreakListener;
 import com.github.lukesky19.skynodes.records.SkyTask;
 import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.*;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class SkyNodes extends JavaPlugin {
     // Variables
@@ -50,7 +55,8 @@ public final class SkyNodes extends JavaPlugin {
     Messages messages;
     List<BukkitTask> bukkitTasks = new ArrayList<>();
     final MiniMessage mm = MiniMessage.miniMessage();
-    ComponentLogger logger;
+    Logger logger;
+    BukkitAudiences audiences;
 
     // Getter(s)
     public ConfigManager getCfgMgr() {
@@ -77,22 +83,30 @@ public final class SkyNodes extends JavaPlugin {
     public SkyNodeCommand getSkyNodeCmd() {
         return skyNodeCmd;
     }
+    public @NonNull BukkitAudiences getAudiences() {
+        if(this.audiences == null) {
+            throw new IllegalStateException("Tried to access Adventure when the plugin was disabled!");
+        }
+        return this.audiences;
+    }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        logger = this.getComponentLogger();
+        logger = this.getLogger();
 
         if(Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core") == null) {
-            logger.error(mm.deserialize("<red>Multiverse-Core not found. Disabling..."));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(mm.deserialize("<red>Multiverse-Core not found. Disabling...")));
             Bukkit.getPluginManager().disablePlugin(this);
         }
 
         // Check if WorldEdit or FastAsyncWorldEdit is enabled.
         if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null || Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
-            logger.error(mm.deserialize("<red>WorldEdit or FastAsyncWorldEdit not found. Disabling..."));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(mm.deserialize("<red>WorldEdit or FastAsyncWorldEdit not found. Disabling...")));
             Bukkit.getPluginManager().disablePlugin(this);
         }
+
+        this.audiences = BukkitAudiences.create(this);
 
         confUtil = new ConfigurateUtil(this);
         cfgMgr = new ConfigManager(this);
@@ -122,6 +136,11 @@ public final class SkyNodes extends JavaPlugin {
                 }
             }
             bukkitTasks = new ArrayList<>();
+        }
+
+        if(this.audiences != null) {
+            this.audiences.close();
+            this.audiences = null;
         }
     }
 
@@ -160,9 +179,10 @@ public final class SkyNodes extends JavaPlugin {
                         schemMgr.paste(taskId, randSkyNode.nodeId(), randSkyNode.nodeWorld(), randSkyNode.blockVector3(), randSkyNode.nodeSchems(), randSkyNode.region(), randSkyNode.safeLocation(), null);
                     } finally {
                         if (settings.debug()) {
-                            logger.info(mm.deserialize(messages.nodePasteSuccess(),
-                                    Placeholder.parsed("taskid", taskId),
-                                    Placeholder.parsed("nodeid", randSkyNode.nodeId())));
+                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(
+                                    mm.deserialize(messages.nodePasteSuccess(),
+                                            Placeholder.parsed("taskid", taskId),
+                                            Placeholder.parsed("nodeid", randSkyNode.nodeId()))));
                         }
                     }
                 }
@@ -171,7 +191,7 @@ public final class SkyNodes extends JavaPlugin {
         }
 
         if(settings.debug()) {
-            logger.info(messages.startTasksSuccess());
+            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.startTasksSuccess()));
         }
     }
 }

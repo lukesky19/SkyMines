@@ -49,6 +49,8 @@ public class MessagesManager {
         String clipBoardLoadFailure;
         Component noPermission;
         Component unknownArgument;
+        Component missingArgumentTaskId;
+        Component missingArgumentNodeId;
         String nodePasteSuccess;
         String nodePasteFailure;
         String worldNotFound;
@@ -65,6 +67,7 @@ public class MessagesManager {
         Component noRedo;
         String invalidTaskId;
         String invalidNodeId;
+        Component inGameOnly;
         Component bypassedSafeTeleport;
         Component bypassedBlockBreakCheck;
         Component canMine;
@@ -132,6 +135,18 @@ public class MessagesManager {
             unknownArgument = mm.deserialize(configurationNode.node("UnknownArgument").getString());
         } else {
             unknownArgument = mm.deserialize("<red>Unknown argument. Double-check your command.");
+        }
+
+        if(!configurationNode.node("MissingArgumentTaskId").isNull()) {
+            missingArgumentTaskId = mm.deserialize(configurationNode.node("MissingArgumentTaskId").getString());
+        } else {
+            missingArgumentTaskId = mm.deserialize("<red>Missing argument for the task id. Double-check your command.");
+        }
+
+        if(!configurationNode.node("MissingArgumentNodeId").isNull()) {
+            missingArgumentNodeId = mm.deserialize(configurationNode.node("MissingArgumentNodeId").getString());
+        } else {
+            missingArgumentNodeId = mm.deserialize("<red>Missing argument for the node id. Double-check your command.");
         }
 
         if(!configurationNode.node("NodePasteSuccess").isNull()) {
@@ -230,6 +245,12 @@ public class MessagesManager {
             invalidNodeId = "<red>The node id <white><nodeid> <red>is not a valid configured node.";
         }
 
+        if(!configurationNode.node("InGameOnly").isNull()) {
+            inGameOnly = mm.deserialize(configurationNode.node("InGameOnly").getString());
+        } else {
+            inGameOnly = mm.deserialize("<red>This command is only available in-game.");
+        }
+
         if(!configurationNode.node("BypassedSafeTeleport").isNull()) {
             bypassedSafeTeleport = mm.deserialize(configurationNode.node("BypassedSafeTeleport").getString());
         } else {
@@ -264,6 +285,8 @@ public class MessagesManager {
                 clipBoardLoadFailure,
                 noPermission,
                 unknownArgument,
+                missingArgumentTaskId,
+                missingArgumentNodeId,
                 nodePasteSuccess,
                 nodePasteFailure,
                 worldNotFound,
@@ -280,6 +303,7 @@ public class MessagesManager {
                 noRedo,
                 invalidTaskId,
                 invalidNodeId,
+                inGameOnly,
                 bypassedSafeTeleport,
                 bypassedBlockBreakCheck,
                 canMine,

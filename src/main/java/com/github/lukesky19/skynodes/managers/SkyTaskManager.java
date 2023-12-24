@@ -22,19 +22,21 @@ import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.SkyNode;
 import com.github.lukesky19.skynodes.records.SkyTask;
 import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SkyTaskManager {
 
     final SkyNodes plugin;
-    final ComponentLogger logger;
+    final Logger logger;
     final ConfigManager cfgMgr;
     final MessagesManager msgsMgr;
     final NodeManager nodeMgr;
@@ -46,7 +48,7 @@ public class SkyTaskManager {
 
     public SkyTaskManager(SkyNodes plugin) {
         this.plugin = plugin;
-        this.logger = plugin.getComponentLogger();
+        this.logger = plugin.getLogger();
         this.cfgMgr = plugin.getCfgMgr();
         this.msgsMgr = plugin.getMsgsMgr();
         this.nodeMgr = plugin.getNodeMgr();
@@ -67,8 +69,10 @@ public class SkyTaskManager {
             if(!skyNodesList.isEmpty()) {
                 tasksList.add(new SkyTask(taskId, delaySeconds, skyNodesList));
             } else {
-                logger.error(messages.prefix().append(MiniMessage.miniMessage().deserialize(messages.noNodesFound(),
-                        Placeholder.parsed("taskid", taskId))));
+                logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                        messages.prefix().append(
+                                MiniMessage.miniMessage().deserialize(messages.noNodesFound(),
+                                        Placeholder.parsed("taskid", taskId)))));
             }
         }
     }

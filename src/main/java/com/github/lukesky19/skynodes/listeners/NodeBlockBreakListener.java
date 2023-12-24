@@ -29,6 +29,7 @@ import com.sk89q.worldedit.math.BlockVector3;
 import java.util.*;
 
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -65,6 +66,7 @@ public class NodeBlockBreakListener implements Listener {
         // c. on the allowed-blocks list for a SkyNode.
         Messages messages = msgsMgr.getMessages();
         Settings settings = settingsMgr.getSettings();
+        BukkitAudiences audiences = plugin.getAudiences();
         BlockVector3 blockVector3 = BlockVector3.at(e.getBlock().getLocation().getX(), e.getBlock().getLocation().getY(), e.getBlock().getLocation().getZ());
         List<SkyNode> allSkyNodes = nodeMgr.getAllSkyNodes();
 
@@ -79,7 +81,7 @@ public class NodeBlockBreakListener implements Listener {
                 if(region.contains(blockVector3)) {
                     if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
                         if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                            e.getPlayer().sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
+                            audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
                         }
                         return;
                     }
@@ -88,12 +90,12 @@ public class NodeBlockBreakListener implements Listener {
                     for(Material mat : materials) {
                         if(Objects.equals(e.getBlock().getType(), mat)) {
                             if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                e.getPlayer().sendMessage(messages.prefix().append(messages.canMine()));
+                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canMine()));
                             }
                             return;
                         } else {
                             if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                e.getPlayer().sendMessage(messages.prefix().append(messages.canNotMine()));
+                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canNotMine()));
                             }
                             e.setCancelled(true);
                             return;

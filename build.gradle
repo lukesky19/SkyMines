@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id "com.github.johnrengelman.shadow" version "8.1.1"
 }
 
 group = 'com.github.lukesky19'
@@ -10,6 +11,10 @@ repositories {
     maven {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "spigotmc-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
     }
     maven {
         name = "sonatype"
@@ -26,9 +31,13 @@ repositories {
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT"
+    compileOnly "org.spigotmc:spigot-api:1.13-R0.1-SNAPSHOT"
     compileOnly "com.sk89q.worldedit:worldedit-bukkit:7.2.7"
-    compileOnly "org.spongepowered:configurate-yaml:4.1.2"
+    implementation "org.spongepowered:configurate-yaml:4.1.2"
+    implementation "net.kyori:adventure-api:4.14.0"
+    implementation "net.kyori:adventure-platform-bukkit:4.3.1"
+    implementation "net.kyori:adventure-text-minimessage:4.14.0"
+    implementation "net.kyori:adventure-text-serializer-ansi:4.14.0"
     compileOnly "com.sk89q.worldguard:worldguard-bukkit:7.0.7"
     compileOnly 'com.onarandombox.multiversecore:multiverse-core:4.3.12'
 }
@@ -57,3 +66,12 @@ processResources {
         expand props
     }
 }
+
+shadowJar {
+    archiveClassifier.set(null)
+    relocate('net.kyori.adventure', 'com.github.lukesky19.skynodes.libs.adventure')
+    relocate('org.spongepowered.configurate', 'com.github.lukesky19.skynodes.libs.configurate')
+    minimize()
+}
+
+assemble.dependsOn shadowJar

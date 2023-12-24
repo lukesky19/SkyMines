@@ -25,22 +25,27 @@ import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.SkyNode;
 import com.github.lukesky19.skynodes.records.SkyTask;
 import com.sk89q.worldedit.command.WorldEditCommands;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+import net.kyori.adventure.platform.bukkit.BukkitComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import static org.bukkit.Bukkit.getDefaultGameMode;
 import static org.bukkit.Bukkit.getServer;
 
 public class SkyNodeCommand implements CommandExecutor, TabCompleter {
@@ -58,174 +63,248 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         Messages messages = msgsMgr.getMessages();
+        BukkitAudiences audiences = plugin.getAudiences();
+        Logger logger = plugin.getLogger();
         switch (args.length) {
             case 1 -> {
                 switch (args[0]) {
                     case "reload" -> {
-                        if (sender.hasPermission("skynodes.commands.reload")) {
+                        if (sender instanceof Player) {
+                            if (sender.hasPermission("skynodes.commands.reload")) {
+                                try {
+                                    plugin.reload();
+                                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.reload()));
+                                    return true;
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            } else {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
                             try {
                                 plugin.reload();
-                                sender.sendMessage(messages.prefix().append(messages.reload()));
+                                logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.reload()));
                                 return true;
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
-                        } else {
-                            sender.sendMessage(messages.prefix().append(messages.noPermission()));
-                            return false;
                         }
                     }
                     case "help" -> {
-                        if (sender.hasPermission("skynodes.commands.help")) {
+                        if(sender instanceof Player) {
+                            if (sender.hasPermission("skynodes.commands.help")) {
+                                List<Component> helpMessage = messages.help();
+                                for (Component msg : helpMessage) {
+                                    audiences.player((Player) sender).sendMessage(msg);
+                                }
+                                return true;
+                            } else {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
                             List<Component> helpMessage = messages.help();
                             for (Component msg : helpMessage) {
-                                sender.sendMessage(msg);
+                                logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(msg));
                             }
                             return true;
-                        } else {
-                            sender.sendMessage(messages.prefix().append(messages.noPermission()));
-                            return false;
                         }
                     }
                     case "paste" -> {
-                        if (sender.hasPermission("skynodes.commands.paste")) {
-                            // Missing argument. Where is taskId?
-                            return true;
+                        if(sender instanceof Player) {
+                            if (sender.hasPermission("skynodes.commands.paste")) {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.missingArgumentTaskId()));
+                                return true;
+                            } else {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
+                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            return false;
                         }
-                        return false;
                     }
                     case "undo" -> {
-                        if (sender.hasPermission("skynodes.commands.undo")) {
-                            schemMgr.undo((Player) sender);
+                        if(sender instanceof Player) {
+                            if (sender.hasPermission("skynodes.commands.undo")) {
+                                schemMgr.undo((Player) sender);
+                                return true;
+                            } else {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
+                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            return false;
                         }
-                        return false;
                     }
                     case "redo" -> {
-                        if (sender.hasPermission("skynodes.commands.redo")) {
-                            schemMgr.redo((Player) sender);
+                        if(sender instanceof Player) {
+                            if (sender.hasPermission("skynodes.commands.redo")) {
+                                schemMgr.redo((Player) sender);
+                                return true;
+                            } else {
+                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
+                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            return false;
                         }
-                        return false;
                     }
                     default -> {
-                        sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
-                        sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
-                        return false;
+                        if(sender instanceof Player) {
+                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
+                            return false;
+                        } else {
+                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.unknownArgument()));
+                            return false;
+                        }
                     }
                 }
             }
             case 2 -> {
                 if (args[0].equals("paste")) {
-                    if (sender.hasPermission("skynodes.commands.paste")) {
-                        // Where is nodeId?
-                        return true;
+                    if(sender instanceof Player) {
+                        if (sender.hasPermission("skynodes.commands.paste")) {
+                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.missingArgumentNodeId()));
+                            return true;
+                        } else {
+                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                            return false;
+                        }
+                    } else {
+                        logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                        return false;
                     }
-                    return false;
                 } else {
-                    sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
-                    sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
+                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
                     return false;
                 }
             }
             case 3 -> {
                 if (args[0].equals("paste")) {
-                    if (sender.hasPermission("skynodes.commands.paste")) {
-                        List<SkyTask> tasksList = taskMgr.getSkyTasksList();
-                        for (SkyTask skyTask : tasksList) {
-                            if (args[1].equals(skyTask.taskId())) {
-                                plugin.getComponentLogger().info(mm.deserialize("Tasks Match"));
-                                List<SkyNode> nodesList = skyTask.skyNodes();
-                                for (SkyNode skyNode : nodesList) {
-                                    if (args[2].equals(skyNode.nodeId())) {
-                                        plugin.getComponentLogger().info(mm.deserialize("Nodes Match"));
-                                        try {
-                                            schemMgr.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        } finally {
-                                            sender.sendMessage(messages.prefix().append(
-                                                    mm.deserialize(messages.nodePasteSuccess(),
-                                                            Placeholder.parsed("taskid", args[1]),
-                                                            Placeholder.parsed("nodeid", args[2]))));
-                                            return true;
+                    if (sender instanceof Player) {
+                        if (sender.hasPermission("skynodes.commands.paste")) {
+                            for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                                if (args[1].equals(skyTask.taskId())) {
+                                    for (SkyNode skyNode : skyTask.skyNodes()) {
+                                        if (args[2].equals(skyNode.nodeId())) {
+                                            try {
+                                                schemMgr.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
+                                            } catch (Exception e) {
+                                                throw new RuntimeException(e);
+                                            } finally {
+                                                audiences.player((Player) sender).sendMessage(messages.prefix().append(
+                                                        mm.deserialize(messages.nodePasteSuccess(),
+                                                                Placeholder.parsed("taskid", args[1]),
+                                                                Placeholder.parsed("nodeid", args[2]))));
+                                                return true;
+                                            }
                                         }
                                     }
+                                    audiences.player((Player) sender).sendMessage(messages.prefix().append(
+                                            mm.deserialize(messages.invalidNodeId(),
+                                                    Placeholder.parsed("nodeid", args[2]))));
+                                    return false;
                                 }
-                                sender.sendMessage(mm.deserialize(messages.invalidNodeId(),
-                                        Placeholder.parsed("nodeid", args[2])));
-                                return false;
                             }
+                            audiences.player((Player) sender).sendMessage(messages.prefix().append(
+                                    mm.deserialize(messages.invalidTaskId(),
+                                            Placeholder.parsed("taskid", args[1]))));
+                            return false;
+                        } else {
+                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                            return false;
                         }
-                        sender.sendMessage(mm.deserialize(messages.invalidTaskId(),
-                                Placeholder.parsed("taskid", args[1])));
-                        return false;
                     } else {
-                        sender.sendMessage(messages.prefix().append(messages.noPermission()));
+                        logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
                         return false;
                     }
                 } else {
-                    sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
-                    sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
+                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
                     return false;
                 }
             }
             default -> {
-                sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
-                sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
-                return false;
+                if(sender instanceof Player) {
+                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
+                    return false;
+                } else {
+                    logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.unknownArgument()));
+                    return false;
+                }
             }
         }
     }
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        Player p = (Player) sender;
-        SkyTask task;
-        switch (args.length) {
-            case 1:
+        BukkitAudiences audiences = plugin.getAudiences();
+        Messages messages = msgsMgr.getMessages();
+        switch(args.length) {
+            case 1 -> {
                 ArrayList<String> subCmds = new ArrayList<>();
-                if(p.hasPermission("skynodes.commands.help")) {
+                if (sender instanceof Player) {
+                    if (sender.hasPermission("skynodes.commands.help")) {
+                        subCmds.add("help");
+                    }
+                    if (sender.hasPermission("skynodes.commands.paste")) {
+                        subCmds.add("paste");
+                    }
+                    if (sender.hasPermission("skynodes.commands.reload")) {
+                        subCmds.add("reload");
+                    }
+                    if (sender.hasPermission("skynodes.commands.undo")) {
+                        subCmds.add("undo");
+                    }
+                    if (sender.hasPermission("skynodes.commands.redo")) {
+                        subCmds.add("redo");
+                    }
+                } else {
                     subCmds.add("help");
-                }
-                if(p.hasPermission("skynodes.commands.paste")) {
-                    subCmds.add("paste");
-                }
-                if(p.hasPermission("skynodes.commands.reload")) {
                     subCmds.add("reload");
                 }
-                if(p.hasPermission("skynodes.commands.undo")) {
-                    subCmds.add("undo");
-                }
-                if(p.hasPermission("skynodes.commands.redo")) {
-                    subCmds.add("redo");
-                }
                 return subCmds;
-            case 2:
-                if (args[0].equalsIgnoreCase("paste")) {
-                    if (p.hasPermission("skynodes.commands.paste")) {
-                        List<String> taskIds = new ArrayList<>();
-                        for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
-                            taskIds.add(skyTask.taskId());
+            }
+            case 2 -> {
+                if(args[0].equalsIgnoreCase("paste")) {
+                    List<String> taskIds = new ArrayList<>();
+                    if(sender instanceof Player) {
+                        if(sender.hasPermission("skynodes.commands.paste")) {
+                            for(SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                                taskIds.add(skyTask.taskId());
+                            }
                         }
-                        return taskIds;
                     }
+                    return taskIds;
                 }
-            case 3:
+                return new ArrayList<>();
+            }
+            case 3 -> {
                 if (args[0].equalsIgnoreCase("paste")) {
-                    if (p.hasPermission("skynodes.commands.paste")) {
-                        List<String> nodeIds = new ArrayList<>();
-                        for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
-                            if (Objects.equals(skyTask.taskId(), args[1])) {
-                                List<SkyNode> nodesList = skyTask.skyNodes();
-                                for (SkyNode skyNode : nodesList) {
-                                    nodeIds.add(skyNode.nodeId());
+                    List<String> nodeIds = new ArrayList<>();
+                    if(sender instanceof Player) {
+                        if(sender.hasPermission("skynodes.commands.paste")) {
+                            for(SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                                if(Objects.equals(skyTask.taskId(), args[1])) {
+                                    List<SkyNode> nodesList = skyTask.skyNodes();
+                                    for(SkyNode skyNode : nodesList) {
+                                        nodeIds.add(skyNode.nodeId());
+                                    }
                                 }
                             }
                         }
-                        return nodeIds;
                     }
+                    return nodeIds;
                 }
-            default:
+                return new ArrayList<>();
+            }
+            default -> {
                 return Collections.emptyList();
+            }
         }
     }
 }

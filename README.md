@@ -5,7 +5,7 @@
 ## Features
 * Supports WorldEdit and FastAsyncWorldEdit
 * Restricts block breaking within a SkyNode to a configured list of blocks.
-* Teleports player to safety before a SkyNode is pasted. (Doesn't apply when pasting using the /skynodes paste command)
+* Teleports player to safety before a SkyNode is pasted.
 * Multiple schematics can be configured for one location. The plugin will pick one at random.
 * Multiple tasks are supported to paste multiple SkyNodes at once.
 
@@ -31,9 +31,12 @@
 
 ## TO-DO
 ### v0.5.0
-* Change /skynodes paste to /skynodes paste <taskid> <nodeid>
-* Add /skynodes undo (for last 10 pastes)
-* Add /skynodes redo (for last 10 undos)
+* ~~Change /skynodes paste to /skynodes paste <taskid> <nodeid>~~
+* ~~Store /skynodes paste EditSession in the player's LocalSession.~~
+* ~~Add /skynodes undo~~
+* ~~Add /skynodes redo~~
+* Move debug setting to its own config.yml file.
+* Config (config.yml, messages.yml, nodes.yml) version handling.
 
 ## Building
 ```./gradlew build```

@@ -140,7 +140,7 @@ public class NodeManager {
                 } else if (plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
                     file = new File(Objects.requireNonNull(plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
                 } else {
-                    logger.error(mm.deserialize(messages.consoleSchematicNotFound(),
+                    logger.error(mm.deserialize(messages.schematicNotFound(),
                             Placeholder.parsed("taskid", taskId),
                             Placeholder.parsed("nodeid", nodeId)));
                     return null;

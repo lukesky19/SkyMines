@@ -18,10 +18,16 @@
 package com.github.lukesky19.skynodes.commands;
 
 import com.github.lukesky19.skynodes.managers.MessagesManager;
+import com.github.lukesky19.skynodes.managers.SkyTaskManager;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.managers.SchematicManager;
 import com.github.lukesky19.skynodes.SkyNodes;
+import com.github.lukesky19.skynodes.records.SkyNode;
+import com.github.lukesky19.skynodes.records.SkyTask;
+import com.sk89q.worldedit.command.WorldEditCommands;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -41,83 +47,139 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
     final SkyNodes plugin;
     final MessagesManager msgsMgr;
     final SchematicManager schemMgr;
+    final SkyTaskManager taskMgr;
+    final MiniMessage mm = MiniMessage.miniMessage();
     public SkyNodeCommand(SkyNodes plugin) {
         this.plugin = plugin;
         msgsMgr = plugin.getMsgsMgr();
         schemMgr = plugin.getSchemMgr();
+        taskMgr = plugin.getTaskMgr();
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        Messages configMessages = msgsMgr.getMessages();
-        if(args.length == 1) {
-            switch(args[0]) {
-                case "reload":
-                    if(sender.hasPermission("skynodes.commands.reload")) {
-                        try {
-                            plugin.reload();
-                            sender.sendMessage(configMessages.prefix().append(configMessages.reload()));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    } else {
-                        sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
-                    }
-                    break;
-                case "help":
-                    if(sender.hasPermission("skynodes.commands.help")) {
-                        List<Component> helpMessage = configMessages.help();
-                        for(Component msg : helpMessage) {
-                            sender.sendMessage(msg);
-                        }
-                    } else {
-                        sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
-                    }
-                    break;
-                default:
-                    sender.sendMessage(configMessages.prefix().append(configMessages.unknownArgument()));
-                    break;
-            }
-        } else if(args.length == 6) {
-            if(sender.hasPermission("skynodes.commands.paste")) {
-                if (Bukkit.getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-                    File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
-                    if (file.exists()) {
-                        try {
-                            schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                            sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteSuccess()));
-                            return true;
-                        } catch (Exception e) {
-                            sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteFailure()));
+        Messages messages = msgsMgr.getMessages();
+        switch (args.length) {
+            case 1 -> {
+                switch (args[0]) {
+                    case "reload" -> {
+                        if (sender.hasPermission("skynodes.commands.reload")) {
+                            try {
+                                plugin.reload();
+                                sender.sendMessage(messages.prefix().append(messages.reload()));
+                                return true;
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        } else {
+                            sender.sendMessage(messages.prefix().append(messages.noPermission()));
                             return false;
                         }
-                    } else {
-                        sender.sendMessage(configMessages.prefix().append(configMessages.playerSchematicNotFound()));
+                    }
+                    case "help" -> {
+                        if (sender.hasPermission("skynodes.commands.help")) {
+                            List<Component> helpMessage = messages.help();
+                            for (Component msg : helpMessage) {
+                                sender.sendMessage(msg);
+                            }
+                            return true;
+                        } else {
+                            sender.sendMessage(messages.prefix().append(messages.noPermission()));
+                            return false;
+                        }
+                    }
+                    case "paste" -> {
+                        if (sender.hasPermission("skynodes.commands.paste")) {
+                            // Missing argument. Where is taskId?
+                            return true;
+                        }
+                        return false;
+                    }
+                    case "undo" -> {
+                        if (sender.hasPermission("skynodes.commands.undo")) {
+                            schemMgr.undo((Player) sender);
+                        }
+                        return false;
+                    }
+                    case "redo" -> {
+                        if (sender.hasPermission("skynodes.commands.redo")) {
+                            schemMgr.redo((Player) sender);
+                        }
+                        return false;
+                    }
+                    default -> {
+                        sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                        sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
                         return false;
                     }
                 }
-
-                File file = new File(Objects.requireNonNull(Bukkit.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + args[1]);
-                if(file.exists()) {
-                    try {
-                        schemMgr.pasteFromCommand(Bukkit.getServer().getWorld(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), file);
-                        sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteSuccess()));
+            }
+            case 2 -> {
+                if (args[0].equals("paste")) {
+                    if (sender.hasPermission("skynodes.commands.paste")) {
+                        // Where is nodeId?
                         return true;
-                    } catch (Exception e) {
-                        sender.sendMessage(configMessages.prefix().append(configMessages.playerNodePasteFailure()));
+                    }
+                    return false;
+                } else {
+                    sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                    sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
+                    return false;
+                }
+            }
+            case 3 -> {
+                if (args[0].equals("paste")) {
+                    if (sender.hasPermission("skynodes.commands.paste")) {
+                        List<SkyTask> tasksList = taskMgr.getSkyTasksList();
+                        for (SkyTask skyTask : tasksList) {
+                            if (args[1].equals(skyTask.taskId())) {
+                                plugin.getComponentLogger().info(mm.deserialize("Tasks Match"));
+                                List<SkyNode> nodesList = skyTask.skyNodes();
+                                for (SkyNode skyNode : nodesList) {
+                                    if (args[2].equals(skyNode.nodeId())) {
+                                        plugin.getComponentLogger().info(mm.deserialize("Nodes Match"));
+                                        try {
+                                            schemMgr.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException(e);
+                                        } finally {
+                                            sender.sendMessage(messages.prefix().append(
+                                                    mm.deserialize(messages.nodePasteSuccess(),
+                                                            Placeholder.parsed("taskid", args[1]),
+                                                            Placeholder.parsed("nodeid", args[2]))));
+                                            return true;
+                                        }
+                                    }
+                                }
+                                sender.sendMessage(mm.deserialize(messages.invalidNodeId(),
+                                        Placeholder.parsed("nodeid", args[2])));
+                                return false;
+                            }
+                        }
+                        sender.sendMessage(mm.deserialize(messages.invalidTaskId(),
+                                Placeholder.parsed("taskid", args[1])));
+                        return false;
+                    } else {
+                        sender.sendMessage(messages.prefix().append(messages.noPermission()));
                         return false;
                     }
+                } else {
+                    sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                    sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
+                    return false;
                 }
-            } else {
-                sender.sendMessage(configMessages.prefix().append(configMessages.noPermission()));
+            }
+            default -> {
+                sender.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                sender.sendMessage(mm.deserialize("Length: " + args.length + " argument: " + args[0]));
                 return false;
             }
         }
-        return false;
     }
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         Player p = (Player) sender;
+        SkyTask task;
         switch (args.length) {
             case 1:
                 ArrayList<String> subCmds = new ArrayList<>();
@@ -130,62 +192,36 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                 if(p.hasPermission("skynodes.commands.reload")) {
                     subCmds.add("reload");
                 }
+                if(p.hasPermission("skynodes.commands.undo")) {
+                    subCmds.add("undo");
+                }
+                if(p.hasPermission("skynodes.commands.redo")) {
+                    subCmds.add("redo");
+                }
                 return subCmds;
             case 2:
                 if (args[0].equalsIgnoreCase("paste")) {
                     if (p.hasPermission("skynodes.commands.paste")) {
-                        File directory = null;
-                        List<String> schematicNames = new ArrayList<>();
-                        if (getServer().getPluginManager().getPlugin("WorldEdit") != null) {
-                            directory = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("WorldEdit")).getDataFolder() + File.separator + "schematics");
-                        } else if (getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
-                            directory = new File(Objects.requireNonNull(getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics");
+                        List<String> taskIds = new ArrayList<>();
+                        for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                            taskIds.add(skyTask.taskId());
                         }
-                        for (final File fileEntry : Objects.requireNonNull(Objects.requireNonNull(directory).listFiles())) {
-                            if (fileEntry.isFile()) {
-                                schematicNames.add(fileEntry.getName());
-                            }
-                        }
-                        return schematicNames;
-                    } else {
-                        return Collections.emptyList();
+                        return taskIds;
                     }
                 }
             case 3:
                 if (args[0].equalsIgnoreCase("paste")) {
                     if (p.hasPermission("skynodes.commands.paste")) {
-                        List<World> worlds = plugin.getServer().getWorlds();
-                        List<String> worldNames = new ArrayList<>();
-                        for (World w : worlds) {
-                            worldNames.add(w.getName());
+                        List<String> nodeIds = new ArrayList<>();
+                        for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                            if (Objects.equals(skyTask.taskId(), args[1])) {
+                                List<SkyNode> nodesList = skyTask.skyNodes();
+                                for (SkyNode skyNode : nodesList) {
+                                    nodeIds.add(skyNode.nodeId());
+                                }
+                            }
                         }
-                        return worldNames;
-                    } else {
-                        return Collections.emptyList();
-                    }
-                }
-            case 4:
-                if (args[0].equalsIgnoreCase("paste")) {
-                    if (p.hasPermission("skynodes.commands.paste")) {
-                        return List.of(String.valueOf((int) p.getLocation().getX()));
-                    } else {
-                        return Collections.emptyList();
-                    }
-                }
-            case 5:
-                if (args[0].equalsIgnoreCase("paste")) {
-                    if (p.hasPermission("skynodes.commands.paste")) {
-                        return List.of(String.valueOf((int) p.getLocation().getY()));
-                    } else {
-                        return Collections.emptyList();
-                    }
-                }
-            case 6:
-                if (args[0].equalsIgnoreCase("paste")) {
-                    if (p.hasPermission("skynodes.commands.paste")) {
-                        return List.of(String.valueOf((int) p.getLocation().getZ()));
-                    } else {
-                        return Collections.emptyList();
+                        return nodeIds;
                     }
                 }
             default:

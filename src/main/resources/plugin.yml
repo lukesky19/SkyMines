@@ -18,7 +18,13 @@ permissions:
     description: The base command permission.
     default: op
   skynodes.commands.skynode.paste:
-    description: Used to paste schematics. Debug only.
+    description: Used to paste nodes.
+    default: op
+  skynodes.commands.skynode.undo:
+    description: Used to undo an edit.
+    default: op
+  skynodes.commands.skynode.redo:
+    description: Used to redo an edit.
     default: op
   skynodes.commands.skynode.reload:
     description: Used to reload the plugin.

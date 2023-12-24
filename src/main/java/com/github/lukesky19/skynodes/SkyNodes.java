@@ -113,6 +113,18 @@ public final class SkyNodes extends JavaPlugin {
         reload();
     }
 
+    @Override
+    public void onDisable() {
+        if(!bukkitTasks.isEmpty()) {
+            for (BukkitTask currentTask : bukkitTasks) {
+                if (currentTask != null) {
+                    currentTask.cancel();
+                }
+            }
+            bukkitTasks = new ArrayList<>();
+        }
+    }
+
     public void reload() {
         cfgMgr.reloadConfig();
         settingsMgr.reloadSettings();
@@ -124,13 +136,15 @@ public final class SkyNodes extends JavaPlugin {
         startTasks();
     }
 
-    public void startTasks() {
+    private void startTasks() {
         // Cancel previous BukkitTask if it exists.
-        for(BukkitTask currentTask : bukkitTasks) {
-            if (currentTask != null) {
-                currentTask.cancel();
-                bukkitTasks.remove(currentTask);
+        if(!bukkitTasks.isEmpty()) {
+            for (BukkitTask currentTask : bukkitTasks) {
+                if (currentTask != null) {
+                    currentTask.cancel();
+                }
             }
+            bukkitTasks = new ArrayList<>();
         }
 
         for(SkyTask skyTask : taskMgr.getSkyTasksList()) {
@@ -143,24 +157,12 @@ public final class SkyNodes extends JavaPlugin {
                 public void run() {
                     SkyNode randSkyNode = skyNodes.get(new Random().nextInt(skyNodes.size()));
                     try {
-                        schemMgr.pasteFromConfig(
-                                randSkyNode.nodeWorld(),
-                                randSkyNode.blockVector3(),
-                                randSkyNode.nodeSchems(),
-                                randSkyNode.region(),
-                                randSkyNode.safeLocation());
-
+                        schemMgr.paste(taskId, randSkyNode.nodeId(), randSkyNode.nodeWorld(), randSkyNode.blockVector3(), randSkyNode.nodeSchems(), randSkyNode.region(), randSkyNode.safeLocation(), null);
+                    } finally {
                         if (settings.debug()) {
-                            logger.info(mm.deserialize(messages.consoleNodePasteSuccess(),
+                            logger.info(mm.deserialize(messages.nodePasteSuccess(),
                                     Placeholder.parsed("taskid", taskId),
                                     Placeholder.parsed("nodeid", randSkyNode.nodeId())));
-                        }
-                    } catch (Exception e) {
-                        if(settings.debug()) {
-                            logger.error(mm.deserialize(messages.consoleNodePasteFailure(),
-                                    Placeholder.parsed("taskid", taskId),
-                                    Placeholder.parsed("nodeid", randSkyNode.nodeId())));
-                            throw new RuntimeException(e);
                         }
                     }
                 }

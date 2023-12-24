@@ -45,23 +45,26 @@ public class MessagesManager {
         Component startTasksSuccess;
         List<Component> help = new ArrayList<>();
         String noNodesFound;
-        String consoleNodePasteSuccess;
-        String consoleNodePasteFailure;
         Component operationFailure;
-        Component clipBoardLoadFailure;
+        String clipBoardLoadFailure;
         Component noPermission;
         Component unknownArgument;
-        Component playerNodePasteSuccess;
-        Component playerNodePasteFailure;
-        Component playerSchematicNotFound;
+        String nodePasteSuccess;
+        String nodePasteFailure;
         String worldNotFound;
         String schematicsListError;
-        String consoleSchematicNotFound;
+        String schematicNotFound;
         String invalidLocation;
         String invalidSafeLocation;
         String invalidRegion;
         String blocksAllowedListError;
         String invalidBlockMaterial;
+        Component undo;
+        Component redo;
+        Component noUndo;
+        Component noRedo;
+        String invalidTaskId;
+        String invalidNodeId;
         Component bypassedSafeTeleport;
         Component bypassedBlockBreakCheck;
         Component canMine;
@@ -114,9 +117,9 @@ public class MessagesManager {
         }
 
         if(!configurationNode.node("ClipboardLoadFailure").isNull()) {
-            clipBoardLoadFailure = mm.deserialize(configurationNode.node("ClipboardLoadFailure").getString());
+            clipBoardLoadFailure = configurationNode.node("ClipboardLoadFailure").getString();
         } else {
-            clipBoardLoadFailure = mm.deserialize("<red>Unable to load to the clipboard. See console for more information.");
+            clipBoardLoadFailure = "<red>Unable to load to the clipboard for <white><taskid> <red>and node <white><nodeid>. See console for more information.";
         }
 
         if(!configurationNode.node("NoPermission").isNull()) {
@@ -131,22 +134,16 @@ public class MessagesManager {
             unknownArgument = mm.deserialize("<red>Unknown argument. Double-check your command.");
         }
 
-        if(!configurationNode.node("PlayerNodePasteSuccess").isNull()) {
-            playerNodePasteSuccess = mm.deserialize(configurationNode.node("PlayerNodePasteSuccess").getString());
+        if(!configurationNode.node("NodePasteSuccess").isNull()) {
+            nodePasteSuccess = configurationNode.node("NodePasteSuccess").getString();
         } else {
-            playerNodePasteSuccess = mm.deserialize("<aqua>Node has pasted successfully.");
+            nodePasteSuccess = "<aqua>Node <white><nodeid> <aqua>for task <white><taskid> <aqua>has pasted successfully.";
         }
 
-        if(!configurationNode.node("PlayerNodePasteFailure").isNull()) {
-            playerNodePasteFailure = mm.deserialize(configurationNode.node("PlayerNodePasteFailure").getString());
+        if(!configurationNode.node("NodePasteFailure").isNull()) {
+            nodePasteFailure = configurationNode.node("NodePasteFailure").getString();
         } else {
-            playerNodePasteFailure = mm.deserialize("<red>Node failed to paste. See console for more information.");
-        }
-
-        if(!configurationNode.node("PlayerSchematicNotFound").isNull()) {
-            playerSchematicNotFound = mm.deserialize(configurationNode.node("PlayerSchematicNotFound").getString());
-        } else {
-            playerSchematicNotFound = mm.deserialize("<red>The schematic provied is either invalid or does not exist.");
+            nodePasteFailure = "<red>Node <white><nodeid> <red>for task <white><taskid> <red>has failed to paste. See console for more information.";
         }
 
         if(!configurationNode.node("WorldNotFound").isNull()) {
@@ -161,10 +158,10 @@ public class MessagesManager {
             schematicsListError = "<red>The plugin was unable to obtain the schematic names for task <white><taskId> <red>and node <white><nodeid><red>. Is the node formatted correctly?";
         }
 
-        if(!configurationNode.node("ConsoleSchematicNotFound").isNull()) {
-            consoleSchematicNotFound = configurationNode.node("ConsoleSchematicNotFound").getString();
+        if(!configurationNode.node("SchematicNotFound").isNull()) {
+            schematicNotFound = configurationNode.node("SchematicNotFound").getString();
         } else {
-            consoleSchematicNotFound = "<red>A schematic configured for task <white><taskid> <red>and node <white><nodeid> <red>is invalid or does not exist.";
+            schematicNotFound = "<red>A schematic configured for task <white><taskid> <red>and node <white><nodeid> <red>is invalid or does not exist.";
         }
 
         if(!configurationNode.node("InvalidLocation").isNull()) {
@@ -197,16 +194,40 @@ public class MessagesManager {
             invalidBlockMaterial = "<red>A block for <white><taskid> <red>and node <white><nodeid> <red>is invalid.";
         }
 
-        if(!configurationNode.node("ConsoleNodePasteSuccess").isNull()) {
-            consoleNodePasteSuccess = configurationNode.node("ConsoleNodePasteSuccess").getString();
+        if(!configurationNode.node("Undo").isNull()) {
+            undo = mm.deserialize(configurationNode.node("Undo").getString());
         } else {
-            consoleNodePasteSuccess = "<aqua>Task <white><taskid> <aqua>with Node <white><nodeid> <aqua>has pasted successfully.";
+            undo = mm.deserialize("<aqua>Undid the last edit.");
         }
 
-        if(!configurationNode.node("ConsoleNodePasteFailure").isNull()) {
-            consoleNodePasteFailure = configurationNode.node("ConsoleNodePasteFailure").getString();
+        if(!configurationNode.node("Redo").isNull()) {
+            redo = mm.deserialize(configurationNode.node("Redo").getString());
         } else {
-            consoleNodePasteFailure = "<red>Task <white><taskid> <red>with Node <white><nodeid> <red>failed to paste. See console for more information.";
+            redo = mm.deserialize("<aqua>Redid the last edit.");
+        }
+
+        if(!configurationNode.node("NoUndo").isNull()) {
+            noUndo = mm.deserialize(configurationNode.node("NoUndo").getString());
+        } else {
+            noUndo = mm.deserialize("<aqua>Nothing left to undo.");
+        }
+
+        if(!configurationNode.node("NoRedo").isNull()) {
+            noRedo = mm.deserialize(configurationNode.node("NoRedo").getString());
+        } else {
+            noRedo = mm.deserialize("<aqua>Nothing left to redo.");
+        }
+
+        if(!configurationNode.node("InvalidTaskId").isNull()) {
+            invalidTaskId = configurationNode.node("InvalidTaskId").getString();
+        } else {
+            invalidTaskId = "<red>The task id <white><taskid> <red>is not a valid configured task.";
+        }
+
+        if(!configurationNode.node("InvalidNodeId").isNull()) {
+            invalidNodeId = configurationNode.node("InvalidNodeId").getString();
+        } else {
+            invalidNodeId = "<red>The node id <white><nodeid> <red>is not a valid configured node.";
         }
 
         if(!configurationNode.node("BypassedSafeTeleport").isNull()) {
@@ -243,19 +264,22 @@ public class MessagesManager {
                 clipBoardLoadFailure,
                 noPermission,
                 unknownArgument,
-                playerNodePasteSuccess,
-                playerNodePasteFailure,
-                playerSchematicNotFound,
+                nodePasteSuccess,
+                nodePasteFailure,
                 worldNotFound,
                 schematicsListError,
-                consoleSchematicNotFound,
+                schematicNotFound,
                 invalidLocation,
                 invalidSafeLocation,
                 invalidRegion,
                 blocksAllowedListError,
                 invalidBlockMaterial,
-                consoleNodePasteSuccess,
-                consoleNodePasteFailure,
+                undo,
+                redo,
+                noUndo,
+                noRedo,
+                invalidTaskId,
+                invalidNodeId,
                 bypassedSafeTeleport,
                 bypassedBlockBreakCheck,
                 canMine,

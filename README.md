@@ -25,16 +25,13 @@
 * Give a player the group you created to be able to mine the node. (/lp user \<username> parent add \<group name>)
 * Also works with temporary ranks as well. (/lp user \<username> parent add \<group name> 1h accumulate)
 
-## Disclaimers
-* Paper and forks of Paper are only supported at this time.
-* I only use Paper or forks of Paper for servers I work on, but I may add Spigot support in the future.
-
 ## TO-DO
 ### v0.5.0
 * ~~Change /skynodes paste to /skynodes paste <taskid> <nodeid>~~
 * ~~Store /skynodes paste EditSession in the player's LocalSession.~~
 * ~~Add /skynodes undo~~
 * ~~Add /skynodes redo~~
+* ~~Spigot Support~~
 * Move debug setting to its own config.yml file.
 * Config (config.yml, messages.yml, nodes.yml) version handling.
 

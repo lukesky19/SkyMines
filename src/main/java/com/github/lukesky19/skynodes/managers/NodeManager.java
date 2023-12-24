@@ -28,19 +28,21 @@ import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.*;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class NodeManager {
     final SkyNodes plugin;
-    final ComponentLogger logger;
+    final Logger logger;
     final ConfigManager cfgMgr;
     final MessagesManager msgsMgr;
     final ConfigurateUtil confUtil;
@@ -55,7 +57,7 @@ public class NodeManager {
 
     public NodeManager(SkyNodes plugin) {
         this.plugin = plugin;
-        logger = this.plugin.getComponentLogger();
+        logger = plugin.getLogger();
         cfgMgr = plugin.getCfgMgr();
         msgsMgr = plugin.getMsgsMgr();
         confUtil = plugin.getConfUtil();
@@ -101,9 +103,10 @@ public class NodeManager {
         MultiverseCore core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
         nodeWorld = core.getMVWorldManager().getMVWorld(nodeConfig.node("world").getString()).getCBWorld();
         if(nodeWorld == null) {
-            logger.error(mm.deserialize(messages.worldNotFound(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.worldNotFound(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -114,9 +117,10 @@ public class NodeManager {
                     Integer.parseInt(coords[1]),
                     Integer.parseInt(coords[2]));
         } catch (NumberFormatException e) {
-            logger.error(mm.deserialize(messages.invalidLocation(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidLocation(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -125,9 +129,10 @@ public class NodeManager {
         try {
             schemNames = nodeConfig.node("schematics").getList(String.class);
         } catch (SerializationException e) {
-            logger.error(mm.deserialize(messages.schematicsListError(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.schematicsListError(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -140,9 +145,10 @@ public class NodeManager {
                 } else if (plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
                     file = new File(Objects.requireNonNull(plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
                 } else {
-                    logger.error(mm.deserialize(messages.schematicNotFound(),
-                            Placeholder.parsed("taskid", taskId),
-                            Placeholder.parsed("nodeid", nodeId)));
+                    logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                            mm.deserialize(messages.schematicNotFound(),
+                                    Placeholder.parsed("taskid", taskId),
+                                    Placeholder.parsed("nodeid", nodeId))));
                     return null;
                 }
                 // If the schematic exists on disk, add it to the list of schematic files.
@@ -156,9 +162,10 @@ public class NodeManager {
         if(Objects.requireNonNull(regions).hasRegion(nodeConfig.node("region").getString())) {
             nodeRegion = regions.getRegion(Objects.requireNonNull(nodeConfig.node("region").getString()));
         } else {
-            logger.error(mm.deserialize(messages.invalidRegion(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidRegion(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -172,9 +179,10 @@ public class NodeManager {
                     Integer.parseInt(safeLocationXYZ[1]),
                     Integer.parseInt(safeLocationXYZ[2]));
         } catch (NumberFormatException e) {
-            logger.error(mm.deserialize(messages.invalidSafeLocation(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidSafeLocation(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -183,9 +191,10 @@ public class NodeManager {
         try {
             materialIds = nodeConfig.node("blocks-allowed").getList(String.class);
         } catch (SerializationException e) {
-            logger.error(mm.deserialize(messages.blocksAllowedListError(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.blocksAllowedListError(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -194,9 +203,10 @@ public class NodeManager {
             try {
                 materialsList.add(Material.matchMaterial(id));
             } catch (Exception e) {
-                logger.error(mm.deserialize(messages.invalidBlockMaterial(),
-                        Placeholder.parsed("taskid", taskId),
-                        Placeholder.parsed("nodeid", nodeId)));
+                logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                        mm.deserialize(messages.invalidBlockMaterial(),
+                                Placeholder.parsed("taskid", taskId),
+                                Placeholder.parsed("nodeid", nodeId))));
                 return null;
             }
         }

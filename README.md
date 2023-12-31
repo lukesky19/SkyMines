@@ -11,8 +11,30 @@
 
 ## Dependencies
 * WorldEdit or FastAsyncWorldEdit
-* Multiverse-Core
 * WorldGuard
+
+## FAQ
+Q: What versions does this plugin support?
+
+A: The latest, which is currently 1.20.4. 
+
+
+Q: Are there any plans to support any other versions?
+
+A: No.
+
+Q: Does this work on Spigot and Paper?
+
+A: Yes.
+
+Q: Is Folia supported?
+
+A: There is no Folia support at this time. I may look into it in the future though.
+
+## Issues or Bugs
+* Create a new GitHub Issue describing your issue.
+* Please post any relevant logs containing errors related to SkyNodes and your configuration files.
+* I will attempt to solve any issues to the best of my ability.
 
 ## Example Setup Instructions
 * Create a new region in a world that encompases the entire playable area.
@@ -23,17 +45,7 @@
 * Open nodes.yml and configure a node based on what you have done.
 * Reload the plugin (/skynodes reload)
 * Give a player the group you created to be able to mine the node. (/lp user \<username> parent add \<group name>)
-* Also works with temporary ranks as well. (/lp user \<username> parent add \<group name> 1h accumulate)
-
-## TO-DO
-### v0.5.0
-* ~~Change /skynodes paste to /skynodes paste <taskid> <nodeid>~~
-* ~~Store /skynodes paste EditSession in the player's LocalSession.~~
-* ~~Add /skynodes undo~~
-* ~~Add /skynodes redo~~
-* ~~Spigot Support~~
-* Move debug setting to its own config.yml file.
-* Config (config.yml, messages.yml, nodes.yml) version handling.
+* Also works with temporary ranks as well. (/lp user \<username> parent addtemp \<group name> 1h accumulate)
 
 ## Building
 ```./gradlew build```

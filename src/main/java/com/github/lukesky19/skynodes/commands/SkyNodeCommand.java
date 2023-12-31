@@ -48,21 +48,21 @@ import java.util.logging.Logger;
 import static org.bukkit.Bukkit.getDefaultGameMode;
 import static org.bukkit.Bukkit.getServer;
 
-public class SkyNodeCommand implements CommandExecutor, TabCompleter {
+public final class SkyNodeCommand implements CommandExecutor, TabCompleter {
     final SkyNodes plugin;
-    final MessagesManager msgsMgr;
-    final SchematicManager schemMgr;
-    final SkyTaskManager taskMgr;
+    final MessagesManager messagesManager;
+    final SchematicManager schematicManager;
+    final SkyTaskManager skyTaskManager;
     final MiniMessage mm = MiniMessage.miniMessage();
-    public SkyNodeCommand(SkyNodes plugin) {
+    public SkyNodeCommand(SkyNodes plugin, MessagesManager messagesManager, SchematicManager schematicManager, SkyTaskManager skyTaskManager) {
         this.plugin = plugin;
-        msgsMgr = plugin.getMsgsMgr();
-        schemMgr = plugin.getSchemMgr();
-        taskMgr = plugin.getTaskMgr();
+        this.messagesManager = messagesManager;
+        this.schematicManager = schematicManager;
+        this.skyTaskManager = skyTaskManager;
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        Messages messages = msgsMgr.getMessages();
+        Messages messages = messagesManager.getMessages();
         BukkitAudiences audiences = plugin.getAudiences();
         Logger logger = plugin.getLogger();
         switch (args.length) {
@@ -129,7 +129,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     case "undo" -> {
                         if(sender instanceof Player) {
                             if (sender.hasPermission("skynodes.commands.undo")) {
-                                schemMgr.undo((Player) sender);
+                                schematicManager.undo((Player) sender);
                                 return true;
                             } else {
                                 audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
@@ -143,7 +143,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     case "redo" -> {
                         if(sender instanceof Player) {
                             if (sender.hasPermission("skynodes.commands.redo")) {
-                                schemMgr.redo((Player) sender);
+                                schematicManager.redo((Player) sender);
                                 return true;
                             } else {
                                 audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
@@ -188,12 +188,12 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                 if (args[0].equals("paste")) {
                     if (sender instanceof Player) {
                         if (sender.hasPermission("skynodes.commands.paste")) {
-                            for (SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                            for (SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
                                 if (args[1].equals(skyTask.taskId())) {
                                     for (SkyNode skyNode : skyTask.skyNodes()) {
                                         if (args[2].equals(skyNode.nodeId())) {
                                             try {
-                                                schemMgr.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
+                                                schematicManager.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
                                             } catch (Exception e) {
                                                 throw new RuntimeException(e);
                                             } finally {
@@ -243,7 +243,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         BukkitAudiences audiences = plugin.getAudiences();
-        Messages messages = msgsMgr.getMessages();
+        Messages messages = messagesManager.getMessages();
         switch(args.length) {
             case 1 -> {
                 ArrayList<String> subCmds = new ArrayList<>();
@@ -274,7 +274,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     List<String> taskIds = new ArrayList<>();
                     if(sender instanceof Player) {
                         if(sender.hasPermission("skynodes.commands.paste")) {
-                            for(SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                            for(SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
                                 taskIds.add(skyTask.taskId());
                             }
                         }
@@ -288,7 +288,7 @@ public class SkyNodeCommand implements CommandExecutor, TabCompleter {
                     List<String> nodeIds = new ArrayList<>();
                     if(sender instanceof Player) {
                         if(sender.hasPermission("skynodes.commands.paste")) {
-                            for(SkyTask skyTask : taskMgr.getSkyTasksList()) {
+                            for(SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
                                 if(Objects.equals(skyTask.taskId(), args[1])) {
                                     List<SkyNode> nodesList = skyTask.skyNodes();
                                     for(SkyNode skyNode : nodesList) {

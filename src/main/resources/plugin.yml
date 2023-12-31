@@ -3,9 +3,9 @@ version: '${version}'
 main: com.github.lukesky19.skynodes.SkyNodes
 api-version: '1.20'
 authors: [ lukeskywlker19 ]
+load: POSTWORLD
 depend:
   - WorldGuard
-  - Multiverse-Core
 softdepend:
   - WorldEdit
   - FastAsyncWorldEdit

@@ -19,6 +19,7 @@ package com.github.lukesky19.skynodes.managers;
 
 import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
+import com.github.lukesky19.skynodes.utils.ConfigLoaderUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -27,12 +28,14 @@ import org.spongepowered.configurate.serialize.SerializationException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MessagesManager {
+public final class MessagesManager {
     final SkyNodes plugin;
+    final ConfigLoaderUtil configLoaderUtil;
     final MiniMessage mm = MiniMessage.miniMessage();
     Messages messages;
-    public MessagesManager(SkyNodes plugin)  {
+    public MessagesManager(SkyNodes plugin, ConfigLoaderUtil configLoaderUtil)  {
         this.plugin = plugin;
+        this.configLoaderUtil = configLoaderUtil;
     }
     public Messages getMessages() {
         return messages;
@@ -73,25 +76,25 @@ public class MessagesManager {
         Component canMine;
         Component canNotMine;
 
-        if(!configurationNode.node("Prefix").isNull()) {
+        if(!configurationNode.node("Prefix").virtual()) {
             prefix = mm.deserialize(configurationNode.node("Prefix").getString());
         } else {
             prefix = mm.deserialize("<gray>[<yellow><bold>SkyNodes<reset><gray>]");
         }
 
-        if(!configurationNode.node("Reload").isNull()) {
+        if(!configurationNode.node("Reload").virtual()) {
             reload = mm.deserialize(configurationNode.node("Reload").getString());
         } else {
             reload = mm.deserialize("<aqua>The plugin has reloaded successfully.");
         }
 
-        if(!configurationNode.node("StartTasksSuccess").isNull()) {
+        if(!configurationNode.node("StartTasksSuccess").virtual()) {
             startTasksSuccess = mm.deserialize(configurationNode.node("StartTasksSuccess").getString());
         } else {
             startTasksSuccess = mm.deserialize("<aqua>The plugin has started all tasks successfully.");
         }
 
-        if(!configurationNode.node("Help").isNull()) {
+        if(!configurationNode.node("Help").virtual()) {
             try {
                 for(String message : configurationNode.node("Help").getList(String.class)) {
                     help.add(mm.deserialize(message));
@@ -107,169 +110,169 @@ public class MessagesManager {
             help.add(mm.deserialize("<white>/<aqua>skynodes <yellow>paste <white><<red>schematic name<white>> <white><<red>world<white>> <white><<red>X<white>> <white><<red>Y<white>> <white><<red>Z<white>>"));
         }
 
-        if(!configurationNode.node("NoNodesFound").isNull()) {
+        if(!configurationNode.node("NoNodesFound").virtual()) {
             noNodesFound = configurationNode.node("NoNodesFound").getString();
         } else {
             noNodesFound = "<red>No nodes for task <white><taskid> <red>are configured. Did you setup any nodes in nodes.yml?";
         }
 
-        if(!configurationNode.node("OperationFailure").isNull()) {
+        if(!configurationNode.node("OperationFailure").virtual()) {
             operationFailure = mm.deserialize(configurationNode.node("OperationFailure").getString());
         } else {
             operationFailure = mm.deserialize("<red>The operation failed to complete. See console for more information.");
         }
 
-        if(!configurationNode.node("ClipboardLoadFailure").isNull()) {
+        if(!configurationNode.node("ClipboardLoadFailure").virtual()) {
             clipBoardLoadFailure = configurationNode.node("ClipboardLoadFailure").getString();
         } else {
             clipBoardLoadFailure = "<red>Unable to load to the clipboard for <white><taskid> <red>and node <white><nodeid>. See console for more information.";
         }
 
-        if(!configurationNode.node("NoPermission").isNull()) {
+        if(!configurationNode.node("NoPermission").virtual()) {
             noPermission = mm.deserialize(configurationNode.node("NoPermission").getString());
         } else {
             noPermission = mm.deserialize("<red>You do not have permission for this command or sub-command.");
         }
 
-        if(!configurationNode.node("UnknownArgument").isNull()) {
+        if(!configurationNode.node("UnknownArgument").virtual()) {
             unknownArgument = mm.deserialize(configurationNode.node("UnknownArgument").getString());
         } else {
             unknownArgument = mm.deserialize("<red>Unknown argument. Double-check your command.");
         }
 
-        if(!configurationNode.node("MissingArgumentTaskId").isNull()) {
+        if(!configurationNode.node("MissingArgumentTaskId").virtual()) {
             missingArgumentTaskId = mm.deserialize(configurationNode.node("MissingArgumentTaskId").getString());
         } else {
             missingArgumentTaskId = mm.deserialize("<red>Missing argument for the task id. Double-check your command.");
         }
 
-        if(!configurationNode.node("MissingArgumentNodeId").isNull()) {
+        if(!configurationNode.node("MissingArgumentNodeId").virtual()) {
             missingArgumentNodeId = mm.deserialize(configurationNode.node("MissingArgumentNodeId").getString());
         } else {
             missingArgumentNodeId = mm.deserialize("<red>Missing argument for the node id. Double-check your command.");
         }
 
-        if(!configurationNode.node("NodePasteSuccess").isNull()) {
+        if(!configurationNode.node("NodePasteSuccess").virtual()) {
             nodePasteSuccess = configurationNode.node("NodePasteSuccess").getString();
         } else {
             nodePasteSuccess = "<aqua>Node <white><nodeid> <aqua>for task <white><taskid> <aqua>has pasted successfully.";
         }
 
-        if(!configurationNode.node("NodePasteFailure").isNull()) {
+        if(!configurationNode.node("NodePasteFailure").virtual()) {
             nodePasteFailure = configurationNode.node("NodePasteFailure").getString();
         } else {
             nodePasteFailure = "<red>Node <white><nodeid> <red>for task <white><taskid> <red>has failed to paste. See console for more information.";
         }
 
-        if(!configurationNode.node("WorldNotFound").isNull()) {
+        if(!configurationNode.node("WorldNotFound").virtual()) {
             worldNotFound = configurationNode.node("WorldNotFound").getString();
         } else {
             worldNotFound = "<red>The world for task <white><taskid> <red>and node <white><nodeid> <red>is invalid.";
         }
 
-        if(!configurationNode.node("SchematicsListError").isNull()) {
+        if(!configurationNode.node("SchematicsListError").virtual()) {
             schematicsListError = configurationNode.node("SchematicsListError").getString();
         } else {
             schematicsListError = "<red>The plugin was unable to obtain the schematic names for task <white><taskId> <red>and node <white><nodeid><red>. Is the node formatted correctly?";
         }
 
-        if(!configurationNode.node("SchematicNotFound").isNull()) {
+        if(!configurationNode.node("SchematicNotFound").virtual()) {
             schematicNotFound = configurationNode.node("SchematicNotFound").getString();
         } else {
             schematicNotFound = "<red>A schematic configured for task <white><taskid> <red>and node <white><nodeid> <red>is invalid or does not exist.";
         }
 
-        if(!configurationNode.node("InvalidLocation").isNull()) {
+        if(!configurationNode.node("InvalidLocation").virtual()) {
             invalidLocation = configurationNode.node("InvalidLocation").getString();
         } else {
             invalidLocation = "<red>The X Y Z coordinates of <white>location <red>for task <white><taskid> <red>and node <white><nodeid> <red>are invalid.";
         }
 
-        if(!configurationNode.node("InvalidSafeLocation").isNull()) {
+        if(!configurationNode.node("InvalidSafeLocation").virtual()) {
             invalidSafeLocation = configurationNode.node("InvalidSafeLocation").getString();
         } else {
             invalidSafeLocation = "<red>The X Y Z coordinates of <white>safe-location <red>for task <white><taskid> <red>and node <white><nodeid> <red>are invalid.";
         }
 
-        if(!configurationNode.node("InvalidRegion").isNull()) {
+        if(!configurationNode.node("InvalidRegion").virtual()) {
             invalidRegion = configurationNode.node("InvalidRegion").getString();
         } else {
             invalidRegion = "<red>The region for task <white><taskid> <red>and node <white><nodeid> <red>does not exist.";
         }
 
-        if(!configurationNode.node("BlocksAllowedListError").isNull()) {
+        if(!configurationNode.node("BlocksAllowedListError").virtual()) {
             blocksAllowedListError = configurationNode.node("BlocksAllowedListError").getString();
         } else {
             blocksAllowedListError = "<red>The plugin was unable to obtain the blocks-allowed list for task <white><taskid> <red>and node <white><nodeid><red>. Is the node formatted correctly?";
         }
 
-        if(!configurationNode.node("InvalidBlockMaterial").isNull()) {
+        if(!configurationNode.node("InvalidBlockMaterial").virtual()) {
             invalidBlockMaterial = configurationNode.node("InvalidBlockMaterial").getString();
         } else {
             invalidBlockMaterial = "<red>A block for <white><taskid> <red>and node <white><nodeid> <red>is invalid.";
         }
 
-        if(!configurationNode.node("Undo").isNull()) {
+        if(!configurationNode.node("Undo").virtual()) {
             undo = mm.deserialize(configurationNode.node("Undo").getString());
         } else {
             undo = mm.deserialize("<aqua>Undid the last edit.");
         }
 
-        if(!configurationNode.node("Redo").isNull()) {
+        if(!configurationNode.node("Redo").virtual()) {
             redo = mm.deserialize(configurationNode.node("Redo").getString());
         } else {
             redo = mm.deserialize("<aqua>Redid the last edit.");
         }
 
-        if(!configurationNode.node("NoUndo").isNull()) {
+        if(!configurationNode.node("NoUndo").virtual()) {
             noUndo = mm.deserialize(configurationNode.node("NoUndo").getString());
         } else {
             noUndo = mm.deserialize("<aqua>Nothing left to undo.");
         }
 
-        if(!configurationNode.node("NoRedo").isNull()) {
+        if(!configurationNode.node("NoRedo").virtual()) {
             noRedo = mm.deserialize(configurationNode.node("NoRedo").getString());
         } else {
             noRedo = mm.deserialize("<aqua>Nothing left to redo.");
         }
 
-        if(!configurationNode.node("InvalidTaskId").isNull()) {
+        if(!configurationNode.node("InvalidTaskId").virtual()) {
             invalidTaskId = configurationNode.node("InvalidTaskId").getString();
         } else {
             invalidTaskId = "<red>The task id <white><taskid> <red>is not a valid configured task.";
         }
 
-        if(!configurationNode.node("InvalidNodeId").isNull()) {
+        if(!configurationNode.node("InvalidNodeId").virtual()) {
             invalidNodeId = configurationNode.node("InvalidNodeId").getString();
         } else {
             invalidNodeId = "<red>The node id <white><nodeid> <red>is not a valid configured node.";
         }
 
-        if(!configurationNode.node("InGameOnly").isNull()) {
+        if(!configurationNode.node("InGameOnly").virtual()) {
             inGameOnly = mm.deserialize(configurationNode.node("InGameOnly").getString());
         } else {
             inGameOnly = mm.deserialize("<red>This command is only available in-game.");
         }
 
-        if(!configurationNode.node("BypassedSafeTeleport").isNull()) {
+        if(!configurationNode.node("BypassedSafeTeleport").virtual()) {
             bypassedSafeTeleport = mm.deserialize(configurationNode.node("BypassedSafeTeleport").getString());
         } else {
             bypassedSafeTeleport = mm.deserialize("<red>You bypassed the safe teleport because you have the permission <white>skynodes.bypass.safeteleport<red>.");
         }
 
-        if(!configurationNode.node("BypassedBlockBreakCheck").isNull()) {
+        if(!configurationNode.node("BypassedBlockBreakCheck").virtual()) {
             bypassedBlockBreakCheck = mm.deserialize(configurationNode.node("BypassedBlockBreakCheck").getString());
         } else {
             bypassedBlockBreakCheck = mm.deserialize("<red>You bypassed the block break checks because you have the permission <white>skynodes.bypass.blockbreakcheck<red>.");
         }
 
-        if(!configurationNode.node("CanMine").isNull()) {
+        if(!configurationNode.node("CanMine").virtual()) {
             canMine = mm.deserialize(configurationNode.node("CanMine").getString());
         } else {
             canMine = mm.deserialize("You can mine this.");
         }
 
-        if(!configurationNode.node("CanNotMine").isNull()) {
+        if(!configurationNode.node("CanNotMine").virtual()) {
             canNotMine = mm.deserialize(configurationNode.node("CanNotMine").getString());
         } else {
             canNotMine = mm.deserialize("You can not mine this.");
@@ -312,6 +315,6 @@ public class MessagesManager {
     }
 
     public void reloadMessages() {
-        loadPluginMessages(plugin.getCfgMgr().getMessagesConfig());
+        loadPluginMessages(configLoaderUtil.getMessagesConfig());
     }
 }

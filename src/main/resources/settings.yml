@@ -1,0 +1,4 @@
+settings:
+  # Should debug messages be displayed?
+  # Recommended to NOT change this.
+  debug: false

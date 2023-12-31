@@ -21,6 +21,7 @@ import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.Settings;
 import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -28,134 +29,203 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
+import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import com.sk89q.worldedit.session.SessionManager;
 import com.sk89q.worldedit.util.Location;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class SchematicManager {
-    public SchematicManager(SkyNodes plugin) {
+public final class SchematicManager {
+    public SchematicManager(SkyNodes plugin, MessagesManager messagesManager, SettingsManager settingsManager) {
         this.plugin = plugin;
-        msgsMgr = plugin.getMsgsMgr();
-        settingsMgr = plugin.getSettingsMgr();
-        logger = plugin.getComponentLogger();
+        this.messagesManager = messagesManager;
+        this.settingsManager = settingsManager;
     }
+
     final SkyNodes plugin;
-    final MessagesManager msgsMgr;
-    final SettingsManager settingsMgr;
-    final ComponentLogger logger;
+    final MessagesManager messagesManager;
+    final SettingsManager settingsManager;
     final MiniMessage mm = MiniMessage.miniMessage();
 
     /**
-     * Checks if the player is within a region and pastes a schematic.
-     * @param skyNode A SkyNode object.
+     * Checks if the player is within a region, pastes a schematic, and saves the EditSession to a player's LocalSession.
+     * @param taskId The id of the task which contains the node being pasted.
+     * @param nodeId The id of the node being pasted.
+     * @param world The World to paste the schematic in.
+     * @param blockVector3 Location to paste the schematic.
+     * @param schemList A list of schematics to choose from.
+     * @param region The region the schematic is pasted in.
+     * @param safeLocation The safe location to teleport any players in the region.
+     * @param player The player to save the paste's EditSession to.
+     * @return true if successful, false if it fails.
      */
-    public void pasteFromConfig(World world, BlockVector3 blockVector3, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation) {
-        Messages configMessages = msgsMgr.getMessages();
+    public void paste(String taskId, String nodeId, World world, BlockVector3 blockVector3, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
+        Messages configMessages = messagesManager.getMessages();
+        Logger logger = plugin.getLogger();
         File file = schemList.get(new Random().nextInt(schemList.size()));
-        // Prepare the clipboard.
-        ClipboardReader reader = prepareClipboardReader(file);
-        // Prepare the EditSession
-        EditSession session = prepareEditSession(world);
-        // Prepare the Operation.
-        Operation operation = prepareOperation(reader, session, blockVector3);
 
-        // Check for player in region before pasting.
-        playerCheck(region, safeLocation);
+        Clipboard clipboard = loadClipboard(file, taskId, nodeId);
+        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
+        completeOperation(clipboard, weWorld, blockVector3, region, safeLocation, player);
+    }
 
-        // Attempt to paste the schematic/node.
-        try {
-            Operations.complete(operation);
-            session.close();
-        } catch (WorldEditException e) {
-            logger.error(configMessages.operationFailure());
-            logger.error(mm.deserialize(e.getMessage()));
+    /**
+     * Undos the last WorldEdit change.
+     * @param player A Bukkit Player
+     */
+    public void undo(Player player) {
+        Messages messages = messagesManager.getMessages();
+        BukkitAudiences audiences = plugin.getAudiences();
+
+        if(player != null) {
+            com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
+            SessionManager manager = WorldEdit.getInstance().getSessionManager();
+            LocalSession localSession = manager.get(actor);
+            if (localSession != null) {
+                BlockBag blockBag = localSession.getBlockBag(actor);
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    EditSession undoSession = localSession.undo(blockBag, actor);
+                    if(undoSession != null) {
+                        localSession.remember(undoSession);
+                        audiences.player(player).sendMessage(messages.prefix().append(messages.undo()));
+                    } else {
+                        audiences.player(player).sendMessage(messages.prefix().append(messages.noUndo()));
+                    }
+                });
+            }
         }
     }
 
     /**
-     * Pastes a schematic based on a World, X, Y, and Z coordinates, and a schematic File.
-     * @param world A Bukkit World.
-     * @param x A X coordinate.
-     * @param y A Y coordinate.
-     * @param z A Z coordinate.
-     * @param file A schematic file.
+     * Redos the last WorldEdit change.
+     * @param player A Bukkit Player
      */
-    public void pasteFromCommand(org.bukkit.World world, int x, int y, int z, File file) {
-        Messages messages = msgsMgr.getMessages();
-        BlockVector3 blockVector3 = BlockVector3.at(x, y, z);
-        ClipboardReader reader = prepareClipboardReader(file);
-        EditSession session = prepareEditSession(world);
-        Operation operation = prepareOperation(reader, session, blockVector3);
+    public void redo(Player player) {
+        Messages messages = messagesManager.getMessages();
+        BukkitAudiences audiences = plugin.getAudiences();
 
-        try {
-            Operations.complete(operation);
-            session.close();
-        } catch (WorldEditException e) {
-            logger.error(messages.operationFailure());
-            logger.error(mm.deserialize(e.getMessage()));
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (player != null) {
+                try {
+                    // Get the player's last EditSession to redo.
+                    com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
+                    SessionManager manager = WorldEdit.getInstance().getSessionManager();
+                    LocalSession localSession = manager.get(actor);
+                    if (localSession != null) {
+                        BlockBag blockBag = localSession.getBlockBag(actor);
+                        EditSession redoSession = localSession.redo(blockBag, actor);
+                        if(redoSession != null) {
+                            localSession.remember(redoSession);
+                            audiences.player(player).sendMessage(messages.prefix().append(messages.redo()));
+                        } else {
+                            audiences.player(player).sendMessage(messages.prefix().append(messages.noRedo()));
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
-    private ClipboardReader prepareClipboardReader(File file) {
-        Messages messages = msgsMgr.getMessages();
-        ClipboardFormat clipboardFormat = ClipboardFormats.findByFile(file);
-        ClipboardReader clipboardReader = null;
-        try {
-            clipboardReader = Objects.requireNonNull(clipboardFormat).getReader(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
-            logger.error(messages.consoleSchematicNotFound());
-            logger.error(mm.deserialize(e.getMessage()));
+    private Clipboard loadClipboard(File schematic, String taskId, String nodeId) {
+        Messages messages = messagesManager.getMessages();
+
+        Clipboard clipboard;
+        ClipboardFormat format = ClipboardFormats.findByFile(schematic);
+        try(ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
+            clipboard = reader.read();
         } catch (IOException e) {
-            logger.error(messages.clipboardLoadFailure());
-            logger.error(mm.deserialize(e.getMessage()));
+            plugin.getLogger().log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.clipboardLoadFailure(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
+            throw new RuntimeException(e);
         }
-        return clipboardReader;
+        return clipboard;
     }
 
-    private EditSession prepareEditSession(org.bukkit.World world) {
-        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
-        return WorldEdit.getInstance().newEditSessionBuilder().world(weWorld).build();
+    private void completeOperation(Clipboard clipboard, com.sk89q.worldedit.world.World world, BlockVector3 blockVector3, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
+        Messages messages = messagesManager.getMessages();
+        if(player != null) {
+            com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try (EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(world).actor(actor).build()) {
+                    Operation operation = new ClipboardHolder(clipboard)
+                            .createPaste(editSession)
+                            .to(blockVector3)
+                            .ignoreAirBlocks(true)
+                            .build();
+
+                    // Check for player in region before pasting.
+                    playerCheck(region, safeLocation);
+
+                    Operations.complete(operation);
+
+                    saveEditSession(editSession, player);
+                } catch (WorldEditException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try (EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(world).build()) {
+                    Operation operation = new ClipboardHolder(clipboard)
+                            .createPaste(editSession)
+                            .to(blockVector3)
+                            .ignoreAirBlocks(true)
+                            .build();
+
+                    // Check for player in region before pasting.
+                    playerCheck(region, safeLocation);
+
+                    Operations.complete(operation);
+                } catch (WorldEditException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
 
-    private Operation prepareOperation(ClipboardReader clipboardReader, EditSession editSession, BlockVector3 blockVector3) {
-        Messages messages = msgsMgr.getMessages();
-        Operation operation;
-        Clipboard clipboard = null;
-        try {
-            clipboard = clipboardReader.read();
-        } catch (IOException e) {
-            logger.error(messages.clipboardLoadFailure());
-            logger.error(mm.deserialize(e.getMessage()));
+    private void saveEditSession(EditSession editSession, Player player) {
+        if (player != null) {
+            // Save the EditSession to the player's LocalSession
+            com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
+            SessionManager manager = WorldEdit.getInstance().getSessionManager();
+            LocalSession localSession = manager.get(actor);
+            localSession.remember(editSession);
         }
-        operation = new ClipboardHolder(Objects.requireNonNull(clipboard))
-                        .createPaste(editSession)
-                        .to(blockVector3)
-                        .ignoreAirBlocks(true)
-                        .build();
-        return operation;
     }
 
     private void playerCheck(ProtectedRegion skyNodeRegion, org.bukkit.Location safeLocation) {
-        Messages messages = msgsMgr.getMessages();
-        Settings settings = settingsMgr.getSettings();
+        Messages messages = messagesManager.getMessages();
+        Settings settings = settingsManager.getSettings();
+        BukkitAudiences audiences = plugin.getAudiences();
 
         // Get a list of all online players.
         Collection<? extends Player> playerList = Bukkit.getOnlinePlayers();
@@ -172,8 +242,8 @@ public class SchematicManager {
                     if (!p.hasPermission("skynodes.bypass.safeteleport")) {
                         p.teleport(safeLocation);
                     } else {
-                        if (settings.debug()) {
-                            p.sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
+                        if (settings.debug() && p.hasPermission("skynodes.debug")) {
+                            audiences.player(p).sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
                         }
                     }
                 }

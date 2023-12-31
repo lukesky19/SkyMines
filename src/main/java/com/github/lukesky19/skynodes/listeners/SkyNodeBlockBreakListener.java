@@ -22,40 +22,29 @@ import com.github.lukesky19.skynodes.managers.*;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.Settings;
 import com.github.lukesky19.skynodes.records.SkyNode;
-import com.github.lukesky19.skynodes.records.SkyTask;
-import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
 import com.sk89q.worldedit.math.BlockVector3;
 
 import java.util.*;
 
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.w3c.dom.Node;
 
-public class NodeBlockBreakListener implements Listener {
-    final SkyNodes plugin;
-    final ConfigManager cfgMgr;
-    final NodeManager nodeMgr;
-    final SkyTaskManager taskMgr;
-    final MessagesManager msgsMgr;
-    final SettingsManager settingsMgr;
-    final ConfigurateUtil confUtil;
-    final MiniMessage mm = MiniMessage.miniMessage();
-
-    public NodeBlockBreakListener(SkyNodes plugin) {
+public final class SkyNodeBlockBreakListener implements Listener {
+    public SkyNodeBlockBreakListener(SkyNodes plugin, MessagesManager messagesManager, SettingsManager settingsManager, SkyNodeManager skyNodeManager) {
         this.plugin = plugin;
-        cfgMgr = plugin.getCfgMgr();
-        nodeMgr = plugin.getNodeMgr();
-        taskMgr = plugin.getTaskMgr();
-        msgsMgr = plugin.getMsgsMgr();
-        settingsMgr = plugin.getSettingsMgr();
-        confUtil = plugin.getConfUtil();
+        this.messagesManager = messagesManager;
+        this.settingsManager = settingsManager;
+        this.skyNodeManager = skyNodeManager;
     }
+    final SkyNodes plugin;
+    final SkyNodeManager skyNodeManager;
+    final MessagesManager messagesManager;
+    final SettingsManager settingsManager;
 
     @EventHandler
     public void onNodeBreak(BlockBreakEvent e) {
@@ -63,10 +52,11 @@ public class NodeBlockBreakListener implements Listener {
         // a. within the world for a SkyNode
         // b. within the region for a SkyNode.
         // c. on the allowed-blocks list for a SkyNode.
-        Messages messages = msgsMgr.getMessages();
-        Settings settings = settingsMgr.getSettings();
+        Messages messages = messagesManager.getMessages();
+        Settings settings = settingsManager.getSettings();
+        BukkitAudiences audiences = plugin.getAudiences();
         BlockVector3 blockVector3 = BlockVector3.at(e.getBlock().getLocation().getX(), e.getBlock().getLocation().getY(), e.getBlock().getLocation().getZ());
-        List<SkyNode> allSkyNodes = nodeMgr.getAllSkyNodes();
+        List<SkyNode> allSkyNodes = skyNodeManager.getAllSkyNodes();
 
         for(SkyNode skyNode : allSkyNodes) {
             World world = skyNode.nodeWorld();
@@ -79,7 +69,7 @@ public class NodeBlockBreakListener implements Listener {
                 if(region.contains(blockVector3)) {
                     if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
                         if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                            e.getPlayer().sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
+                            audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
                         }
                         return;
                     }
@@ -88,12 +78,12 @@ public class NodeBlockBreakListener implements Listener {
                     for(Material mat : materials) {
                         if(Objects.equals(e.getBlock().getType(), mat)) {
                             if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                e.getPlayer().sendMessage(messages.prefix().append(messages.canMine()));
+                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canMine()));
                             }
                             return;
                         } else {
                             if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                e.getPlayer().sendMessage(messages.prefix().append(messages.canNotMine()));
+                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canNotMine()));
                             }
                             e.setCancelled(true);
                             return;

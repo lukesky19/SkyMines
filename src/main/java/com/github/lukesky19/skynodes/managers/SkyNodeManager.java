@@ -20,56 +20,63 @@ package com.github.lukesky19.skynodes.managers;
 import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.SkyNode;
-import com.github.lukesky19.skynodes.utils.ConfigurateUtil;
-import com.onarandombox.MultiverseCore.MultiverseCore;
+import com.github.lukesky19.skynodes.utils.ConfigLoaderUtil;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import org.bukkit.*;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class NodeManager {
+public final class SkyNodeManager {
+    // Constructor
+    public SkyNodeManager(SkyNodes plugin, ConfigLoaderUtil configLoaderUtil, MessagesManager messagesManager) {
+        this.plugin = plugin;
+        this.configLoaderUtil = configLoaderUtil;
+        this.messagesManager = messagesManager;
+    }
+
+    // Variables
     final SkyNodes plugin;
-    final ComponentLogger logger;
-    final ConfigManager cfgMgr;
-    final MessagesManager msgsMgr;
-    final ConfigurateUtil confUtil;
+    final ConfigLoaderUtil configLoaderUtil;
+    final MessagesManager messagesManager;
     final MiniMessage mm = MiniMessage.miniMessage();
+
     List<SkyNode> allSkyNodes;
+
+    // Getter(s)
     public List<SkyNode> getAllSkyNodes() {
         return allSkyNodes;
-    }
-    public void setAllSkyNodes(List<SkyNode> list) {
-        this.allSkyNodes = list;
-    }
-
-    public NodeManager(SkyNodes plugin) {
-        this.plugin = plugin;
-        logger = this.plugin.getComponentLogger();
-        cfgMgr = plugin.getCfgMgr();
-        msgsMgr = plugin.getMsgsMgr();
-        confUtil = plugin.getConfUtil();
     }
 
     /**
      * Loads, and stores all configured SkyNodes into memory.
      * Will not store any null SkyNodes (invalid configuration).
      */
-    public List<SkyNode> loadSkyNodes(CommentedConfigurationNode task) {
-        List<CommentedConfigurationNode> nodesList = confUtil.getConfigSection(task, "nodes");
+
+    public List<SkyNode> loadSkyNodes(@NotNull CommentedConfigurationNode task) {
+        allSkyNodes = new ArrayList<>();
+        List<CommentedConfigurationNode> nodesList = configLoaderUtil.getConfigSection(task, "nodes");
         List<SkyNode> skyNodesList = new ArrayList<>();
             for(CommentedConfigurationNode skyNodeComConfNode : nodesList) {
-                SkyNode skyNode = createSkyNode(task.key().toString(), skyNodeComConfNode);
+                SkyNode skyNode = createSkyNode(Objects.requireNonNull(task.key()).toString(), skyNodeComConfNode);
                 if (skyNode != null) {
                     skyNodesList.add(skyNode);
                     allSkyNodes.add(skyNode);
@@ -84,26 +91,26 @@ public class NodeManager {
      * @return A new SkyNode object or null.
      */
     private SkyNode createSkyNode(String taskId, CommentedConfigurationNode nodeConfig) {
+        Logger logger = plugin.getLogger();
         // Plugin Messages
-        Messages messages = msgsMgr.getMessages();
+        Messages messages = messagesManager.getMessages();
 
         // Variables for data necessary for a new Node object.
-        String nodeId = nodeConfig.key().toString();
+        String nodeId = Objects.requireNonNull(nodeConfig.key()).toString();
         World nodeWorld;
         BlockVector3 vector;
-        int nodeX, nodeY, nodeZ;
         List<File> nodeSchematics = new ArrayList<>();
         ProtectedRegion nodeRegion;
         Location safeLocation;
         List<Material> materialsList = new ArrayList<>();
 
         // Get the configured world for the node
-        MultiverseCore core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
-        nodeWorld = core.getMVWorldManager().getMVWorld(nodeConfig.node("world").getString()).getCBWorld();
+        nodeWorld = Bukkit.getWorld(Objects.requireNonNull(nodeConfig.node("world").getString()));
         if(nodeWorld == null) {
-            logger.error(mm.deserialize(messages.worldNotFound(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.worldNotFound(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -114,9 +121,10 @@ public class NodeManager {
                     Integer.parseInt(coords[1]),
                     Integer.parseInt(coords[2]));
         } catch (NumberFormatException e) {
-            logger.error(mm.deserialize(messages.invalidLocation(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidLocation(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -125,9 +133,10 @@ public class NodeManager {
         try {
             schemNames = nodeConfig.node("schematics").getList(String.class);
         } catch (SerializationException e) {
-            logger.error(mm.deserialize(messages.schematicsListError(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.schematicsListError(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -140,9 +149,10 @@ public class NodeManager {
                 } else if (plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit") != null) {
                     file = new File(Objects.requireNonNull(plugin.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit")).getDataFolder() + File.separator + "schematics" + File.separator + s);
                 } else {
-                    logger.error(mm.deserialize(messages.consoleSchematicNotFound(),
-                            Placeholder.parsed("taskid", taskId),
-                            Placeholder.parsed("nodeid", nodeId)));
+                    logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                            mm.deserialize(messages.schematicNotFound(),
+                                    Placeholder.parsed("taskid", taskId),
+                                    Placeholder.parsed("nodeid", nodeId))));
                     return null;
                 }
                 // If the schematic exists on disk, add it to the list of schematic files.
@@ -156,9 +166,10 @@ public class NodeManager {
         if(Objects.requireNonNull(regions).hasRegion(nodeConfig.node("region").getString())) {
             nodeRegion = regions.getRegion(Objects.requireNonNull(nodeConfig.node("region").getString()));
         } else {
-            logger.error(mm.deserialize(messages.invalidRegion(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidRegion(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -172,9 +183,10 @@ public class NodeManager {
                     Integer.parseInt(safeLocationXYZ[1]),
                     Integer.parseInt(safeLocationXYZ[2]));
         } catch (NumberFormatException e) {
-            logger.error(mm.deserialize(messages.invalidSafeLocation(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidSafeLocation(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -183,9 +195,10 @@ public class NodeManager {
         try {
             materialIds = nodeConfig.node("blocks-allowed").getList(String.class);
         } catch (SerializationException e) {
-            logger.error(mm.deserialize(messages.blocksAllowedListError(),
-                    Placeholder.parsed("taskid", taskId),
-                    Placeholder.parsed("nodeid", nodeId)));
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.blocksAllowedListError(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
             return null;
         }
 
@@ -194,9 +207,10 @@ public class NodeManager {
             try {
                 materialsList.add(Material.matchMaterial(id));
             } catch (Exception e) {
-                logger.error(mm.deserialize(messages.invalidBlockMaterial(),
-                        Placeholder.parsed("taskid", taskId),
-                        Placeholder.parsed("nodeid", nodeId)));
+                logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                        mm.deserialize(messages.invalidBlockMaterial(),
+                                Placeholder.parsed("taskid", taskId),
+                                Placeholder.parsed("nodeid", nodeId))));
                 return null;
             }
         }

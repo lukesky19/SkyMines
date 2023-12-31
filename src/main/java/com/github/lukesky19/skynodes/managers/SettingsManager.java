@@ -19,18 +19,19 @@ package com.github.lukesky19.skynodes.managers;
 
 import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Settings;
+import com.github.lukesky19.skynodes.utils.ConfigLoaderUtil;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 
-public class SettingsManager {
+public final class SettingsManager {
     // Constructor(s)
-    public SettingsManager(SkyNodes plugin) {
+    public SettingsManager(SkyNodes plugin, ConfigLoaderUtil configLoaderUtil) {
         this.plugin = plugin;
-        cfgMgr = plugin.getCfgMgr();
+        this.configLoaderUtil = configLoaderUtil;
     }
 
     // Variable(s)
     final SkyNodes plugin;
-    final ConfigManager cfgMgr;
+    final ConfigLoaderUtil configLoaderUtil;
     Settings settings;
 
     // Getter(s)
@@ -43,8 +44,8 @@ public class SettingsManager {
     private void loadSettings(CommentedConfigurationNode comConfNode) {
         boolean debug;
 
-        if(!comConfNode.node("debug").isNull()) {
-            debug = comConfNode.node("debug").getBoolean();
+        if(!comConfNode.node("settings", "debug").virtual()) {
+            debug = comConfNode.node("settings", "debug").getBoolean();
         } else {
             debug = false;
         }
@@ -54,6 +55,6 @@ public class SettingsManager {
 
     // (Re-)loads the settings
     public void reloadSettings() {
-        loadSettings(cfgMgr.getNodesConfig());
+        loadSettings(configLoaderUtil.getSettingsConfig());
     }
 }

@@ -10,10 +10,14 @@ tasks:
       # NODEID:
         ## World needs to be a valid and loaded World.
         # world: WORLD_NAME
-        ## A X, Y, and Z coordinate.
-        # location: 0 0 0
-        ## A X, Y, and Z coordinate.
+        ## A list of X, Y, and Z coordinates where the schematic will be placed at. (Randomly chosen)
+        # locations:
+          # - 0 0 0
+          # - 1 1 1
+          # - 2 2 2
+        ## A single X, Y, and Z coordinate.
         # safe-location: 0 0 0
+        ## A list of schematics to paste for the node. (Randomly chosen)
         ## Any schematic here must exist inside WorldEdit/schematics or FastAsyncWorldEdit/schematics.
         # schematics:
           # - "SCHEMATIC_NAME.schem"

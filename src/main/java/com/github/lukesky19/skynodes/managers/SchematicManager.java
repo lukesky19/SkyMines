@@ -84,10 +84,11 @@ public final class SchematicManager {
      * @param player The player to save the paste's EditSession to.
      * @return true if successful, false if it fails.
      */
-    public void paste(String taskId, String nodeId, World world, BlockVector3 blockVector3, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
+    public void paste(String taskId, String nodeId, World world, List<BlockVector3> vector3List, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
         Messages configMessages = messagesManager.getMessages();
         Logger logger = plugin.getLogger();
         File file = schemList.get(new Random().nextInt(schemList.size()));
+        BlockVector3 blockVector3 = vector3List.get(new Random().nextInt(vector3List.size()));
 
         Clipboard clipboard = loadClipboard(file, taskId, nodeId);
         com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);

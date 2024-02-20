@@ -29,7 +29,7 @@ import java.util.List;
 public record SkyNode(
         String nodeId,
         World nodeWorld,
-        BlockVector3 blockVector3,
+        List<BlockVector3> vector3List,
         List<File> nodeSchems,
         ProtectedRegion region,
         Location safeLocation,

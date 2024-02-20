@@ -193,7 +193,7 @@ public final class SkyNodeCommand implements CommandExecutor, TabCompleter {
                                     for (SkyNode skyNode : skyTask.skyNodes()) {
                                         if (args[2].equals(skyNode.nodeId())) {
                                             try {
-                                                schematicManager.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.blockVector3(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
+                                                schematicManager.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.vector3List(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
                                             } catch (Exception e) {
                                                 throw new RuntimeException(e);
                                             } finally {

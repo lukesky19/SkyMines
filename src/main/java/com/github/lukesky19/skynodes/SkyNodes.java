@@ -140,7 +140,7 @@ public final class SkyNodes extends JavaPlugin {
                 public void run() {
                     SkyNode randSkyNode = skyNodes.get(new Random().nextInt(skyNodes.size()));
                     try {
-                        schematicManager.paste(taskId, randSkyNode.nodeId(), randSkyNode.nodeWorld(), randSkyNode.blockVector3(), randSkyNode.nodeSchems(), randSkyNode.region(), randSkyNode.safeLocation(), null);
+                        schematicManager.paste(taskId, randSkyNode.nodeId(), randSkyNode.nodeWorld(), randSkyNode.vector3List(), randSkyNode.nodeSchems(), randSkyNode.region(), randSkyNode.safeLocation(), null);
                     } finally {
                         if (settings.debug()) {
                             logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(

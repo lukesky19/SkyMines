@@ -21,6 +21,8 @@ import com.github.lukesky19.skynodes.SkyNodes;
 import com.github.lukesky19.skynodes.records.Messages;
 import com.github.lukesky19.skynodes.records.SkyNode;
 import com.github.lukesky19.skynodes.utils.ConfigLoaderUtil;
+import com.onarandombox.MultiverseCore.MultiverseCore;
+import com.onarandombox.MultiverseCore.api.MultiverseWorld;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.WorldGuard;
@@ -34,6 +36,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
@@ -98,15 +101,17 @@ public final class SkyNodeManager {
         // Variables for data necessary for a new Node object.
         String nodeId = Objects.requireNonNull(nodeConfig.key()).toString();
         World nodeWorld;
-        BlockVector3 vector;
+        List<BlockVector3> vectors = new ArrayList<>();
         List<File> nodeSchematics = new ArrayList<>();
         ProtectedRegion nodeRegion;
         Location safeLocation;
         List<Material> materialsList = new ArrayList<>();
 
         // Get the configured world for the node
-        nodeWorld = Bukkit.getWorld(Objects.requireNonNull(nodeConfig.node("world").getString()));
-        if(nodeWorld == null) {
+        MultiverseCore core = (MultiverseCore) plugin.getServer().getPluginManager().getPlugin("Multiverse-Core");
+        try {
+            nodeWorld = core.getMVWorldManager().getMVWorld(nodeConfig.node("world").getString()).getCBWorld();
+        } catch (Exception e) {
             logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
                     mm.deserialize(messages.worldNotFound(),
                             Placeholder.parsed("taskid", taskId),
@@ -114,13 +119,28 @@ public final class SkyNodeManager {
             return null;
         }
 
+        // Parse the locations configured for the node
+        List<String> coordsList = new ArrayList<>();
         try {
-            String[] coords = Objects.requireNonNull(nodeConfig.node("location").getString()).split(" ");
-            vector = BlockVector3.at(
-                    Integer.parseInt(coords[0]),
-                    Integer.parseInt(coords[1]),
-                    Integer.parseInt(coords[2]));
-        } catch (NumberFormatException e) {
+            coordsList = nodeConfig.node("location").getList(String.class);
+        } catch (SerializationException e) {
+            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+                    mm.deserialize(messages.invalidLocation(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId))));
+            return null;
+        }
+
+        if(!coordsList.isEmpty()) {
+            for(String set : coordsList) {
+                String[] coords = set.split(" ");
+                BlockVector3 vector = BlockVector3.at(
+                        Integer.parseInt(coords[0]),
+                        Integer.parseInt(coords[1]),
+                        Integer.parseInt(coords[2]));
+                vectors.add(vector);
+            }
+        } else {
             logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
                     mm.deserialize(messages.invalidLocation(),
                             Placeholder.parsed("taskid", taskId),
@@ -215,7 +235,7 @@ public final class SkyNodeManager {
             }
         }
 
-        return new SkyNode(nodeId, nodeWorld, vector, nodeSchematics, nodeRegion, safeLocation, materialsList);
+        return new SkyNode(nodeId, nodeWorld, vectors, nodeSchematics, nodeRegion, safeLocation, materialsList);
     }
 
 }

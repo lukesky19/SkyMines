@@ -24,7 +24,7 @@ NodePasteFailure: "<red>Node <white><nodeid> <red>for task <white><taskid> <red>
 WorldNotFound: "<red>The world for task <white><taskid> <red>and node <white><nodeid> <red>is invalid."
 SchematicsListError: "<red>The plugin was unable to obtain the schematic names for task <white><taskId> <red>and node <white><nodeid><red>. Is the node formatted correctly?"
 SchematicNotFound: "<red>A schematic configured for task <white><taskid> <red>and node <white><nodeid> <red>is invalid or does not exist."
-InvalidLocation: "<red>The X Y Z coordinates of <white>location <red>for task <white><taskid> <red>and node <white><nodeid> <red>are invalid."
+InvalidLocation: "<red>One of the X Y Z coordinates of <white>locations <red>for task <white><taskid> <red>and node <white><nodeid> <red>are invalid."
 InvalidSafeLocation: "<red>The X Y Z coordinates of <white>safe-location <red>for task <white><taskid> <red>and node <white><nodeid> <red>are invalid."
 InvalidRegion: "<red>The region for task <white><taskid> <red>and node <white><nodeid> <red>does not exist."
 BlocksAllowedListError: "<red>The plugin was unable to obtain the blocks-allowed list for task <white><taskid> <red>and node <white><nodeid><red>. Is the node formatted correctly?"

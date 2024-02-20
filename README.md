@@ -12,6 +12,7 @@
 ## Dependencies
 * WorldEdit or FastAsyncWorldEdit
 * WorldGuard
+* Multiverse-Core
 
 ## FAQ
 Q: What versions does this plugin support?

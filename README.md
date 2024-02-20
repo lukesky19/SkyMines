@@ -1,6 +1,6 @@
 # SkyNodes
 ## Description
-* This plugin takes a configured task with a delay and a list of nodes, picks a random node, and pastes it in a set location for that node.
+* This plugin allows you to configure tasks with a delay. Each task will randomly choose a node, which randomly chooses a schematic and location from a configured list to paste in.
 
 ## Features
 * Supports WorldEdit and FastAsyncWorldEdit

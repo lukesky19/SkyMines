@@ -17,233 +17,397 @@
 */
 package com.github.lukesky19.skynodes.commands;
 
-import com.github.lukesky19.skynodes.managers.MessagesManager;
-import com.github.lukesky19.skynodes.managers.SkyTaskManager;
-import com.github.lukesky19.skynodes.records.Messages;
-import com.github.lukesky19.skynodes.managers.SchematicManager;
+import com.github.lukesky19.skynodes.configuration.config.ParsedConfig;
+import com.github.lukesky19.skynodes.configuration.config.ConfigManager;
+import com.github.lukesky19.skynodes.configuration.locale.LocaleManager;
+import com.github.lukesky19.skynodes.configuration.locale.FormattedLocale;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsManager;
+import com.github.lukesky19.skynodes.utils.PasteManager;
 import com.github.lukesky19.skynodes.SkyNodes;
-import com.github.lukesky19.skynodes.records.SkyNode;
-import com.github.lukesky19.skynodes.records.SkyTask;
-import com.sk89q.worldedit.command.WorldEditCommands;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
-import net.kyori.adventure.platform.bukkit.BukkitComponentSerializer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
-import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
-import org.checkerframework.checker.units.qual.A;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static org.bukkit.Bukkit.getDefaultGameMode;
-import static org.bukkit.Bukkit.getServer;
 
 public final class SkyNodeCommand implements CommandExecutor, TabCompleter {
-    final SkyNodes plugin;
-    final MessagesManager messagesManager;
-    final SchematicManager schematicManager;
-    final SkyTaskManager skyTaskManager;
+    final SkyNodes skyNodes;
+    final SettingsManager settingsManager;
+    final LocaleManager localeManager;
+    final PasteManager pasteManager;
+    final ConfigManager configManager;
     final MiniMessage mm = MiniMessage.miniMessage();
-    public SkyNodeCommand(SkyNodes plugin, MessagesManager messagesManager, SchematicManager schematicManager, SkyTaskManager skyTaskManager) {
-        this.plugin = plugin;
-        this.messagesManager = messagesManager;
-        this.schematicManager = schematicManager;
-        this.skyTaskManager = skyTaskManager;
+    public SkyNodeCommand(
+            SkyNodes skyNodes,
+            SettingsManager settingsManager,
+            LocaleManager localeManager,
+            PasteManager pasteManager,
+            ConfigManager configManager) {
+        this.skyNodes = skyNodes;
+        this.settingsManager = settingsManager;
+        this.localeManager = localeManager;
+        this.pasteManager = pasteManager;
+        this.configManager = configManager;
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        Messages messages = messagesManager.getMessages();
-        BukkitAudiences audiences = plugin.getAudiences();
-        Logger logger = plugin.getLogger();
-        switch (args.length) {
+        FormattedLocale messages = localeManager.formattedLocale();
+        ComponentLogger logger = skyNodes.getComponentLogger();
+
+        switch(args.length) {
             case 1 -> {
-                switch (args[0]) {
-                    case "reload" -> {
-                        if (sender instanceof Player) {
-                            if (sender.hasPermission("skynodes.commands.reload")) {
-                                try {
-                                    plugin.reload();
-                                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.reload()));
-                                    return true;
-                                } catch (Exception e) {
-                                    throw new RuntimeException(e);
-                                }
-                            } else {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
-                                return false;
-                            }
-                        } else {
-                            try {
-                                plugin.reload();
-                                logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.reload()));
-                                return true;
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    }
+                switch(args[0]) {
                     case "help" -> {
-                        if(sender instanceof Player) {
-                            if (sender.hasPermission("skynodes.commands.help")) {
-                                List<Component> helpMessage = messages.help();
-                                for (Component msg : helpMessage) {
-                                    audiences.player((Player) sender).sendMessage(msg);
+                        if(sender instanceof Player player) {
+                            if(sender.hasPermission("skynodes.commands.help")) {
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                for (Component msg : messages.help()) {
+                                    player.sendMessage(msg);
                                 }
                                 return true;
                             } else {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.noPermission()));
                                 return false;
                             }
                         } else {
-                            List<Component> helpMessage = messages.help();
-                            for (Component msg : helpMessage) {
-                                logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(msg));
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            for (Component msg : messages.help()) {
+                                logger.info(msg);
                             }
                             return true;
                         }
                     }
+
+                    case "reload" -> {
+                        if(sender instanceof Player player) {
+                            if(sender.hasPermission("skynodes.commands.reload")) {
+                                skyNodes.reload();
+                                if(!skyNodes.isPluginEnabled()) {
+                                    logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin has been soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+                                player.sendMessage(messages.prefix().append(messages.reload()));
+                                return true;
+                            } else {
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.noPermission()));
+                                return false;
+                            }
+                        } else {
+                            skyNodes.reload();
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin has been soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            logger.warn(messages.reload());
+                            return true;
+                        }
+                    }
+
                     case "paste" -> {
-                        if(sender instanceof Player) {
-                            if (sender.hasPermission("skynodes.commands.paste")) {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.missingArgumentTaskId()));
+                        if(sender instanceof Player player) {
+                            if(sender.hasPermission("skynodes.commands.paste")) {
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.missingArgumentTaskId()));
                                 return true;
                             } else {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.noPermission()));
                                 return false;
                             }
                         } else {
-                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            logger.info(messages.inGameOnly());
                             return false;
                         }
                     }
+
                     case "undo" -> {
-                        if(sender instanceof Player) {
+                        if(sender instanceof Player player) {
                             if (sender.hasPermission("skynodes.commands.undo")) {
-                                schematicManager.undo((Player) sender);
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                pasteManager.undo((Player) sender);
                                 return true;
                             } else {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.noPermission()));
                                 return false;
                             }
                         } else {
-                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            logger.info(messages.inGameOnly());
                             return false;
                         }
                     }
+
                     case "redo" -> {
-                        if(sender instanceof Player) {
+                        if(sender instanceof Player player) {
                             if (sender.hasPermission("skynodes.commands.redo")) {
-                                schematicManager.redo((Player) sender);
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                pasteManager.redo((Player) sender);
                                 return true;
                             } else {
-                                audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                                if(!skyNodes.isPluginEnabled()) {
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                    player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                    return false;
+                                }
+
+                                player.sendMessage(messages.prefix().append(messages.noPermission()));
                                 return false;
                             }
                         } else {
-                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            logger.info(messages.inGameOnly());
                             return false;
                         }
                     }
+
                     default -> {
-                        if(sender instanceof Player) {
-                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
-                            return false;
+                        if(sender instanceof Player player) {
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return false;
+                            }
+
+                            player.sendMessage(messages.prefix().append(messages.unknownArgument()));
                         } else {
-                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.unknownArgument()));
-                            return false;
+                            if(!skyNodes.isPluginEnabled()) {
+                                logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                return false;
+                            }
+
+                            logger.info(messages.unknownArgument());
                         }
+                        return false;
                     }
                 }
             }
+
             case 2 -> {
-                if (args[0].equals("paste")) {
-                    if(sender instanceof Player) {
+                if(args[0].equals("paste")) {
+                    if(sender instanceof Player player) {
                         if (sender.hasPermission("skynodes.commands.paste")) {
-                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.missingArgumentNodeId()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return false;
+                            }
+
+                            player.sendMessage(messages.prefix().append(messages.missingArgumentNodeId()));
                             return true;
                         } else {
-                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return false;
+                            }
+
+                            player.sendMessage(messages.prefix().append(messages.noPermission()));
                             return false;
                         }
                     } else {
-                        logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                        if(!skyNodes.isPluginEnabled()) {
+                            logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return false;
+                        }
+
+                        logger.info(messages.inGameOnly());
                         return false;
                     }
                 } else {
-                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
+                    if(sender instanceof Player player) {
+                        if(!skyNodes.isPluginEnabled()) {
+                            player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                            return false;
+                        }
+
+                        player.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                    } else {
+                        if(!skyNodes.isPluginEnabled()) {
+                            logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return false;
+                        }
+
+                        logger.info(messages.unknownArgument());
+                    }
                     return false;
                 }
             }
+
             case 3 -> {
-                if (args[0].equals("paste")) {
-                    if (sender instanceof Player) {
-                        if (sender.hasPermission("skynodes.commands.paste")) {
-                            for (SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
-                                if (args[1].equals(skyTask.taskId())) {
-                                    for (SkyNode skyNode : skyTask.skyNodes()) {
-                                        if (args[2].equals(skyNode.nodeId())) {
+                if(args[0].equals("paste")) {
+                    if(sender instanceof Player player) {
+                        if(sender.hasPermission("skynodes.commands.paste")) {
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return false;
+                            }
+
+                            for(Map.Entry<String, ParsedConfig.SkyTask> skyTaskEntry : configManager.getConfiguration().tasks().entrySet()) {
+                                String taskId = skyTaskEntry.getKey();
+
+                                if(args[1].equals(taskId)) {
+                                    for(Map.Entry<String, ParsedConfig.SkyNode> skyNodeEntry : skyTaskEntry.getValue().skyNodes().entrySet()) {
+                                        ParsedConfig.SkyNode skyNode = skyNodeEntry.getValue();
+                                        String nodeId = skyNodeEntry.getKey();
+
+                                        if(args[2].equals(nodeId)) {
                                             try {
-                                                schematicManager.paste(skyTask.taskId(), skyNode.nodeId(), skyNode.nodeWorld(), skyNode.vector3List(), skyNode.nodeSchems(), skyNode.region(), skyNode.safeLocation(), (Player) sender);
-                                            } catch (Exception e) {
-                                                throw new RuntimeException(e);
+                                                pasteManager.paste(taskId, nodeId, skyNode, player);
                                             } finally {
-                                                audiences.player((Player) sender).sendMessage(messages.prefix().append(
-                                                        mm.deserialize(messages.nodePasteSuccess(),
-                                                                Placeholder.parsed("taskid", args[1]),
-                                                                Placeholder.parsed("nodeid", args[2]))));
-                                                return true;
+                                                if (settingsManager.getSettings().debug()) {
+                                                    logger.info(
+                                                            MiniMessage.miniMessage().deserialize(localeManager.formattedLocale().nodePasteSuccess(),
+                                                                    Placeholder.parsed("taskid", taskId),
+                                                                    Placeholder.parsed("nodeid", nodeId)));
+                                                }
                                             }
+                                            return true;
                                         }
                                     }
-                                    audiences.player((Player) sender).sendMessage(messages.prefix().append(
+
+                                    player.sendMessage(messages.prefix().append(
                                             mm.deserialize(messages.invalidNodeId(),
                                                     Placeholder.parsed("nodeid", args[2]))));
                                     return false;
                                 }
                             }
-                            audiences.player((Player) sender).sendMessage(messages.prefix().append(
+
+                            player.sendMessage(messages.prefix().append(
                                     mm.deserialize(messages.invalidTaskId(),
                                             Placeholder.parsed("taskid", args[1]))));
                             return false;
                         } else {
-                            audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.noPermission()));
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return false;
+                            }
+
+                            player.sendMessage(messages.prefix().append(messages.noPermission()));
                             return false;
                         }
                     } else {
-                        logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.inGameOnly()));
+                        if(!skyNodes.isPluginEnabled()) {
+                            logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return false;
+                        }
+
+                        logger.info(messages.inGameOnly());
                         return false;
                     }
                 } else {
-                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
-                    return false;
+                    if(sender instanceof Player player) {
+                        if(!skyNodes.isPluginEnabled()) {
+                            player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                            return false;
+                        }
+
+                        player.sendMessage(messages.prefix().append(messages.unknownArgument()));
+                        return false;
+                    }  else {
+                        if(!skyNodes.isPluginEnabled()) {
+                            logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return false;
+                        }
+
+                        logger.info(messages.unknownArgument());
+                    }
                 }
             }
+
             default -> {
-                if(sender instanceof Player) {
-                    audiences.player((Player) sender).sendMessage(messages.prefix().append(messages.unknownArgument()));
-                    return false;
+                if(sender instanceof Player player) {
+                    if(!skyNodes.isPluginEnabled()) {
+                        logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                        return false;
+                    }
+
+                    player.sendMessage(messages.prefix().append(messages.unknownArgument()));
                 } else {
-                    logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.unknownArgument()));
-                    return false;
+                    if(!skyNodes.isPluginEnabled()) {
+                        logger.warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                        return false;
+                    }
+
+                    logger.info(messages.unknownArgument());
                 }
+                return false;
             }
         }
+        return false;
     }
 
     @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        BukkitAudiences audiences = plugin.getAudiences();
-        Messages messages = messagesManager.getMessages();
+    public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         switch(args.length) {
             case 1 -> {
                 ArrayList<String> subCmds = new ArrayList<>();
@@ -272,11 +436,26 @@ public final class SkyNodeCommand implements CommandExecutor, TabCompleter {
             case 2 -> {
                 if(args[0].equalsIgnoreCase("paste")) {
                     List<String> taskIds = new ArrayList<>();
-                    if(sender instanceof Player) {
+                    if(sender instanceof Player player) {
                         if(sender.hasPermission("skynodes.commands.paste")) {
-                            for(SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
-                                taskIds.add(skyTask.taskId());
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return new ArrayList<>();
                             }
+
+                            for(Map.Entry<String, ParsedConfig.SkyTask> skyTask : configManager.getConfiguration().tasks().entrySet()) {
+                                taskIds.add(skyTask.getKey());
+                            }
+                        }
+                    } else {
+                        if(!skyNodes.isPluginEnabled()) {
+                            skyNodes.getComponentLogger().warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return new ArrayList<>();
+                        }
+
+                        for(Map.Entry<String, ParsedConfig.SkyTask> skyTask : configManager.getConfiguration().tasks().entrySet()) {
+                            taskIds.add(skyTask.getKey());
                         }
                     }
                     return taskIds;
@@ -286,14 +465,32 @@ public final class SkyNodeCommand implements CommandExecutor, TabCompleter {
             case 3 -> {
                 if (args[0].equalsIgnoreCase("paste")) {
                     List<String> nodeIds = new ArrayList<>();
-                    if(sender instanceof Player) {
+                    if(sender instanceof Player player) {
                         if(sender.hasPermission("skynodes.commands.paste")) {
-                            for(SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
-                                if(Objects.equals(skyTask.taskId(), args[1])) {
-                                    List<SkyNode> nodesList = skyTask.skyNodes();
-                                    for(SkyNode skyNode : nodesList) {
-                                        nodeIds.add(skyNode.nodeId());
+                            if(!skyNodes.isPluginEnabled()) {
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                                player.sendMessage(MiniMessage.miniMessage().deserialize("<gray>[</gray><aqua>SkyShop</aqua><gray>]</gray> <red>Please check your server's console for more information.</red>"));
+                                return new ArrayList<>();
+                            }
+
+                            for(Map.Entry<String, ParsedConfig.SkyTask> skyTask : configManager.getConfiguration().tasks().entrySet()) {
+                                if(Objects.equals(args[1], skyTask.getKey())) {
+                                    for(Map.Entry<String, ParsedConfig.SkyNode> skyNode : skyTask.getValue().skyNodes().entrySet()) {
+                                        nodeIds.add(skyNode.getKey());
                                     }
+                                }
+                            }
+                        }
+                    } else {
+                        if(!skyNodes.isPluginEnabled()) {
+                            skyNodes.getComponentLogger().warn(MiniMessage.miniMessage().deserialize("<red>The plugin is currently is soft-disabled due to a configuration error.</red>"));
+                            return new ArrayList<>();
+                        }
+
+                        for(Map.Entry<String, ParsedConfig.SkyTask> skyTask : configManager.getConfiguration().tasks().entrySet()) {
+                            if(Objects.equals(args[1], skyTask.getKey())) {
+                                for(Map.Entry<String, ParsedConfig.SkyNode> skyNode : skyTask.getValue().skyNodes().entrySet()) {
+                                    nodeIds.add(skyNode.getKey());
                                 }
                             }
                         }

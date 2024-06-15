@@ -15,12 +15,10 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.records;
+package com.github.lukesky19.skynodes.configuration.settings;
 
-import java.util.List;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
-public record SkyTask(
-        String taskId,
-        int delaySeconds,
-        List<SkyNode> skyNodes) {
+@ConfigSerializable
+public record SettingsConfiguration(boolean debug, String locale) {
 }

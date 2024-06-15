@@ -18,74 +18,88 @@
 package com.github.lukesky19.skynodes.listeners;
 
 import com.github.lukesky19.skynodes.SkyNodes;
-import com.github.lukesky19.skynodes.managers.*;
-import com.github.lukesky19.skynodes.records.Messages;
-import com.github.lukesky19.skynodes.records.Settings;
-import com.github.lukesky19.skynodes.records.SkyNode;
+import com.github.lukesky19.skynodes.configuration.config.ConfigValidator;
+import com.github.lukesky19.skynodes.configuration.config.ParsedConfig;
+import com.github.lukesky19.skynodes.configuration.config.ConfigManager;
+import com.github.lukesky19.skynodes.configuration.locale.LocaleManager;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsManager;
+import com.github.lukesky19.skynodes.configuration.locale.FormattedLocale;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsConfiguration;
+import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.sk89q.worldedit.math.BlockVector3;
 
 import java.util.*;
 
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
-public final class SkyNodeBlockBreakListener implements Listener {
-    public SkyNodeBlockBreakListener(SkyNodes plugin, MessagesManager messagesManager, SettingsManager settingsManager, SkyNodeManager skyNodeManager) {
+public class SkyNodeBlockBreakListener implements Listener {
+    public SkyNodeBlockBreakListener(
+            SkyNodes plugin,
+            LocaleManager localeManager,
+            SettingsManager settingsManager,
+            ConfigManager configManager,
+            ConfigValidator configValidator) {
         this.plugin = plugin;
-        this.messagesManager = messagesManager;
+        this.localeManager = localeManager;
         this.settingsManager = settingsManager;
-        this.skyNodeManager = skyNodeManager;
+        this.configManager = configManager;
+        this.configValidator = configValidator;
     }
     final SkyNodes plugin;
-    final SkyNodeManager skyNodeManager;
-    final MessagesManager messagesManager;
+    final ConfigManager configManager;
+    final LocaleManager localeManager;
     final SettingsManager settingsManager;
+    final ConfigValidator configValidator;
 
     @EventHandler
     public void onNodeBreak(BlockBreakEvent e) {
+        if(!plugin.isPluginEnabled()) return;
+
         // Check if the block broken is:
         // a. within the world for a SkyNode
         // b. within the region for a SkyNode.
         // c. on the allowed-blocks list for a SkyNode.
-        Messages messages = messagesManager.getMessages();
-        Settings settings = settingsManager.getSettings();
-        BukkitAudiences audiences = plugin.getAudiences();
+        FormattedLocale formattedLocale = localeManager.formattedLocale();
+        SettingsConfiguration settingsConfiguration = settingsManager.getSettings();
         BlockVector3 blockVector3 = BlockVector3.at(e.getBlock().getLocation().getX(), e.getBlock().getLocation().getY(), e.getBlock().getLocation().getZ());
-        List<SkyNode> allSkyNodes = skyNodeManager.getAllSkyNodes();
 
-        for(SkyNode skyNode : allSkyNodes) {
-            World world = skyNode.nodeWorld();
-            ProtectedRegion region = skyNode.region();
-            List<Material> materials = skyNode.materials();
+        for(Map.Entry<String, ParsedConfig.SkyTask> skyTaskEntry : configManager.getConfiguration().tasks().entrySet()) {
+            for(Map.Entry<String, ParsedConfig.SkyNode> skyNodeEntry : skyTaskEntry.getValue().skyNodes().entrySet()) {
+                ParsedConfig.SkyNode skyNode = skyNodeEntry.getValue();
 
-            // World Check
-            if(Objects.equals(e.getBlock().getWorld(), world)) {
-                // Region Check
-                if(region.contains(blockVector3)) {
-                    if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
-                        if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                            audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.bypassedBlockBreakCheck()));
-                        }
-                        return;
-                    }
+                MultiverseCore mVCore = (MultiverseCore) plugin.getServer().getPluginManager().getPlugin("Multiverse-Core");
+                World nodeWorld;
+                nodeWorld = Objects.requireNonNull(mVCore).getMVWorldManager().getMVWorld(skyNode.nodeWorld()).getCBWorld();
 
-                    // Material Check
-                    for(Material mat : materials) {
-                        if(Objects.equals(e.getBlock().getType(), mat)) {
-                            if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canMine()));
+                ProtectedRegion region = configValidator.verifyRegion(skyTaskEntry.getKey(), skyNodeEntry.getKey(), skyNode.region(), nodeWorld);
+
+                List<Material> materialsList = skyNode.materials();
+
+                if(Objects.equals(e.getBlock().getWorld(), nodeWorld)) {
+                    if(region.contains(blockVector3)) {
+                        if(e.getPlayer().hasPermission("skynodes.bypass.blockbreakcheck")) {
+                            if(settingsConfiguration.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                                e.getPlayer().sendMessage(formattedLocale.prefix().append(formattedLocale.bypassedBlockBreakCheck()));
                             }
                             return;
-                        } else {
-                            if(settings.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
-                                audiences.player(e.getPlayer()).sendMessage(messages.prefix().append(messages.canNotMine()));
+                        }
+
+                        for(Material mat : materialsList) {
+                            if(Objects.equals(e.getBlock().getType(), mat)) {
+                                if(settingsConfiguration.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                                    e.getPlayer().sendMessage(formattedLocale.prefix().append(formattedLocale.canMine()));
+                                }
+                            } else {
+                                if(settingsConfiguration.debug() && e.getPlayer().hasPermission("skynodes.debug")) {
+                                    e.getPlayer().sendMessage(formattedLocale.prefix().append(formattedLocale.canNotMine()));
+                                }
+                                e.setCancelled(true);
                             }
-                            e.setCancelled(true);
                             return;
                         }
                     }

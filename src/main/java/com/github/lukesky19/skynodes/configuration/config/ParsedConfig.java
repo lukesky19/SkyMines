@@ -15,23 +15,25 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.records;
+package com.github.lukesky19.skynodes.configuration.config;
 
 import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 
-import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 
-public record SkyNode(
-        String nodeId,
-        World nodeWorld,
-        List<BlockVector3> vector3List,
-        List<File> nodeSchems,
-        ProtectedRegion region,
-        Location safeLocation,
-        List<Material> materials) {
+public record ParsedConfig(LinkedHashMap<String, SkyTask> tasks) {
+    public record SkyTask(
+            Integer delaySeconds,
+            LinkedHashMap<String, SkyNode> skyNodes) {}
+
+    public record SkyNode(
+            String nodeWorld,
+            List<BlockVector3> vector3List,
+            List<String> nodeSchems,
+            String region,
+            Location safeLocation,
+            List<Material> materials) {}
 }

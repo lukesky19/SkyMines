@@ -15,7 +15,28 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.records;
+package com.github.lukesky19.skynodes.utils;
 
-public record Settings(boolean debug) {
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SchedulerUtility {
+    List<BukkitTask> runningTasks = new ArrayList<>();
+
+    public void addTask(BukkitTask task) {
+        runningTasks.add(task);
+    }
+
+    public void stopTasks() {
+        if(!runningTasks.isEmpty()) {
+            for (BukkitTask currentTask : runningTasks) {
+                if (currentTask != null) {
+                    currentTask.cancel();
+                }
+            }
+            runningTasks = new ArrayList<>();
+        }
+    }
 }

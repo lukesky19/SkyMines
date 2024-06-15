@@ -1,20 +1,16 @@
 plugins {
     id 'java'
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "io.github.goooler.shadow" version "8.1.7"
 }
 
 group = 'com.github.lukesky19'
-version = '1.0.0'
+version = '2.0.0-1.21'
 
 repositories {
     mavenCentral()
     maven {
         name = "papermc-repo"
         url = "https://repo.papermc.io/repository/maven-public/"
-    }
-    maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
     }
     maven {
         name = "sonatype"
@@ -31,18 +27,17 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT"
+    compileOnly "io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT"
     compileOnly "com.sk89q.worldedit:worldedit-bukkit:7.2.18"
     compileOnly "com.sk89q.worldguard:worldguard-bukkit:7.0.9"
     compileOnly 'com.onarandombox.multiversecore:multiverse-core:4.3.12'
+    implementation "net.kyori:adventure-api:4.17.0"
+    implementation "net.kyori:adventure-text-minimessage:4.17.0"
     implementation "org.spongepowered:configurate-yaml:4.1.2"
-    implementation "net.kyori:adventure-api:4.14.0"
-    implementation "net.kyori:adventure-platform-bukkit:4.3.1"
-    implementation "net.kyori:adventure-text-minimessage:4.14.0"
-    implementation "net.kyori:adventure-text-serializer-ansi:4.14.0"
+    implementation "org.bstats:bstats-bukkit:3.0.2"
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -69,8 +64,8 @@ processResources {
 
 shadowJar {
     archiveClassifier.set(null)
-    relocate('net.kyori.adventure', 'com.github.lukesky19.skynodes.libs.adventure')
     relocate('org.spongepowered.configurate', 'com.github.lukesky19.skynodes.libs.configurate')
+    relocate('org.bstats', 'com.github.lukesky19.skyshop.libs.bstats')
     minimize()
 }
 

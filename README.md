@@ -17,8 +17,7 @@
 ## FAQ
 Q: What versions does this plugin support?
 
-A: The latest, which is currently 1.20.4. 
-
+A: 1.20.4, 1.20.5, 1.20.6, and 1.21. Make sure you download the right jar for your server version.
 
 Q: Are there any plans to support any other versions?
 
@@ -26,7 +25,7 @@ A: No.
 
 Q: Does this work on Spigot and Paper?
 
-A: Yes.
+A: This will work on Paper, but not Spigot as I have dropped Spigot support as of version 2.0.0.
 
 Q: Is Folia supported?
 

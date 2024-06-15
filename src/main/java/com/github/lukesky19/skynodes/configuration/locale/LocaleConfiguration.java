@@ -15,43 +15,47 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.records;
+package com.github.lukesky19.skynodes.configuration.locale;
 
-import net.kyori.adventure.text.Component;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.List;
 
-public record Messages(
-        Component prefix,
-        Component reload,
-        List<Component> help,
-        Component startTasksSuccess,
+@ConfigSerializable
+public record LocaleConfiguration(
+        String prefix,
+        List<String> help,
+        String reload,
+        String configLoadError,
+        String startTasksSuccess,
+        String noTasksFound,
         String noNodesFound,
-        Component operationFailure,
+        String operationFailure,
         String clipboardLoadFailure,
-        Component noPermission,
-        Component unknownArgument,
-        Component missingArgumentTaskId,
-        Component missingArgumentNodeId,
+        String noPermission,
+        String unknownArgument,
+        String missingArgumentTaskId,
+        String missingArgumentNodeId,
         String nodePasteSuccess,
         String nodePasteFailure,
         String worldNotFound,
-        String schematicsListError,
+        String schematicListError,
         String schematicNotFound,
         String invalidLocation,
         String invalidSafeLocation,
         String invalidRegion,
         String blocksAllowedListError,
         String invalidBlockMaterial,
-        Component undo,
-        Component redo,
-        Component noUndo,
-        Component noRedo,
+        String undo,
+        String redo,
+        String noUndo,
+        String noRedo,
         String invalidTaskId,
         String invalidNodeId,
-        Component inGameOnly,
-        Component bypassedSafeTeleport,
-        Component bypassedBlockBreakCheck,
-        Component canMine,
-        Component canNotMine) {
+        String inGameOnly,
+        String softDisable,
+        String bypassedSafeTeleport,
+        String bypassedBlockBreakCheck,
+        String canMine,
+        String canNotMine) {
 }

@@ -18,144 +18,78 @@
 package com.github.lukesky19.skynodes;
 
 import com.github.lukesky19.skynodes.commands.SkyNodeCommand;
-import com.github.lukesky19.skynodes.managers.*;
-import com.github.lukesky19.skynodes.records.Messages;
-import com.github.lukesky19.skynodes.records.Settings;
-import com.github.lukesky19.skynodes.records.SkyNode;
+import com.github.lukesky19.skynodes.configuration.config.ConfigValidator;
+import com.github.lukesky19.skynodes.configuration.config.ConfigManager;
+import com.github.lukesky19.skynodes.configuration.locale.LocaleManager;
+import com.github.lukesky19.skynodes.configuration.locale.LocaleValidator;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsManager;
 import com.github.lukesky19.skynodes.listeners.SkyNodeBlockBreakListener;
-import com.github.lukesky19.skynodes.records.SkyTask;
-import com.github.lukesky19.skynodes.utils.ConfigLoaderUtil;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+import com.github.lukesky19.skynodes.utils.ConfigurationUtility;
+import com.github.lukesky19.skynodes.utils.PasteManager;
+import com.github.lukesky19.skynodes.utils.SchedulerUtility;
+import com.onarandombox.bstats.bukkit.Metrics;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public final class SkyNodes extends JavaPlugin {
-    ConfigLoaderUtil configLoaderUtil;
+public class SkyNodes extends JavaPlugin {
     SettingsManager settingsManager;
-    MessagesManager messagesManager;
-    SkyNodeManager skyNodeManager;
-    SkyTaskManager skyTaskManager;
-    SchematicManager schematicManager;
+    LocaleManager localeManager;
+    ConfigManager configManager;
+    SchedulerUtility schedulerUtility;
+    Boolean pluginState = true;
 
-    Settings settings;
-    Messages messages;
-    List<BukkitTask> bukkitTasks = new ArrayList<>();
-    final MiniMessage mm = MiniMessage.miniMessage();
-    BukkitAudiences audiences;
-
-    public @NonNull BukkitAudiences getAudiences() {
-        if(this.audiences == null) {
-            throw new IllegalStateException("Tried to access Adventure when the plugin was disabled!");
-        }
-        return this.audiences;
+    public void setPluginState(Boolean pluginState) {
+        this.pluginState = pluginState;
+    }
+    public Boolean isPluginEnabled() {
+        return this.pluginState;
     }
 
     @Override
     public void onEnable() {
-        Logger logger = this.getLogger();
+        int pluginId = 22278;
+        new Metrics(this, pluginId);
 
         // Check if WorldEdit or FastAsyncWorldEdit is enabled.
-        if (Bukkit.getPluginManager().getPlugin("WorldEdit") == null || Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
-            logger.log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(mm.deserialize("<red>WorldEdit or FastAsyncWorldEdit not found. Disabling...")));
+        if(Bukkit.getPluginManager().getPlugin("WorldEdit") == null && Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit") == null) {
+            getComponentLogger().error(MiniMessage.miniMessage().deserialize("<red>WorldEdit or FastAsyncWorldEdit not found. Disabling..."));
             Bukkit.getPluginManager().disablePlugin(this);
         }
 
-        // Adventure Audiences
-        this.audiences = BukkitAudiences.create(this);
-
         // Classes
-        configLoaderUtil = new ConfigLoaderUtil(this);
-        messagesManager = new MessagesManager(this, configLoaderUtil);
-        settingsManager = new SettingsManager(this, configLoaderUtil);
-        skyNodeManager = new SkyNodeManager(this, configLoaderUtil, messagesManager);
-        skyTaskManager = new SkyTaskManager(this, configLoaderUtil, messagesManager, skyNodeManager);
-        schematicManager = new SchematicManager(this, messagesManager, settingsManager);
-        SkyNodeCommand skyNodeCommand = new SkyNodeCommand(this, messagesManager, schematicManager, skyTaskManager);
+        ConfigurationUtility configurationUtility = new ConfigurationUtility(this);
+        settingsManager = new SettingsManager(this, configurationUtility);
+        LocaleValidator localeValidator = new LocaleValidator(this);
+        localeManager = new LocaleManager(this, settingsManager, localeValidator, configurationUtility);
+        ConfigValidator configValidator = new ConfigValidator(this, localeManager);
+        schedulerUtility = new SchedulerUtility();
+        PasteManager pasteManager = new PasteManager(this, localeManager, settingsManager, configValidator, schedulerUtility);
+        configManager = new ConfigManager(this, localeManager, settingsManager, configValidator, pasteManager, schedulerUtility, configurationUtility);
+
+        SkyNodeCommand skyNodeCommand = new SkyNodeCommand(this, settingsManager, localeManager, pasteManager, configManager);
 
         // Set skynodes command executor and tabcompleter.
         Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setExecutor(skyNodeCommand);
         Objects.requireNonNull(Bukkit.getPluginCommand("skynodes")).setTabCompleter(skyNodeCommand);
         // Register blockBreakListener.
-        Bukkit.getPluginManager().registerEvents(new SkyNodeBlockBreakListener(this, messagesManager, settingsManager, skyNodeManager), this);
+        Bukkit.getPluginManager().registerEvents(new SkyNodeBlockBreakListener(this, localeManager, settingsManager, configManager, configValidator), this);
 
         reload();
     }
 
     @Override
     public void onDisable() {
-        if(!bukkitTasks.isEmpty()) {
-            for (BukkitTask currentTask : bukkitTasks) {
-                if (currentTask != null) {
-                    currentTask.cancel();
-                }
-            }
-            bukkitTasks = new ArrayList<>();
-        }
-
-        if(this.audiences != null) {
-            this.audiences.close();
-            this.audiences = null;
-        }
+        schedulerUtility.stopTasks();
     }
 
     public void reload() {
-        configLoaderUtil.reloadConfig();
-        settingsManager.reloadSettings();
-        settings = settingsManager.getSettings();
-        messagesManager.reloadMessages();
-        messages = messagesManager.getMessages();
-        skyTaskManager.createSkyTasks();
-        startTasks();
-    }
-
-    private void startTasks() {
-        Logger logger = this.getLogger();
-        // Cancel previous BukkitTask if it exists.
-        if(!bukkitTasks.isEmpty()) {
-            for (BukkitTask currentTask : bukkitTasks) {
-                if (currentTask != null) {
-                    currentTask.cancel();
-                }
-            }
-            bukkitTasks = new ArrayList<>();
-        }
-
-        for(SkyTask skyTask : skyTaskManager.getSkyTasksList()) {
-            String taskId = skyTask.taskId();
-            int delaySeconds = skyTask.delaySeconds();
-            List<SkyNode> skyNodes = skyTask.skyNodes();
-
-            BukkitTask bukkitTask = new BukkitRunnable() {
-                @Override
-                public void run() {
-                    SkyNode randSkyNode = skyNodes.get(new Random().nextInt(skyNodes.size()));
-                    try {
-                        schematicManager.paste(taskId, randSkyNode.nodeId(), randSkyNode.nodeWorld(), randSkyNode.vector3List(), randSkyNode.nodeSchems(), randSkyNode.region(), randSkyNode.safeLocation(), null);
-                    } finally {
-                        if (settings.debug()) {
-                            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(
-                                    mm.deserialize(messages.nodePasteSuccess(),
-                                            Placeholder.parsed("taskid", taskId),
-                                            Placeholder.parsed("nodeid", randSkyNode.nodeId()))));
-                        }
-                    }
-                }
-            }.runTaskTimer(this,20L*60,20L*delaySeconds);
-            bukkitTasks.add(bukkitTask);
-        }
-
-        if(settings.debug()) {
-            logger.log(Level.INFO, ANSIComponentSerializer.ansi().serialize(messages.startTasksSuccess()));
-        }
+        pluginState = true;
+        settingsManager.reload();
+        localeManager.reload();
+        configManager.reload();
+        configManager.startTasks();
     }
 }

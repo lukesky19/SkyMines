@@ -15,11 +15,15 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.managers;
+package com.github.lukesky19.skynodes.utils;
 
 import com.github.lukesky19.skynodes.SkyNodes;
-import com.github.lukesky19.skynodes.records.Messages;
-import com.github.lukesky19.skynodes.records.Settings;
+import com.github.lukesky19.skynodes.configuration.config.ConfigValidator;
+import com.github.lukesky19.skynodes.configuration.config.ParsedConfig;
+import com.github.lukesky19.skynodes.configuration.locale.LocaleManager;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsManager;
+import com.github.lukesky19.skynodes.configuration.locale.FormattedLocale;
+import com.github.lukesky19.skynodes.configuration.settings.SettingsConfiguration;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -41,58 +45,90 @@ import com.sk89q.worldguard.protection.ApplicableRegionSet;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public final class SchematicManager {
-    public SchematicManager(SkyNodes plugin, MessagesManager messagesManager, SettingsManager settingsManager) {
-        this.plugin = plugin;
-        this.messagesManager = messagesManager;
-        this.settingsManager = settingsManager;
-    }
-
-    final SkyNodes plugin;
-    final MessagesManager messagesManager;
+public class PasteManager {
+    final SkyNodes skyNodes;
+    final LocaleManager localeManager;
     final SettingsManager settingsManager;
+    final ConfigValidator configValidator;
+    final SchedulerUtility schedulerUtility;
     final MiniMessage mm = MiniMessage.miniMessage();
+
+    public PasteManager(
+            SkyNodes skyNodes,
+            LocaleManager localeManager,
+            SettingsManager settingsManager,
+            ConfigValidator configValidator,
+            SchedulerUtility schedulerUtility) {
+        this.skyNodes = skyNodes;
+        this.localeManager = localeManager;
+        this.settingsManager = settingsManager;
+        this.configValidator = configValidator;
+        this.schedulerUtility = schedulerUtility;
+    }
 
     /**
      * Checks if the player is within a region, pastes a schematic, and saves the EditSession to a player's LocalSession.
-     * @param taskId The id of the task which contains the node being pasted.
-     * @param nodeId The id of the node being pasted.
-     * @param world The World to paste the schematic in.
-     * @param blockVector3 Location to paste the schematic.
-     * @param schemList A list of schematics to choose from.
-     * @param region The region the schematic is pasted in.
-     * @param safeLocation The safe location to teleport any players in the region.
-     * @param player The player to save the paste's EditSession to.
-     * @return true if successful, false if it fails.
+     *
+     * @param taskId The identifier for a task.
+     * @param nodeId The identifier for a node.
+     * @param node The config for the node being pasted.
+     * @param player The player to teleport to safety if in the pasting area, or null of not checking.
      */
-    public void paste(String taskId, String nodeId, World world, List<BlockVector3> vector3List, List<File> schemList, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
-        Messages configMessages = messagesManager.getMessages();
-        Logger logger = plugin.getLogger();
-        File file = schemList.get(new Random().nextInt(schemList.size()));
-        BlockVector3 blockVector3 = vector3List.get(new Random().nextInt(vector3List.size()));
+    public void paste(String taskId, String nodeId, ParsedConfig.SkyNode node, Player player) {
+        ComponentLogger logger = skyNodes.getComponentLogger();
+        FormattedLocale messages = localeManager.formattedLocale();
 
-        Clipboard clipboard = loadClipboard(file, taskId, nodeId);
-        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(world);
-        completeOperation(clipboard, weWorld, blockVector3, region, safeLocation, player);
+        World nodeWorld = configValidator.verifyWorld(taskId, nodeId, node.nodeWorld());
+        if (nodeWorld == null) {
+            logger.error(
+                    MiniMessage.miniMessage().deserialize(messages.nodePasteFailure(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId)));
+            logger.info(messages.softDisable());
+            schedulerUtility.stopTasks();
+            return;
+        }
+
+        BlockVector3 vector3 = node.vector3List().get(new Random().nextInt(node.vector3List().size()));
+
+        List<File> schematicsList = configValidator.verifySchematics(taskId, nodeId, node.nodeSchems());
+        if (schematicsList == null) {
+            logger.error(
+                    MiniMessage.miniMessage().deserialize(messages.nodePasteFailure(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId)));
+            logger.info(messages.softDisable());
+            schedulerUtility.stopTasks();
+            return;
+        }
+        File schematic = schematicsList.get(new Random().nextInt(schematicsList.size()));
+
+        ProtectedRegion region = configValidator.verifyRegion(taskId, nodeId, node.region(), nodeWorld);
+        if (region == null) {
+            logger.error(
+                    MiniMessage.miniMessage().deserialize(messages.nodePasteFailure(),
+                            Placeholder.parsed("taskid", taskId),
+                            Placeholder.parsed("nodeid", nodeId)));
+            logger.info(messages.softDisable());
+            schedulerUtility.stopTasks();
+            return;
+        }
+
+        Clipboard clipboard = loadClipboard(schematic, taskId, nodeId);
+        com.sk89q.worldedit.world.World weWorld = BukkitAdapter.adapt(nodeWorld);
+        completeOperation(clipboard, weWorld, vector3, region, node.safeLocation(), player);
     }
 
     /**
@@ -100,22 +136,21 @@ public final class SchematicManager {
      * @param player A Bukkit Player
      */
     public void undo(Player player) {
-        Messages messages = messagesManager.getMessages();
-        BukkitAudiences audiences = plugin.getAudiences();
+        FormattedLocale messages = localeManager.formattedLocale();
 
-        if(player != null) {
+        if (player != null) {
             com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
             SessionManager manager = WorldEdit.getInstance().getSessionManager();
             LocalSession localSession = manager.get(actor);
             if (localSession != null) {
                 BlockBag blockBag = localSession.getBlockBag(actor);
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                Bukkit.getScheduler().runTaskAsynchronously(skyNodes, () -> {
                     EditSession undoSession = localSession.undo(blockBag, actor);
-                    if(undoSession != null) {
+                    if (undoSession != null) {
                         localSession.remember(undoSession);
-                        audiences.player(player).sendMessage(messages.prefix().append(messages.undo()));
+                        player.sendMessage(messages.prefix().append(messages.undo()));
                     } else {
-                        audiences.player(player).sendMessage(messages.prefix().append(messages.noUndo()));
+                        player.sendMessage(messages.prefix().append(messages.noUndo()));
                     }
                 });
             }
@@ -127,10 +162,9 @@ public final class SchematicManager {
      * @param player A Bukkit Player
      */
     public void redo(Player player) {
-        Messages messages = messagesManager.getMessages();
-        BukkitAudiences audiences = plugin.getAudiences();
+        FormattedLocale messages = localeManager.formattedLocale();
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(skyNodes, () -> {
             if (player != null) {
                 try {
                     // Get the player's last EditSession to redo.
@@ -140,11 +174,11 @@ public final class SchematicManager {
                     if (localSession != null) {
                         BlockBag blockBag = localSession.getBlockBag(actor);
                         EditSession redoSession = localSession.redo(blockBag, actor);
-                        if(redoSession != null) {
+                        if (redoSession != null) {
                             localSession.remember(redoSession);
-                            audiences.player(player).sendMessage(messages.prefix().append(messages.redo()));
+                            player.sendMessage(messages.prefix().append(messages.redo()));
                         } else {
-                            audiences.player(player).sendMessage(messages.prefix().append(messages.noRedo()));
+                            player.sendMessage(messages.prefix().append(messages.noRedo()));
                         }
                     }
                 } catch (Exception e) {
@@ -155,27 +189,29 @@ public final class SchematicManager {
     }
 
     private Clipboard loadClipboard(File schematic, String taskId, String nodeId) {
-        Messages messages = messagesManager.getMessages();
+        ComponentLogger logger = skyNodes.getComponentLogger();
+        FormattedLocale messages = localeManager.formattedLocale();
 
         Clipboard clipboard;
         ClipboardFormat format = ClipboardFormats.findByFile(schematic);
-        try(ClipboardReader reader = format.getReader(new FileInputStream(schematic))) {
+        try (ClipboardReader reader = Objects.requireNonNull(format).getReader(new FileInputStream(schematic))) {
             clipboard = reader.read();
         } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, ANSIComponentSerializer.ansi().serialize(
+            logger.error(
                     mm.deserialize(messages.clipboardLoadFailure(),
                             Placeholder.parsed("taskid", taskId),
-                            Placeholder.parsed("nodeid", nodeId))));
+                            Placeholder.parsed("nodeid", nodeId)));
             throw new RuntimeException(e);
         }
         return clipboard;
     }
 
     private void completeOperation(Clipboard clipboard, com.sk89q.worldedit.world.World world, BlockVector3 blockVector3, ProtectedRegion region, org.bukkit.Location safeLocation, Player player) {
-        Messages messages = messagesManager.getMessages();
-        if(player != null) {
+        ComponentLogger logger = skyNodes.getComponentLogger();
+
+        if (player != null) {
             com.sk89q.worldedit.entity.Player actor = BukkitAdapter.adapt(player);
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            Bukkit.getScheduler().runTaskAsynchronously(skyNodes, () -> {
                 try (EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(world).actor(actor).build()) {
                     Operation operation = new ClipboardHolder(clipboard)
                             .createPaste(editSession)
@@ -190,11 +226,12 @@ public final class SchematicManager {
 
                     saveEditSession(editSession, player);
                 } catch (WorldEditException e) {
+                    logger.info(localeManager.formattedLocale().operationFailure());
                     throw new RuntimeException(e);
                 }
             });
         } else {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            Bukkit.getScheduler().runTaskAsynchronously(skyNodes, () -> {
                 try (EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(world).build()) {
                     Operation operation = new ClipboardHolder(clipboard)
                             .createPaste(editSession)
@@ -207,6 +244,7 @@ public final class SchematicManager {
 
                     Operations.complete(operation);
                 } catch (WorldEditException e) {
+                    logger.error(localeManager.formattedLocale().operationFailure());
                     throw new RuntimeException(e);
                 }
             });
@@ -224,9 +262,8 @@ public final class SchematicManager {
     }
 
     private void playerCheck(ProtectedRegion skyNodeRegion, org.bukkit.Location safeLocation) {
-        Messages messages = messagesManager.getMessages();
-        Settings settings = settingsManager.getSettings();
-        BukkitAudiences audiences = plugin.getAudiences();
+        FormattedLocale messages = localeManager.formattedLocale();
+        SettingsConfiguration settingsConfiguration = settingsManager.getSettings();
 
         // Get a list of all online players.
         Collection<? extends Player> playerList = Bukkit.getOnlinePlayers();
@@ -243,8 +280,8 @@ public final class SchematicManager {
                     if (!p.hasPermission("skynodes.bypass.safeteleport")) {
                         p.teleport(safeLocation);
                     } else {
-                        if (settings.debug() && p.hasPermission("skynodes.debug")) {
-                            audiences.player(p).sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
+                        if (settingsConfiguration.debug() && p.hasPermission("skynodes.debug")) {
+                            p.sendMessage(messages.prefix().append(messages.bypassedSafeTeleport()));
                         }
                     }
                 }

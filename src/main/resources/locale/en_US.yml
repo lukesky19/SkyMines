@@ -2,7 +2,7 @@
 prefix: "<gray>[</gray><yellow><bold>SkyNodes</bold></yellow><gray>]</gray> "
 help:
   - "<aqua>Skynodes is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>"
-  - "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</bold></underline></yellow></click>"
+  - "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</bold></underlined></yellow></click>"
   - " "
   - "<aqua><bold>List of Commands:</bold></aqua>"
   - "<white>/</white><aqua>skynodes</aqua> <yellow>help</yellow>"

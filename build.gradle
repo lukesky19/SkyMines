@@ -1,72 +1,77 @@
 plugins {
-    id 'java'
-    id "io.github.goooler.shadow" version "8.1.7"
+    id("io.github.goooler.shadow") version "8.1.7"
 }
 
-group = 'com.github.lukesky19'
-version = '2.0.1-1.21'
+allprojects {
+    apply plugin: "java"
+    apply plugin: "java-library"
 
-repositories {
-    mavenCentral()
-    maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
+    group = 'com.github.lukesky19'
+    version = '2.0.2'
+
+    java.toolchain {
+        JavaLanguageVersion.of(21)
     }
-    maven {
-        name = "sonatype"
-        url = "https://oss.sonatype.org/content/groups/public/"
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
     }
-    maven {
-        name = "enginehub"
-        url = "https://maven.enginehub.org/repo/"
+
+    repositories {
+        mavenCentral()
+        maven {
+            name = "papermc-repo"
+            url = "https://repo.papermc.io/repository/maven-public/"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/groups/public/"
+        }
+        maven {
+            name = "enginehub"
+            url = "https://maven.enginehub.org/repo/"
+        }
+        maven {
+            name = "onarandombox"
+            url = "https://repo.onarandombox.com/content/groups/public/"
+        }
     }
-    maven {
-        name = "onarandombox"
-        url = "https://repo.onarandombox.com/content/groups/public/"
+}
+
+subprojects { project ->
+    def javaVersion = 17
+    if (project.hasProperty("javaVersion")) {
+        javaVersion = project.property("javaVersion")
+    }
+
+    project.tasks.withType(JavaCompile).configureEach {
+        javaCompiler = javaToolchains.compilerFor {
+            JavaLanguageVersion.of(javaVersion)
+        }
+    }
+
+    processResources {
+        def props = [version: version]
+        inputs.properties props
+        filteringCharset 'UTF-8'
+        filesMatching('plugin.yml') {
+            expand props
+        }
     }
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT"
-    compileOnly "com.sk89q.worldedit:worldedit-bukkit:7.2.18"
-    compileOnly "com.sk89q.worldguard:worldguard-bukkit:7.0.9"
-    compileOnly 'com.onarandombox.multiversecore:multiverse-core:4.3.12'
-    implementation "net.kyori:adventure-api:4.17.0"
-    implementation "net.kyori:adventure-text-minimessage:4.17.0"
-    implementation "org.spongepowered:configurate-yaml:4.1.2"
-    implementation "org.bstats:bstats-bukkit:3.0.2"
-}
-
-def targetJavaVersion = 21
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release = targetJavaVersion
-    }
-}
-
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand props
-    }
+    implementation project(":Core")
+    implementation project(":v1_20_R4")
+    implementation project(":v1_20_R3")
 }
 
 shadowJar {
     archiveClassifier.set(null)
-    relocate('org.spongepowered.configurate', 'com.github.lukesky19.skynodes.libs.configurate')
-    relocate('org.bstats', 'com.github.lukesky19.skyshop.libs.bstats')
-    minimize()
+
+    manifest {
+        attributes("paperweight-mappings-namespace": "mojang")
+    }
 }
 
 build.dependsOn shadowJar

@@ -17,7 +17,7 @@
 ## FAQ
 Q: What versions does this plugin support?
 
-A: 1.20-1.21
+A: 1.20-1.21.1
 
 Q: Are there any plans to support any other versions?
 

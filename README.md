@@ -1,23 +1,27 @@
 # SkyNodes
 ## Description
-* This plugin allows you to configure tasks with a delay. Each task will randomly choose a node, which randomly chooses a schematic and location from a configured list to paste in.
+* This plugin is a mines plugin that tracks blocks broken in specific regions (nodes), replaces them, gives items, and sends client-side block changes.
 
 ## Features
-* Supports WorldEdit and FastAsyncWorldEdit
-* Restricts block breaking within a SkyNode to a configured list of blocks.
-* Teleports player to safety before a SkyNode is pasted.
-* Multiple schematics can be configured for one location. The plugin will pick one at random.
-* Multiple tasks are supported to paste multiple SkyNodes at once.
+* Restricts block breaking within a node to a configured list of blocks.
+* When a block is mined, it is replaced with what was broken and the player is sent a client-side block update to show a configurable replacement Block.
+  * A loot table can be configured for suspicious sand and suspicious gravel. (Optional)
+  * It is required since the plugin cannot detect what the loot table was.
+* Cooldowns are configurable per block.
+* An infinite number of players can use the mine without worrying about the mine being empty since tracking is per-player and block updates are client-side.
+* In the event of a config error, all block breaking, block drops, and block clicks will be cancelled to protect any mines from unintentional destruction.
 
 ## Dependencies
-* WorldEdit or FastAsyncWorldEdit
 * WorldGuard
-* Multiverse-Core
 
 ## FAQ
-Q: What versions does this plugin support?
+Q: What Minecraft versions does this plugin support?
 
-A: 1.20-1.21.1
+A: 1.21-1.21.1
+
+Q: What plugin versions are supported?
+
+A: I will only support the latest plugin version(s), which are currently is 2.0.2 and 3.0.0-Pre-1.
 
 Q: Are there any plans to support any other versions?
 
@@ -25,7 +29,7 @@ A: No.
 
 Q: Does this work on Spigot and Paper?
 
-A: This will work on Paper, but not Spigot as I have dropped Spigot support as of version 2.0.0.
+A: This will work on Paper.
 
 Q: Is Folia supported?
 
@@ -37,15 +41,14 @@ A: There is no Folia support at this time. I may look into it in the future thou
 * I will attempt to solve any issues to the best of my ability.
 
 ## Example Setup Instructions
-* Create a new region in a world that encompases the entire playable area.
-* Create a new region inside that region where you want players to be able to break blocks.
+* Create a new region (parent region) in a world that encompasses the entire playable area.
+* Create a new region (child region) inside that region where you want players to be able to break blocks.
 * Create a new group (/lp creategroup \<name>).
 * Add that group to the 2nd region above (/rg addmember \<region name> g:\<group name>).
-* Create a schematic to replace the blocks players will break. Make sure to remember the coordinates you ran //copy at.
 * Open nodes.yml and configure a node based on what you have done.
 * Reload the plugin (/skynodes reload)
 * Give a player the group you created to be able to mine the node. (/lp user \<username> parent add \<group name>)
-* Also works with temporary ranks as well. (/lp user \<username> parent addtemp \<group name> 1h accumulate)
+  * Also works with temporary ranks as well. (/lp user \<username> parent addtemp \<group name> 1h accumulate)
 
 ## Building
 ```./gradlew build```

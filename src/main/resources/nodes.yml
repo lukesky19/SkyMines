@@ -1,0 +1,19 @@
+config-version: 3.0.0
+data:
+  ## World Name (A String)
+  # "WORLD_NAME":
+    ## Region Name (A String)
+    # "REGION_NAME":
+      ## Node ID (A number)
+      # NODE_ID
+        # region: "REGION NAME"
+        # blocks-allowed:
+          # 0:
+            ## The Material name for the Block.
+            # block: STONE
+            ## The Material name for the visual replacement (client-side)
+            # replacement: BEDROCK
+            ## This setting is optional and only used for suspicious sand and gravel.
+            # loot-table: "NAMESPACE:NAME"
+            ## The delay in seconds it should take to regen the Block.
+            # delay-seconds: 300

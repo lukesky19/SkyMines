@@ -1,0 +1,40 @@
+name: SkyNodes
+version: '${version}'
+main: com.github.lukesky19.skynodes.SkyNodes
+api-version: '1.21'
+authors: [ lukeskywlker19 ]
+load: POSTWORLD
+depend:
+  - WorldGuard
+
+commands:
+  skynodes:
+    description: The base command.
+permissions:
+  skynodes.commands.skynode:
+    description: The base command permission.
+    default: op
+  skynodes.commands.skynode.paste:
+    description: Used to paste nodes.
+    default: op
+  skynodes.commands.skynode.undo:
+    description: Used to undo an edit.
+    default: op
+  skynodes.commands.skynode.redo:
+    description: Used to redo an edit.
+    default: op
+  skynodes.commands.skynode.reload:
+    description: Used to reload the plugin.
+    default: op
+  skynodes.commands.skynode.help:
+    description: Used to paste schematics. Debug only.
+    default: op
+  skynodes.bypass.safeteleport:
+    description: Bypasses the check for safe teleport when pasting a schematic.
+    default: op
+  skynodes.bypass.blockbreakcheck:
+    description: Bypasses the check for safe teleport when pasting a schematic.
+    default: op
+  skynodes.debug:
+    description: If the debug settings is enabled, those with this permission will receive debug messages.
+    default: op

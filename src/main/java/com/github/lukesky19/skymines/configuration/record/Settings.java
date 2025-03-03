@@ -1,6 +1,6 @@
 /*
-    SkyNodes tracks blocks broken in specific regions (nodes), replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2024  lukeskywlker19
+    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
+    Copyright (C) 2023-2025  lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -15,10 +15,15 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skynodes.configuration.record;
+package com.github.lukesky19.skymines.configuration.record;
 
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
+import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * The plugin's settings configuration/
+ * @param configVersion The config version of the file.
+ * @param locale The locale file name (without .yml) to use.
+ */
 @ConfigSerializable
-public record Settings(String configVersion, String locale) {
-}
+public record Settings(@Nullable String configVersion, @Nullable String locale) {}

@@ -1,27 +1,44 @@
-# SkyNodes
+# SkyMines
 ## Description
-* This plugin is a mines plugin that tracks blocks broken in specific regions (nodes), replaces them, gives items, and sends client-side block changes.
+* A mines plugin that tracks blocks broken in specific regions (nodes), replaces them, gives items, and sends client-side block changes.
 
 ## Features
-* Restricts block breaking within a node to a configured list of blocks.
-* When a block is mined, it is replaced with what was broken and the player is sent a client-side block update to show a configurable replacement Block.
-  * A loot table can be configured for suspicious sand and suspicious gravel. (Optional)
-  * It is required since the plugin cannot detect what the loot table was.
-* Cooldowns are configurable per block.
-* An infinite number of players can use the mine without worrying about the mine being empty since tracking is per-player and block updates are client-side.
-* In the event of a config error, all block breaking, block drops, and block clicks will be cancelled to protect any mines from unintentional destruction.
+* Packet-based mines where blocks broken are tracked server-side and clients are sent packets to show a configurable replacement Block when broken.
+* Restricts block breaking within a mine's regions to a configured list of blocks.
+* A loot table can be configured for suspicious sand and suspicious gravel when replaced.
+  * This is required because the loot table is not detectable after the block as been brushed.
+* Each region has a separate list of blocks that can be broken with separate cooldowns per block.
+* Configurable boss bar timer while inside mines.
 
 ## Dependencies
 * WorldGuard
 
+## Commands
+- /skymines help - View the plugin's help message
+- /skymines reload - Command to reload the plugin
+- /skymines time <mine id> - Command for a player to view how much time they have for a mine.
+- /skymines add <player name> <mine id> <time in seconds> - Command to add time for a player to access a specific mine.
+- /skymines remove <player name> <mine id> <time in seconds> - Command to remove time for a player to access a specific mine.
+- /skymines set <player name> <mine id> <time in seconds> - Command to set the time for a player to access a specific mine.
+
+## Permisisons
+- `skymines.commands.skymines` - The permission to access the /skymines command.
+- `skymines.commands.skymines.reload` - The permission to access /skymines reload.
+- `skymines.commands.skymines.help` - The permission to access /skymines help.
+- `skymines.commands.skymines.time` - The permission to access /skymines time.
+- `skymines.commands.skymines.add` - The permission to access /skymines add.
+- `skymines.commands.skymines.remove` - The permission to access /skymines remove.
+- `skymines.commands.skymines.set` - The permission to access /skymines set.
+
+## Issues, Bugs, or Suggestions
+* Please create a new [Github Issue](https://github.com/lukesky19/SkyMines/issues) with your issue, bug, or suggestion.
+* If an issue or bug, please post any relevant logs containing errors related to SkyShop and your configuration files.
+* I will attempt to solve any issues or implement features to the best of my ability.
+
 ## FAQ
 Q: What Minecraft versions does this plugin support?
 
-A: 1.21-1.21.1
-
-Q: What plugin versions are supported?
-
-A: I will only support the latest plugin version(s), which are currently is 2.0.2 and 3.0.0-Pre-1.
+A: 1.21.0, 1.21.1, 1.21.2, 1.21.3, 1.21.4
 
 Q: Are there any plans to support any other versions?
 
@@ -29,29 +46,20 @@ A: No.
 
 Q: Does this work on Spigot and Paper?
 
-A: This will work on Paper.
+A: This will work on Paper and most likely forks of Paper.
 
 Q: Is Folia supported?
 
 A: There is no Folia support at this time. I may look into it in the future though.
 
-## Issues or Bugs
-* Create a new GitHub Issue describing your issue.
-* Please post any relevant logs containing errors related to SkyNodes and your configuration files.
-* I will attempt to solve any issues to the best of my ability.
-
-## Example Setup Instructions
-* Create a new region (parent region) in a world that encompasses the entire playable area.
-* Create a new region (child region) inside that region where you want players to be able to break blocks.
-* Create a new group (/lp creategroup \<name>).
-* Add that group to the 2nd region above (/rg addmember \<region name> g:\<group name>).
-* Open nodes.yml and configure a node based on what you have done.
-* Reload the plugin (/skynodes reload)
-* Give a player the group you created to be able to mine the node. (/lp user \<username> parent add \<group name>)
-  * Also works with temporary ranks as well. (/lp user \<username> parent addtemp \<group name> 1h accumulate)
+## For Server Admins/Owners
+* Download the plugin [SkyLib](https://github.com/lukesky19/SkyLib/releases).
+* Download the plugin from the releases tab and add it to your server.
 
 ## Building
-```./gradlew build```
+* Go to [SkyLib](https://github.com/lukesky19/SkyLib) and follow the "For Developers" instructions.
+* Then run:
+  ```./gradlew build```
 
 ## Why AGPL3?
 I wanted a license that will keep my code open source. I believe in open source software and in-case this project goes unmaintained by me, I want it to live on through the work of others. And I want that work to remain open source to prevent a time when a fork can never be continued (i.e., closed-sourced and abandoned).

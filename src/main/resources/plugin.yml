@@ -1,40 +1,27 @@
-name: SkyNodes
+name: SkyMines
 version: '${version}'
-main: com.github.lukesky19.skynodes.SkyNodes
+main: com.github.lukesky19.skymines.SkyMines
 api-version: '1.21'
 authors: [ lukeskywlker19 ]
 load: POSTWORLD
 depend:
   - WorldGuard
 
-commands:
-  skynodes:
-    description: The base command.
 permissions:
-  skynodes.commands.skynode:
+  skymines.commands.skymines:
     description: The base command permission.
     default: op
-  skynodes.commands.skynode.paste:
-    description: Used to paste nodes.
+  skymines.commands.skymines.reload:
+    description: The permission to use the reload command.
     default: op
-  skynodes.commands.skynode.undo:
-    description: Used to undo an edit.
+  skymines.commands.skymines.help:
+    description: The permission to use the help command.
     default: op
-  skynodes.commands.skynode.redo:
-    description: Used to redo an edit.
-    default: op
-  skynodes.commands.skynode.reload:
-    description: Used to reload the plugin.
-    default: op
-  skynodes.commands.skynode.help:
-    description: Used to paste schematics. Debug only.
-    default: op
-  skynodes.bypass.safeteleport:
-    description: Bypasses the check for safe teleport when pasting a schematic.
-    default: op
-  skynodes.bypass.blockbreakcheck:
-    description: Bypasses the check for safe teleport when pasting a schematic.
-    default: op
-  skynodes.debug:
-    description: If the debug settings is enabled, those with this permission will receive debug messages.
-    default: op
+  skymines.commands.skymines.time:
+    description: The permission to view a player to view their time to access a mine.
+  skymines.commands.skymines.add:
+    description: The permission to add time to a mine for a player.
+  skymines.commands.skymines.remove:
+    description: The permission to remove time to a mine for a player.
+  skymines.commands.skymines.set:
+    description: The permission to set the time to a mine for a player.

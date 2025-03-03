@@ -1,0 +1,27 @@
+name: SkyMines
+version: '${version}'
+main: com.github.lukesky19.skymines.SkyMines
+api-version: '1.21'
+authors: [ lukeskywlker19 ]
+load: POSTWORLD
+depend:
+  - WorldGuard
+
+permissions:
+  skymines.commands.skymines:
+    description: The base command permission.
+    default: op
+  skymines.commands.skymines.reload:
+    description: The permission to use the reload command.
+    default: op
+  skymines.commands.skymines.help:
+    description: The permission to use the help command.
+    default: op
+  skymines.commands.skymines.time:
+    description: The permission to view a player to view their time to access a mine.
+  skymines.commands.skymines.add:
+    description: The permission to add time to a mine for a player.
+  skymines.commands.skymines.remove:
+    description: The permission to remove time to a mine for a player.
+  skymines.commands.skymines.set:
+    description: The permission to set the time to a mine for a player.

@@ -251,6 +251,7 @@ public class LocaleManager {
                 stringBuilder.append(" ");
             }
             stringBuilder.append(timeMessage.seconds());
+            isFirstUnit = false;
         }
 
         if(isFirstUnit) {

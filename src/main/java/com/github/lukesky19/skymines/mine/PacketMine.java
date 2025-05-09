@@ -53,6 +53,7 @@ public class PacketMine extends Mine {
     private final MineConfig mineConfig;
     private String mineId;
     private RegionManager regionManager;
+    private World mineWorld;
     private ProtectedRegion mineRegion;
     private final HashMap<ProtectedRegion, List<PacketBlock>> childRegions = new HashMap<>();
 
@@ -89,7 +90,7 @@ public class PacketMine extends Mine {
         }
 
         if(mineConfig.worldName() != null) {
-            World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
+            mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
             if(mineWorld != null) {
                 regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(mineWorld));
 
@@ -193,7 +194,7 @@ public class PacketMine extends Mine {
 
     @Override
     public boolean isLocationInMine(@NotNull Location location) {
-        return mineRegion.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return mineWorld.equals(location.getWorld()) && mineRegion.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     /**

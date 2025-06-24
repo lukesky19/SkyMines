@@ -1,13 +1,13 @@
 package com.github.lukesky19.skymines.mine;
 
-import com.github.lukesky19.skylib.format.FormatUtil;
-import com.github.lukesky19.skylib.player.PlayerUtil;
+import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.player.PlayerUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.loader.LocaleManager;
-import com.github.lukesky19.skymines.configuration.record.Locale;
-import com.github.lukesky19.skymines.configuration.record.MineConfig;
+import com.github.lukesky19.skymines.configuration.LocaleManager;
 import com.github.lukesky19.skymines.data.MineBlock;
 import com.github.lukesky19.skymines.data.PacketBlock;
+import com.github.lukesky19.skymines.data.config.Locale;
+import com.github.lukesky19.skymines.data.config.MineConfig;
 import com.github.lukesky19.skymines.manager.DatabaseManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
@@ -84,7 +84,7 @@ public class PacketMine extends Mine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(FormatUtil.format("<red>Unable to create mine due to a null mine id.</red>"));
+            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a null mine id.</red>"));
             status = false;
             return;
         }
@@ -99,12 +99,12 @@ public class PacketMine extends Mine {
                     if (parentRegion != null) {
                         this.mineRegion = parentRegion;
                     } else {
-                        logger.error(FormatUtil.format("<red>Unable to create mine due to region " + mineConfig.parentRegion() + " not being found.</red>"));
+                        logger.error(AdventureUtil.serialize("<red>Unable to create mine due to region " + mineConfig.parentRegion() + " not being found.</red>"));
                         status = false;
                         return;
                     }
                 } else {
-                    logger.error(FormatUtil.format("<red>Unable to create mine due to a parent region not being configured.</red>"));
+                    logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a parent region not being configured.</red>"));
                     status = false;
                     return;
                 }
@@ -128,19 +128,19 @@ public class PacketMine extends Mine {
                                                 if(lootTable != null) {
                                                     packetBlock = new PacketBlock(worldMaterial, replacementMaterial, lootTable, blockData.cooldownSeconds());
                                                 } else {
-                                                    logger.warn(FormatUtil.format("No loot table found for key " + key.asString()));
+                                                    logger.warn(AdventureUtil.serialize("No loot table found for key " + key.asString()));
                                                 }
                                             } else {
-                                                logger.warn(FormatUtil.format("Unable to get loot table due to a null NamespacedKey."));
+                                                logger.warn(AdventureUtil.serialize("Unable to get loot table due to a null NamespacedKey."));
                                             }
                                         }
 
                                         packetBlocks.add(packetBlock);
                                     } else {
                                         if(worldMaterial == null) {
-                                            logger.warn(FormatUtil.format("Unable to find a material of name " + blockData.block()));
+                                            logger.warn(AdventureUtil.serialize("Unable to find a material of name " + blockData.block()));
                                         } else {
-                                            logger.warn(FormatUtil.format("Unable to find a material of name " + blockData.replacement()));
+                                            logger.warn(AdventureUtil.serialize("Unable to find a material of name " + blockData.replacement()));
                                         }
                                     }
                                 }
@@ -148,19 +148,19 @@ public class PacketMine extends Mine {
 
                             childRegions.put(childRegion, packetBlocks);
                         } else {
-                            logger.warn(FormatUtil.format("Unable to find a region by the name of " + childRegionData.region()));
+                            logger.warn(AdventureUtil.serialize("Unable to find a region by the name of " + childRegionData.region()));
                         }
                     } else {
-                        logger.warn(FormatUtil.format("There is a child region that has a null region name."));
+                        logger.warn(AdventureUtil.serialize("There is a child region that has a null region name."));
                     }
                 }
             } else {
-                logger.error(FormatUtil.format("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+                logger.error(AdventureUtil.serialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
                 status = false;
                 return;
             }
         } else {
-            logger.error(FormatUtil.format("<red>Unable to create mine due to a world name not being configured.</red>"));
+            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a world name not being configured.</red>"));
             status = false;
             return;
         }
@@ -168,8 +168,8 @@ public class PacketMine extends Mine {
         try {
             playerTimes.putAll(databaseManager.getPlayerTimesByMineId(mineId));
         } catch (SQLException e) {
-            logger.warn(FormatUtil.format("Unable to load player times from database. Error:"));
-            logger.error(FormatUtil.format(e.getMessage()));
+            logger.warn(AdventureUtil.serialize("Unable to load player times from database. Error:"));
+            logger.error(AdventureUtil.serialize(e.getMessage()));
             return;
         }
 
@@ -248,7 +248,7 @@ public class PacketMine extends Mine {
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!playerTimes.containsKey(uuid)) {
             blockBreakEvent.setCancelled(true);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
             return;
         }
 
@@ -259,11 +259,11 @@ public class PacketMine extends Mine {
         if(this.isBlockOnCooldown(uuid, location)) {
             blockBreakEvent.setCancelled(true);
             this.sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.cooldown()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.cooldown()));
         } else {
             if(!this.isBlockMineable(player, uuid, location, material)) {
                 blockBreakEvent.setCancelled(true);
-                player.sendMessage(FormatUtil.format(locale.prefix() + locale.canNotMine()));
+                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.canNotMine()));
             }
         }
     }
@@ -283,7 +283,7 @@ public class PacketMine extends Mine {
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!playerTimes.containsKey(uuid)) {
             blockDropItemEvent.setCancelled(true);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
             return;
         }
 
@@ -353,7 +353,7 @@ public class PacketMine extends Mine {
         if(block.getType().equals(Material.AIR)) return;
         if(!playerTimes.containsKey(uuid)) {
             playerInteractEvent.setCancelled(true);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
             return;
         }
 
@@ -361,11 +361,11 @@ public class PacketMine extends Mine {
         if(isBlockOnCooldown(uuid, location)) {
             playerInteractEvent.setCancelled(true);
             this.sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.cooldown()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.cooldown()));
         } else {
             if(!this.isBlockMineable(player, uuid, location, block.getType())) {
                 playerInteractEvent.setCancelled(true);
-                player.sendMessage(FormatUtil.format(locale.prefix() + locale.canNotMine()));
+                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.canNotMine()));
             }
         }
     }
@@ -385,7 +385,7 @@ public class PacketMine extends Mine {
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!playerTimes.containsKey(uuid)) {
             playerHarvestBlockEvent.setCancelled(true);
-            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
             return;
         }
 
@@ -450,7 +450,7 @@ public class PacketMine extends Mine {
         if(blockPlaceEvent.getPlayer().getGameMode().equals(GameMode.CREATIVE)) return;
 
         blockPlaceEvent.setCancelled(true);
-        player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineNoPlace()));
+        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoPlace()));
     }
 
     /**
@@ -728,7 +728,7 @@ public class PacketMine extends Mine {
                             BossBar bossBar = playerBossBars.get(uuid);
                             if(bossBar != null) {
                                 if(mineConfig.bossBar().noTimeText() != null) {
-                                    bossBar.name(FormatUtil.format(mineConfig.bossBar().noTimeText()));
+                                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()));
                                 } else {
                                     player.hideBossBar(bossBar);
                                     playerBossBars.remove(uuid);
@@ -745,7 +745,7 @@ public class PacketMine extends Mine {
                                     String message = localeManager.getTimeMessage(time);
 
                                     List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", message));
-                                    bossBar.name(FormatUtil.format(mineConfig.bossBar().timeText(), placeholders));
+                                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
                                 }
                             }
                         }
@@ -813,7 +813,7 @@ public class PacketMine extends Mine {
             List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", localeManager.getTimeMessage(time)));
             if(bossBar != null) {
                 if(mineConfig.bossBar().timeText() != null) {
-                    bossBar.name(FormatUtil.format(mineConfig.bossBar().timeText(), placeholders));
+                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
                     playerBossBars.put(uuid, bossBar);
 
                     return bossBar;
@@ -823,7 +823,7 @@ public class PacketMine extends Mine {
                     BossBar.Color bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
                     BossBar.Overlay bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
 
-                    bossBar = BossBar.bossBar(FormatUtil.format(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
+                    bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
                     playerBossBars.put(uuid, bossBar);
 
                     return bossBar;
@@ -832,7 +832,7 @@ public class PacketMine extends Mine {
         } else {
             if(bossBar != null) {
                 if(mineConfig.bossBar().noTimeText() != null) {
-                    bossBar.name(FormatUtil.format(mineConfig.bossBar().noTimeText()));
+                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()));
                     return bossBar;
                 }
             } else {
@@ -840,7 +840,7 @@ public class PacketMine extends Mine {
                     BossBar.Color bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
                     BossBar.Overlay bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
 
-                    bossBar = BossBar.bossBar(FormatUtil.format(mineConfig.bossBar().noTimeText()), 1, bossBarColor, bossBarOverlay);
+                    bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()), 1, bossBarColor, bossBarOverlay);
                     playerBossBars.put(uuid, bossBar);
 
                     return bossBar;

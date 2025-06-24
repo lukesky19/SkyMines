@@ -18,8 +18,8 @@
 package com.github.lukesky19.skymines.manager;
 
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.loader.LocaleManager;
-import com.github.lukesky19.skymines.configuration.record.MineConfig;
+import com.github.lukesky19.skymines.configuration.LocaleManager;
+import com.github.lukesky19.skymines.data.config.MineConfig;
 import com.github.lukesky19.skymines.mine.Mine;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import org.bukkit.Location;

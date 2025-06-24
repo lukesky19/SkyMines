@@ -15,15 +15,15 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.configuration.loader;
+package com.github.lukesky19.skymines.configuration;
 
-import com.github.lukesky19.skylib.config.ConfigurationUtility;
-import com.github.lukesky19.skylib.format.FormatUtil;
+import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
 import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.record.Settings;
+import com.github.lukesky19.skymines.data.config.Settings;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,9 +73,9 @@ public class SettingsManager {
         } catch (SerializationException e) {
             throw new RuntimeException(e);
         } catch (ConfigurateException configurateException) {
-            logger.error(FormatUtil.format("<red>Failed to load plugin settings.</red>"));
+            logger.error(AdventureUtil.serialize("<red>Failed to load plugin settings.</red>"));
             if(configurateException.getMessage() != null) {
-                logger.error(FormatUtil.format(configurateException.getMessage()));
+                logger.error(AdventureUtil.serialize(configurateException.getMessage()));
             }
         }
     }

@@ -15,12 +15,13 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.configuration.loader;
+package com.github.lukesky19.skymines.configuration;
 
+import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.record.MineConfig;
+import com.github.lukesky19.skymines.data.config.MineConfig;
 import com.github.lukesky19.skymines.manager.MineManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,8 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
-
-import static com.github.lukesky19.skylib.config.ConfigurationUtility.getYamlConfigurationLoader;
 
 /**
  * This class manages the loading of mine config files.
@@ -60,7 +59,7 @@ public class MineConfigManager {
             paths.filter(Files::isRegularFile)
                     .forEach(path -> {
                         MineConfig mineConfig;
-                        @NotNull YamlConfigurationLoader loader = getYamlConfigurationLoader(path);
+                        @NotNull YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
                         try {
                             mineConfig = loader.load().get(MineConfig.class);
                         } catch (ConfigurateException e) {

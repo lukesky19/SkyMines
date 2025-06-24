@@ -6,6 +6,8 @@ authors: [ lukeskywlker19 ]
 load: POSTWORLD
 depend:
   - WorldGuard
+softdepend:
+  - Multiverse-Core
 
 permissions:
   skymines.commands.skymines:

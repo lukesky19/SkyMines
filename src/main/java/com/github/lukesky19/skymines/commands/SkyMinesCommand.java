@@ -17,10 +17,10 @@
 */
 package com.github.lukesky19.skymines.commands;
 
-import com.github.lukesky19.skylib.format.FormatUtil;
+import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.loader.LocaleManager;
-import com.github.lukesky19.skymines.configuration.record.Locale;
+import com.github.lukesky19.skymines.configuration.LocaleManager;
+import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.manager.MineManager;
 import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -87,15 +87,15 @@ public final class SkyMinesCommand {
                                     Placeholder.parsed("mine_id", mineId),
                                     Placeholder.parsed("time", localeManager.getTimeMessage(time)));
 
-                            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTime(), placeholders));
+                            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTime(), placeholders));
 
                             return 1;
                         } else {
-                            player.sendMessage(FormatUtil.format(locale.prefix() + "You do not have any time for this mine."));
+                            player.sendMessage(AdventureUtil.serialize(locale.prefix() + "You do not have any time for this mine."));
                             return 0;
                         }
                     } else {
-                        player.sendMessage(FormatUtil.format("No mine for mine id " + mineId));
+                        player.sendMessage(AdventureUtil.serialize("No mine for mine id " + mineId));
                         return 0;
                     }
                 })
@@ -132,16 +132,16 @@ public final class SkyMinesCommand {
                                             Placeholder.parsed("mine_id", mineId),
                                             Placeholder.parsed("time", localeManager.getTimeMessage(result)));
 
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
+                                    targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGiven(), placeholders));
+                                    sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
 
                                     return 1;
                                 } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 1!</red>"));
+                                    sender.sendMessage(AdventureUtil.serialize("<red>Time must be greater than or equal to 1!</red>"));
                                     return 0;
                                 }
                             } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
+                                sender.sendMessage(AdventureUtil.serialize("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
                                 return 0;
                             }
                         })
@@ -181,16 +181,16 @@ public final class SkyMinesCommand {
                                             Placeholder.parsed("mine_id", mineId),
                                             Placeholder.parsed("time", localeManager.getTimeMessage(result)));
 
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
+                                    targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGiven(), placeholders));
+                                    sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
 
                                     return 1;
                                 } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 1!</red>"));
+                                    sender.sendMessage(AdventureUtil.serialize("<red>Time must be greater than or equal to 1!</red>"));
                                     return 0;
                                 }
                             } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
+                                sender.sendMessage(AdventureUtil.serialize("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
                                 return 0;
                             }
                         })
@@ -230,16 +230,16 @@ public final class SkyMinesCommand {
                                             Placeholder.parsed("mine_id", mineId),
                                             Placeholder.parsed("time", localeManager.getTimeMessage(result)));
 
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
+                                    targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGiven(), placeholders));
+                                    sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
 
                                     return 1;
                                 } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 0!</red>"));
+                                    sender.sendMessage(AdventureUtil.serialize("<red>Time must be greater than or equal to 0!</red>"));
                                     return 0;
                                 }
                             } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
+                                sender.sendMessage(AdventureUtil.serialize("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
                                 return 0;
                             }
                         })
@@ -255,7 +255,7 @@ public final class SkyMinesCommand {
                 Locale locale = localeManager.getLocale();
 
                 for (String msg : locale.help()) {
-                    sender.sendMessage(FormatUtil.format(msg));
+                    sender.sendMessage(AdventureUtil.serialize(msg));
                 }
 
                 return 1;
@@ -269,7 +269,7 @@ public final class SkyMinesCommand {
 
                 skyMines.reload();
 
-                ctx.getSource().getSender().sendMessage(FormatUtil.format(locale.prefix() + locale.reload()));
+                ctx.getSource().getSender().sendMessage(AdventureUtil.serialize(locale.prefix() + locale.reload()));
 
                 return 1;
             })

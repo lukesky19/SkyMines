@@ -19,9 +19,9 @@ package com.github.lukesky19.skymines;
 
 import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
 import com.github.lukesky19.skymines.commands.SkyMinesCommand;
-import com.github.lukesky19.skymines.configuration.loader.LocaleManager;
-import com.github.lukesky19.skymines.configuration.loader.MineConfigManager;
-import com.github.lukesky19.skymines.configuration.loader.SettingsManager;
+import com.github.lukesky19.skymines.configuration.LocaleManager;
+import com.github.lukesky19.skymines.configuration.MineConfigManager;
+import com.github.lukesky19.skymines.configuration.SettingsManager;
 import com.github.lukesky19.skymines.listeners.*;
 import com.github.lukesky19.skymines.manager.DatabaseManager;
 import com.github.lukesky19.skymines.manager.MineManager;

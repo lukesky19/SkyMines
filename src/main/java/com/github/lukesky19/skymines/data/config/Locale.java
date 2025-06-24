@@ -15,7 +15,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.configuration.record;
+package com.github.lukesky19.skymines.data.config;
 
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
 
@@ -51,7 +51,6 @@ public record Locale(
         String canNotMine,
         TimeMessage timeMessage) {
     /**
-     *
      * @param prefix The text to display before the first time unit.
      * @param years The text to display when the player's time enters years.
      * @param months The text to display when the player's time enters months.

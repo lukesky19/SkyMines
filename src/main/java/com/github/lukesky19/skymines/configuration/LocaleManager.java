@@ -15,16 +15,17 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.configuration.loader;
+package com.github.lukesky19.skymines.configuration;
 
-import com.github.lukesky19.skylib.config.ConfigurationUtility;
-import com.github.lukesky19.skylib.format.FormatUtil;
+import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
+import com.github.lukesky19.skylib.api.time.Time;
+import com.github.lukesky19.skylib.api.time.TimeUtil;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
-import com.github.lukesky19.skylib.record.Time;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.record.Locale;
-import com.github.lukesky19.skymines.configuration.record.Settings;
+import com.github.lukesky19.skymines.data.config.Locale;
+import com.github.lukesky19.skymines.data.config.Settings;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -108,11 +109,11 @@ public class LocaleManager {
 
         Settings settings = settingsManager.getSettings();
         if(settings == null) {
-            logger.error(FormatUtil.format("<red>Failed to load plugin's locale due to plugin settings being null.</red>"));
+            logger.error(AdventureUtil.serialize("<red>Failed to load plugin's locale due to plugin settings being null.</red>"));
             return;
         }
         if(settings.locale() == null) {
-            logger.error(FormatUtil.format("<red>Failed to load plugin's locale to use in settings.yml is null.</red>"));
+            logger.error(AdventureUtil.serialize("<red>Failed to load plugin's locale to use in settings.yml is null.</red>"));
             return;
         }
 
@@ -158,8 +159,8 @@ public class LocaleManager {
                 || locale.canNotMine() == null) {
             locale = null;
 
-            skyMines.getComponentLogger().warn(FormatUtil.format("<yellow>One of the plugin's locale messages was null. Double-check your configuration."));
-            skyMines.getComponentLogger().info(FormatUtil.format("<white>The plugin will use the default config until the issue is resolved.</white>"));
+            skyMines.getComponentLogger().warn(AdventureUtil.serialize("<yellow>One of the plugin's locale messages was null. Double-check your configuration."));
+            skyMines.getComponentLogger().info(AdventureUtil.serialize("<white>The plugin will use the default config until the issue is resolved.</white>"));
         }
     }
 
@@ -171,7 +172,7 @@ public class LocaleManager {
     @NotNull
     public String getTimeMessage(int time) {
         Locale locale = this.getLocale();
-        Time timeRecord = FormatUtil.millisToTime(time * 1000L);
+        Time timeRecord = TimeUtil.millisToTime(time * 1000L);
 
         List<TagResolver.Single> placeholders = List.of(
                 Placeholder.parsed("years", String.valueOf(timeRecord.years())),
@@ -184,7 +185,7 @@ public class LocaleManager {
 
         StringBuilder stringBuilder = getStringBuilder(locale, timeRecord);
 
-        return MiniMessage.miniMessage().serialize(FormatUtil.format(stringBuilder.toString(), placeholders));
+        return MiniMessage.miniMessage().serialize(AdventureUtil.serialize(stringBuilder.toString(), placeholders));
     }
 
     /**

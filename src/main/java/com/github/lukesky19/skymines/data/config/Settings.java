@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -21,7 +21,7 @@ import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializ
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The plugin's settings configuration/
+ * The plugin's settings configuration.
  * @param configVersion The config version of the file.
  * @param locale The locale file name (without .yml) to use.
  */

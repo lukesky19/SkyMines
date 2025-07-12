@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -17,25 +17,37 @@
 */
 package com.github.lukesky19.skymines.listeners;
 
-import com.github.lukesky19.skymines.manager.MineManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.manager.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.AbstractMine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This classes listens for when a block is clicked and if that block is inside a mine, the event is passed to that mine.
  */
-public class BlockClickListener implements Listener {
-    private final MineManager mineManager;
+public class PlayerInteractListener implements Listener {
+    private final @NotNull MineDataManager mineDataManager;
+
+    /**
+     * Default Constructor.
+     * You should use {@link #PlayerInteractListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #PlayerInteractListener(MineDataManager)} instead.
+     * @throws RuntimeException if used.
+     */
+    @Deprecated
+    public PlayerInteractListener() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
 
     /**
      * Constructor
-     * @param mineManager A MineManager instance.
+     * @param mineDataManager A MineDataManager instance.
      */
-    public BlockClickListener(MineManager mineManager) {
-        this.mineManager = mineManager;
+    public PlayerInteractListener(@NotNull MineDataManager mineDataManager) {
+        this.mineDataManager = mineDataManager;
     }
 
     /**
@@ -46,7 +58,7 @@ public class BlockClickListener implements Listener {
     public void onBlockClick(PlayerInteractEvent playerInteractEvent) {
         if(playerInteractEvent.getClickedBlock() == null) return;
 
-        Mine mine = mineManager.getMineByLocation(playerInteractEvent.getClickedBlock().getLocation());
+        AbstractMine mine = mineDataManager.getMineByLocation(playerInteractEvent.getClickedBlock().getLocation());
         if(mine != null) {
            mine.handlePlayerInteract(playerInteractEvent);
         }

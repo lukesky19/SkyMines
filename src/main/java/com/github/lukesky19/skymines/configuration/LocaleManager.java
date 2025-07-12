@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -31,6 +31,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -40,52 +41,21 @@ import java.util.List;
  * This class loads the plugin's locale configuration.
  */
 public class LocaleManager {
-    private final SkyMines skyMines;
-    private final SettingsManager settingsManager;
-    private final Locale DEFAULT_LOCALE = new Locale(
-            "3.0.0.0",
-            "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>",
-            List.of(
-                    "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>",
-                    "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</bold></underlined></yellow></click>",
-                    " ",
-                    "<aqua><bold>List of Commands:</bold></aqua>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>help</yellow>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>reload</yellow>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>add</yellow> <yellow><player_name></yellow> <yellow><mine_id></yellow> <yellow><time_in_seconds></yellow>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>remove</yellow> <yellow><player_name></yellow> <yellow><mine_id></yellow> <yellow><time_in_seconds></yellow>",
-                    "<white>/</white><aqua>skymines</aqua> <yellow>set</yellow> <yellow><player_name></yellow> <yellow><mine_id></yellow> <yellow><time_in_seconds></yellow>"),
-            "<aqua>The plugin has reloaded successfully.</aqua>",
-            "<aqua>You now have access to <yellow><mine_id></yellow> for <time>.</aqua>",
-            "<aqua>Player <yellow><player_name></yellow> now has access to <yellow><mine_id></yellow> for <time>.</aqua>",
-            "<aqua>You have <time> left for <yellow><mine_id></yellow>.</aqua>",
-            "<red>You do not have access to this mine.</red>",
-            "<red>You cannot place blocks inside mines.</red>",
-            "<red>This block is currently on cooldown. Try mining elsewhere.</red>",
-            "<red>You can't mine this block.</red>",
-            new Locale.TimeMessage(
-                    "",
-                    "<yellow><years></yellow> year(s)",
-                    "<yellow><months></yellow> month(s)",
-                    "<yellow><weeks></yellow> week(s)",
-                    "<yellow><days></yellow> day(s)",
-                    "<yellow><hours></yellow> hour(s)",
-                    "<yellow><minutes></yellow> minute(s)",
-                    "<yellow><seconds></yellow> second(s)",
-                    "."));
-    private Locale locale;
+    private final @NotNull SkyMines skyMines;
+    private final @NotNull SettingsManager settingsManager;
+    private @NotNull Locale DEFAULT_LOCALE;
+    private @Nullable Locale locale;
 
     /**
      * Constructor
      * @param skyMines The SkyMines' Plugin
      * @param settingsManager A SettingsLoader instance.
      */
-    public LocaleManager(
-            SkyMines skyMines,
-            SettingsManager settingsManager)  {
+    public LocaleManager(@NotNull SkyMines skyMines, @NotNull SettingsManager settingsManager)  {
         this.skyMines = skyMines;
         this.settingsManager = settingsManager;
+
+        createDefaultLocale();
     }
 
     /**
@@ -144,35 +114,104 @@ public class LocaleManager {
      * Checks if the locale configuration has any null-values.
      */
     private void validateLocale() {
-        if(locale == null) return;
+        ComponentLogger logger = skyMines.getComponentLogger();
+        if(locale == null) {
+            logger.warn(AdventureUtil.serialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
+            return;
+        }
 
-        if(locale.configVersion() == null
-                || locale.prefix() == null
-                || locale.help() == null
-                || locale.reload() == null
-                || locale.mineTimeGiven() == null
-                || locale.mineTimeGivenTo() == null
-                || locale.mineTime() == null
-                || locale.mineNoAccess() == null
-                || locale.mineNoPlace() == null
-                || locale.cooldown() == null
-                || locale.canNotMine() == null) {
-            locale = null;
+        switch(locale.configVersion()) {
+            case "3.1.0.0" -> {
+                // Validate
+                if(locale.prefix() == null
+                        || locale.help() == null
+                        || locale.reload() == null
+                        || locale.noMineWithId() == null
+                        || locale.guiOpenError() == null) {
+                    logger.warn(AdventureUtil.serialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
+                    locale = null;
+                    return;
+                }
 
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("<yellow>One of the plugin's locale messages was null. Double-check your configuration."));
-            skyMines.getComponentLogger().info(AdventureUtil.serialize("<white>The plugin will use the default config until the issue is resolved.</white>"));
+                Locale.PacketMineMessages packetMessages = locale.packetMineMessages();
+                if(packetMessages.mineTimeChanged() == null
+                        || packetMessages.mineTimeChangedTo() == null
+                        || packetMessages.mineTime() == null
+                        || packetMessages.noMineTime() == null
+                        || packetMessages.playerMineTime() == null
+                        || packetMessages.playerNoMineTime() == null
+                        || packetMessages.mineAccessNoTime() == null
+                        || packetMessages.canNotBreakBlock() == null
+                        || packetMessages.canNotPlaceBlock() == null
+                        || packetMessages.cooldown() == null
+                        || packetMessages.timeInvalidLessThenOne() == null
+                        || packetMessages.timeInvalidLessThenZero() == null) {
+                    logger.warn(AdventureUtil.serialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
+                    locale = null;
+                    return;
+                }
+
+                Locale.WorldMineMessages worldMineMessages = locale.worldMineMessages();
+                if(worldMineMessages.invalidBlockType() == null
+                        || worldMineMessages.blockAlreadyUnlocked() == null
+                        || worldMineMessages.blockAlreadyLocked() == null
+                        || worldMineMessages.blockUnlocked() == null
+                        || worldMineMessages.blockLocked() == null
+                        || worldMineMessages.playerBlockUnlocked() == null
+                        || worldMineMessages.playerBlockLocked() == null
+                        || worldMineMessages.blockBreakNotUnlocked() == null
+                        || worldMineMessages.blockBreakNotAllowed() == null
+                        || worldMineMessages.blockPlaceNotUnlocked() == null
+                        || worldMineMessages.blockInteractionNotUnlocked() == null
+                        || worldMineMessages.blockInteractionNotAllowed() == null
+                        || worldMineMessages.notEnoughMoney() == null
+                        || worldMineMessages.guiErrorNotInMine() == null) {
+                    logger.warn(AdventureUtil.serialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
+                    locale = null;
+                    return;
+                }
+
+                Locale.TimeMessage timeMessage= locale.timeMessage();
+                if(timeMessage.prefix() == null
+                        || timeMessage.years() == null
+                        || timeMessage.months() == null
+                        || timeMessage.weeks() == null
+                        || timeMessage.days() == null
+                        || timeMessage.hours() == null
+                        || timeMessage.minutes() == null
+                        || timeMessage.seconds() == null
+                        || timeMessage.suffix() == null) {
+                    logger.warn(AdventureUtil.serialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
+                    locale = null;
+                }
+            }
+
+            case "3.0.0.0" -> {
+                logger.warn(AdventureUtil.serialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
+                locale = null;
+            }
+
+            case null -> {
+                logger.warn(AdventureUtil.serialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
+                locale = null;
+            }
+
+            default -> {
+                logger.warn(AdventureUtil.serialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
+                locale = null;
+            }
         }
     }
 
     /**
      * Gets the time message to display in the boss bar.
-     * @param time The time in seconds.
+     * @param timeSeconds The time in seconds.
      * @return A String containing the time message.
      */
     @NotNull
-    public String getTimeMessage(int time) {
+    public String getTimeMessage(long timeSeconds) {
         Locale locale = this.getLocale();
-        Time timeRecord = TimeUtil.millisToTime(time * 1000L);
+        Time timeRecord = TimeUtil.millisToTime(timeSeconds * 1000L);
 
         List<TagResolver.Single> placeholders = List.of(
                 Placeholder.parsed("years", String.valueOf(timeRecord.years())),
@@ -202,7 +241,7 @@ public class LocaleManager {
 
         boolean isFirstUnit = true;
 
-        if (timeRecord.years() > 0) {
+        if(timeRecord.years() > 0) {
             stringBuilder.append(timeMessage.years());
             isFirstUnit = false;
         }
@@ -261,5 +300,72 @@ public class LocaleManager {
 
         stringBuilder.append(timeMessage.suffix());
         return stringBuilder;
+    }
+
+    /**
+     * Creates the default locale configuration to use if the locale configuration is invalid.
+     */
+    private void createDefaultLocale() {
+        DEFAULT_LOCALE = new Locale(
+                "3.1.0.0",
+                "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>",
+                List.of(
+                        "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>",
+                        "<aqua>Source code is released on GitHub: <click:OPEN_URL:https://github.com/lukesky19><yellow><underlined><bold>https://github.com/lukesky19</bold></underlined></yellow></click>",
+                        " ",
+                        "<aqua><bold>List of Commands:</bold></aqua>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>help</yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>reload</yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow> <yellow><player></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>add</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>remove</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>set</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>unlock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>lock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>"),
+                "<aqua>The plugin has reloaded successfully.</aqua>",
+                "<red>There is no mine with that name.",
+                "<red>Unable to open this GUI because of a configuration error.</red>",
+                new Locale.PacketMineMessages(
+                        "<aqua>You now have access to <yellow><mine_id></yellow> for <time>.</aqua>",
+                        "<aqua>Player <yellow><player_name></yellow> now has access to <yellow><mine_id></yellow> for <time>.</aqua>",
+                        "<aqua>You have <time> left for <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>You have no time for <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>Player <yellow><player></yellow> has <time> left for <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>Player <yellow><player></yellow> has no time for <yellow><mine_id></yellow>.</aqua>",
+                        "<red>You do not have any time to access the mine. Purchase some on <yellow>/shop</yellow>.</red>",
+                        "<red>This block cannot be mined.</red>",
+                        "<red>You cannot place blocks inside this mine.</red>",
+                        "<red>This block is currently on cooldown. Try mining elsewhere.</red>",
+                        "<red>Time must be greater than or equal to 1!</red>",
+                        "<red>Time must be greater than or equal to 0!</red>"),
+                new Locale.WorldMineMessages(
+                        "<red>Invalid block type provided.</red>",
+                        "<red>The block <yellow><block_type></yellow> is already unlocked for player <yellow><player></yellow> and mine <yellow><mine_id></yellow>.</red>",
+                        "<red>The block <yellow><block_type></yellow> is already locked for player <yellow><player></yellow> and mine <yellow><mine_id></yellow>.</red>",
+                        "<aqua>You can now mine <yellow><block_type></yellow> in mine <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>You can no longer mine <yellow><block_type></yellow> in mine <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>Player <yellow><player></yellow> can now mine <yellow><block_type></yellow> in mine <yellow><mine_id></yellow>.</aqua>",
+                        "<aqua>Player <yellow><player></yellow> can no longer mine <yellow><block_type></yellow> in mine <yellow><mine_id></yellow>.</aqua>",
+                        "<red>You cannot mine this block because it has not been unlocked. Unlock blocks in <yellow>/skymines shop</yellow>.</red>",
+                        "<red>This block cannot be mined.</red>",
+                        "<red>This block is not a player-placed block and cannot be mined.</red>",
+                        "<red>This block is not player water-logged and cannot be unwater-logged.<red>",
+                        "<red>You cannot place this block because it has not been unlocked. Unlock blocks in <yellow>/skymines shop</yellow>.</red>",
+                        "<red>This block cannot be placed.<red>",
+                        "<red>You cannot interact with this block because it has not been unlocked. Unlock blocks in <yellow>/skymines shop</yellow>.</red>",
+                        "<red>This block cannot be interacted with.<red>",
+                        "<red>You do not have enough money to unlock this block.</red>",
+                        "<red>You must be inside a mine to open <yellow>/skymines shop</yellow>.</red>"),
+                new Locale.TimeMessage(
+                        "",
+                        "<yellow><years></yellow> year(s)",
+                        "<yellow><months></yellow> month(s)",
+                        "<yellow><weeks></yellow> week(s)",
+                        "<yellow><days></yellow> day(s)",
+                        "<yellow><hours></yellow> hour(s)",
+                        "<yellow><minutes></yellow> minute(s)",
+                        "<yellow><seconds></yellow> second(s)",
+                        "."));
     }
 }

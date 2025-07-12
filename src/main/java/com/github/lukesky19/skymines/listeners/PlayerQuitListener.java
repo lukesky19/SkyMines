@@ -1,35 +1,59 @@
+/*
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 package com.github.lukesky19.skymines.listeners;
 
-import com.github.lukesky19.skymines.manager.MineManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
+import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.UUID;
 
 /**
- * This class listens to when a player disconnects from the server and passes the event to a mine if they logged out inside one.
+ * This class listens to when a player disconnects from the server, unloads their player data and removes the boss bar shown to them (if any).
  */
 public class PlayerQuitListener implements Listener {
-    private final MineManager mineManager;
+    private final @NotNull PlayerDataManager playerDataManager;
+    private final @NotNull BossBarManager bossBarManager;
 
     /**
      * Constructor
-     * @param mineManager A MineManager instance.
+     * @param playerDataManager A {@link PlayerDataManager} instance.
+     * @param bossBarManager A {@link BossBarManager} instance.
      */
-    public PlayerQuitListener(MineManager mineManager) {
-        this.mineManager = mineManager;
+    public PlayerQuitListener(@NotNull PlayerDataManager playerDataManager, @NotNull BossBarManager bossBarManager) {
+        this.playerDataManager = playerDataManager;
+        this.bossBarManager = bossBarManager;
     }
 
     /**
      * Listens to when a player logs out and passes the event to the mine they were in (if any).
-     * @param playerQuitEvent A PlayerQuitEvent
+     * @param playerQuitEvent A {@link PlayerQuitEvent}.
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent playerQuitEvent) {
-        Mine mine = mineManager.getMineByLocation(playerQuitEvent.getPlayer().getLocation());
-        if(mine != null) {
-            mine.handlePlayerQuitEvent(playerQuitEvent);
-        }
+        Player player = playerQuitEvent.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        playerDataManager.unloadPlayerData(uuid).thenAccept(v -> bossBarManager.removeBossBar(player, uuid));
     }
 }

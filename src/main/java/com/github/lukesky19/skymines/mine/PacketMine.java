@@ -1,14 +1,34 @@
+/*
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
 package com.github.lukesky19.skymines.mine;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.player.PlayerUtil;
+import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.configuration.LocaleManager;
-import com.github.lukesky19.skymines.data.MineBlock;
-import com.github.lukesky19.skymines.data.PacketBlock;
 import com.github.lukesky19.skymines.data.config.Locale;
-import com.github.lukesky19.skymines.data.config.MineConfig;
-import com.github.lukesky19.skymines.manager.DatabaseManager;
+import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
+import com.github.lukesky19.skymines.data.packet.BlockData;
+import com.github.lukesky19.skymines.data.packet.PacketBlock;
+import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
+import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
+import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
@@ -21,249 +41,263 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.BrushableBlock;
+import org.bukkit.block.BlockType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDropItemEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootTable;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.SQLException;
 import java.util.*;
 
 /**
- * This class handles a Mine based on sending client's client-side block updates.
- * The actual blocks don't change in the world and the mined blocks are tracked server side.
- * The block only changes client-side or visually for the player.
+ * This mine uses packets to send block updates after the block has been mined.
+ * Blocks that have been mined are still tracked server-side.
+ * This allows the existence of a per-player mine system.
  */
-public class PacketMine extends Mine {
-    // Class instances
-    private final SkyMines skyMines;
-    private final LocaleManager localeManager;
-    private final DatabaseManager databaseManager;
+public class PacketMine extends AbstractMine {
+    // SkyMines
+    private final @NotNull SkyMines skyMines;
+    private final @NotNull LocaleManager localeManager;
+    private final @NotNull CooldownManager cooldownManager;
+    private final @NotNull MineTimeManager mineTimeManager;
+    private final @NotNull BossBarManager bossBarManager;
 
-    // Mine config
+    // WorldGuard
+    private @Nullable RegionManager regionManager;
+
+    // Mine Data
     private boolean status = true;
-    private final MineConfig mineConfig;
-    private String mineId;
-    private RegionManager regionManager;
-    private World mineWorld;
-    private ProtectedRegion mineRegion;
-    private final HashMap<ProtectedRegion, List<PacketBlock>> childRegions = new HashMap<>();
-
-    // Player data
-    private final HashMap<UUID, List<MineBlock>> playerMinedBlocks = new HashMap<>();
-    private final HashMap<UUID, Integer> playerTimes = new HashMap<>();
-    private final HashMap<UUID, BossBar> playerBossBars = new HashMap<>();
-
-    // Tasks
-    private BukkitTask timeLimitTask;
-    private BukkitTask blockRevertTask;
+    private final @NotNull PacketMineConfig mineConfig;
+    private @Nullable String mineId;
+    private @Nullable World mineWorld;
+    private @Nullable ProtectedRegion mineRegion;
+    /**
+     * Contains the data for a {@link ProtectedRegion} and the {@link List} of {@link PacketBlock}s that contains the data to identify if a block can be mined and the data required to replace the block.
+     */
+    private final @NotNull Map<ProtectedRegion, List<PacketBlock>> blockDataByRegion = new HashMap<>();
 
     /**
-     * Constructor.
-     * Creates all necessary data to run the mine. Check {@link #isSetup()} to see if the Mine was created successfully or not.
-     * @param skyMines The SkyMines' Plugin
-     * @param localeManager A LocaleLoader instance.
-     * @param databaseManager A DatabaseManager instance.
-     * @param mineConfig The MineConfig for this Mine.
+     * Default Constructor.
+     * You should use {@link #PacketMine(SkyMines, LocaleManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
+     * @deprecated You should use {@link #PacketMine(SkyMines, LocaleManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
+     * @throws RuntimeException if used.
      */
-    public PacketMine(SkyMines skyMines, LocaleManager localeManager, DatabaseManager databaseManager, MineConfig mineConfig) {
-        ComponentLogger logger = skyMines.getComponentLogger();
+    @Deprecated
+    public PacketMine() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
+
+    /**
+     * Constructor
+     * @param skyMines A {@link SkyMines} instance.
+     * @param localeManager A {@link LocaleManager} instance.
+     * @param cooldownManager A {@link CooldownManager} instance.
+     * @param mineTimeManager A {@link MineTimeManager} instance.
+     * @param bossBarManager A {@link BossBarManager} instance.
+     * @param mineConfig The {@link PacketMineConfig} to create the mine with.
+     */
+    public PacketMine(
+            @NotNull SkyMines skyMines,
+            @NotNull LocaleManager localeManager,
+            @NotNull CooldownManager cooldownManager,
+            @NotNull MineTimeManager mineTimeManager,
+            @NotNull BossBarManager bossBarManager,
+            @NotNull PacketMineConfig mineConfig) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
-        this.databaseManager = databaseManager;
+        this.cooldownManager = cooldownManager;
+        this.mineTimeManager = mineTimeManager;
+        this.bossBarManager = bossBarManager;
         this.mineConfig = mineConfig;
+
+        ComponentLogger logger = skyMines.getComponentLogger();
 
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a null mine id.</red>"));
+            logger.error(AdventureUtil.serialize("Unable to create mine due to a null mine id."));
             status = false;
             return;
         }
 
-        if(mineConfig.worldName() != null) {
-            mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
-            if(mineWorld != null) {
-                regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(mineWorld));
-
-                if(mineConfig.parentRegion() != null) {
-                    ProtectedRegion parentRegion = getRegion(mineWorld, mineConfig.parentRegion());
-                    if (parentRegion != null) {
-                        this.mineRegion = parentRegion;
-                    } else {
-                        logger.error(AdventureUtil.serialize("<red>Unable to create mine due to region " + mineConfig.parentRegion() + " not being found.</red>"));
-                        status = false;
-                        return;
-                    }
-                } else {
-                    logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a parent region not being configured.</red>"));
-                    status = false;
-                    return;
-                }
-
-                for(MineConfig.ChildRegionData childRegionData : mineConfig.childRegions()) {
-                    if(childRegionData.region() != null) {
-                        ProtectedRegion childRegion = getRegion(mineWorld, childRegionData.region());
-                        if(childRegion != null) {
-                            // Parse blocks that can be mined
-                            List<PacketBlock> packetBlocks = new ArrayList<>();
-                            for(MineConfig.BlockData blockData : childRegionData.blocksAllowed()) {
-                                if(blockData.block() != null && blockData.replacement() != null) {
-                                    Material worldMaterial = Material.getMaterial(blockData.block());
-                                    Material replacementMaterial = Material.getMaterial(blockData.replacement());
-                                    if(worldMaterial != null && replacementMaterial != null) {
-                                        PacketBlock packetBlock = new PacketBlock(worldMaterial, replacementMaterial, null, blockData.cooldownSeconds());
-                                        if(blockData.lootTable() != null) {
-                                            NamespacedKey key = NamespacedKey.fromString(blockData.lootTable());
-                                            if(key != null) {
-                                                LootTable lootTable = skyMines.getServer().getLootTable(key);
-                                                if(lootTable != null) {
-                                                    packetBlock = new PacketBlock(worldMaterial, replacementMaterial, lootTable, blockData.cooldownSeconds());
-                                                } else {
-                                                    logger.warn(AdventureUtil.serialize("No loot table found for key " + key.asString()));
-                                                }
-                                            } else {
-                                                logger.warn(AdventureUtil.serialize("Unable to get loot table due to a null NamespacedKey."));
-                                            }
-                                        }
-
-                                        packetBlocks.add(packetBlock);
-                                    } else {
-                                        if(worldMaterial == null) {
-                                            logger.warn(AdventureUtil.serialize("Unable to find a material of name " + blockData.block()));
-                                        } else {
-                                            logger.warn(AdventureUtil.serialize("Unable to find a material of name " + blockData.replacement()));
-                                        }
-                                    }
-                                }
-                            }
-
-                            childRegions.put(childRegion, packetBlocks);
-                        } else {
-                            logger.warn(AdventureUtil.serialize("Unable to find a region by the name of " + childRegionData.region()));
-                        }
-                    } else {
-                        logger.warn(AdventureUtil.serialize("There is a child region that has a null region name."));
-                    }
-                }
-            } else {
-                logger.error(AdventureUtil.serialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
-                status = false;
-                return;
-            }
-        } else {
+        if(mineConfig.worldName() == null) {
             logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a world name not being configured.</red>"));
             status = false;
             return;
         }
 
-        try {
-            playerTimes.putAll(databaseManager.getPlayerTimesByMineId(mineId));
-        } catch (SQLException e) {
-            logger.warn(AdventureUtil.serialize("Unable to load player times from database. Error:"));
-            logger.error(AdventureUtil.serialize(e.getMessage()));
+        World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
+        if(mineWorld == null) {
+            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            status = false;
             return;
         }
+        this.mineWorld = mineWorld;
 
-        // If the plugin is somehow loaded with players online (plugman), show boss bars for players in the mine
-        for(Player player : skyMines.getServer().getOnlinePlayers()) {
-            if(isLocationInMine(player.getLocation())) {
-                BossBar bossBar = getBossBar(player.getUniqueId());
-                if(bossBar != null) {
-                    player.showBossBar(bossBar);
-                }
-            }
+        RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(mineWorld));
+        if(regionManager == null) {
+            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to an invalid region manager. Is the world of name " + mineConfig.worldName() + " valid?</red>"));
+            status = false;
+            return;
         }
+        this.regionManager = regionManager;
 
-        startBlockRevertTask();
-        startTimeLimitTask();
+        ProtectedRegion parentRegion = getRegion(mineConfig.parentRegion());
+        if(parentRegion == null) {
+            logger.error(AdventureUtil.serialize("Unable to create mine due to parent region " + mineConfig.parentRegion() + " not being found."));
+            status = false;
+            return;
+        }
+        this.mineRegion = parentRegion;
+
+        for(PacketMineConfig.ChildRegionData childRegionData :  mineConfig.childRegions()) {
+            ProtectedRegion childRegion = getRegion(childRegionData.region());
+            if(childRegion == null) {
+                logger.warn(AdventureUtil.serialize("Unable to find a child region for " + childRegionData.region() + "."));
+                continue;
+            }
+
+            List<PacketBlock> packetBlockList = new ArrayList<>();
+            for(int i = 0; i < childRegionData.blocksAllowed().size(); i++) {
+                PacketMineConfig.BlockData blockData = childRegionData.blocksAllowed().get(i);
+
+                if(blockData.block() == null || blockData.replacement() == null) {
+                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of a world type or replacement type is not configured for mine " + mineId + "."));
+                    continue;
+                }
+
+                @NotNull Optional<BlockType> optionalBlockWorldType = RegistryUtil.getBlockType(logger, blockData.block());
+                @NotNull Optional<BlockType> optionalBlockReplacementType = RegistryUtil.getBlockType(logger, blockData.replacement());
+
+                if(optionalBlockWorldType.isEmpty() || optionalBlockReplacementType.isEmpty()) {
+                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
+                    continue;
+                }
+
+                BlockType worldBlockType = optionalBlockWorldType.get();
+                BlockType replacementBlockType = optionalBlockReplacementType.get();
+                Material worldMaterial = worldBlockType.asMaterial();
+                Material replacementMaterial = replacementBlockType.asMaterial();
+                if(worldMaterial == null || replacementMaterial == null) {
+                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
+                    continue;
+                }
+
+                LootTable lootTable = null;
+                if(blockData.lootTable() != null) {
+                    NamespacedKey key = NamespacedKey.fromString(blockData.lootTable());
+                    if(key != null) {
+                        lootTable = skyMines.getServer().getLootTable(key);
+                    } else {
+                        logger.warn(AdventureUtil.serialize("Unable to get loot table due to a null NamespacedKey at index " + i + " for mine " + mineId + "."));
+                    }
+                }
+
+                PacketBlock packetBlock = new PacketBlock(worldBlockType, replacementBlockType, lootTable, blockData.cooldownSeconds());
+                packetBlockList.add(packetBlock);
+            }
+
+            blockDataByRegion.put(childRegion, packetBlockList);
+        }
     }
 
+    /**
+     * Get the id of the mine.
+     * @return The id of the mine.
+     */
     @Override
-    public @NotNull String getMineId() {
+    public @Nullable String getMineId() {
         return mineId;
     }
 
+    /**
+     * Checks if the location is inside the mine's region. This only checks the parent region and not any child regions.
+     * You can use {@link #isBlockMineable(UUID, Location, BlockType)} for checking child regions.
+     * @param location The {@link Location} to check.
+     * @return true if the location is inside the mine's parent region, otherwise false.
+     */
     @Override
     public boolean isLocationInMine(@NotNull Location location) {
-        return mineWorld.equals(location.getWorld()) && mineRegion.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        if(mineWorld == null) return false;
+        if(mineRegion == null) return false;
+
+        return mineWorld.equals(location.getWorld())
+                && mineRegion.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     /**
-     * Checks if the Player has time for this mine and if the player can mine the block.
-     * @param player The player mining the block.
-     * @param uuid The UUID of the player.
-     * @param location The location of the block.
-     * @param material The material of the block.
-     * @return true if the player can mine, false if not.
+     * Checks if the {@link Player} has access to the mine and if the block is allowed to be mined.
+     * @param uuid The {@link UUID} of the player.
+     * @param location The {@link Location} of the block.
+     * @param blockType The {@link BlockType} of the block.
+     * @return true if the block can be mined, otherwise false.
      */
-    public boolean isBlockMineable(@NotNull Player player, @NotNull UUID uuid, @NotNull Location location, @NotNull Material material) {
-        if(!playerTimes.containsKey(uuid)) return false;
-
-        for (Map.Entry<ProtectedRegion, List<PacketBlock>> regionEntry : childRegions.entrySet()) {
-            ProtectedRegion region = regionEntry.getKey();
-            if (region.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
-                for (PacketBlock packetBlock : regionEntry.getValue()) {
-                    if (packetBlock.worldType().equals(material)) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     @Override
-    public boolean isBlockOnCooldown(@NotNull UUID uuid, @NotNull Location location) {
-        List<MineBlock> blockLocations = playerMinedBlocks.get(uuid);
-        if(blockLocations != null) {
-            for(MineBlock mineBlock : blockLocations) {
-                if(mineBlock.getLocation().equals(location)) return true;
-            }
-        }
+    public boolean isBlockMineable(@NotNull UUID uuid, @NotNull Location location, @NotNull BlockType blockType) {
+        if(mineId == null) return false;
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) return false;
 
-        return false;
+        return blockDataByRegion.entrySet().stream()
+                .filter(entry -> entry.getKey().contains(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                .flatMap(entry -> entry.getValue().stream())
+                .anyMatch(packetBlock -> packetBlock.worldType().equals(blockType));
     }
 
     /**
-     * Checks if the player has time to access the mine, if the block is on cooldown or if the block is mineable.
-     * Players in creative mode will be ignored.
+     * Checks if the {@link Location} is on cooldown for the player.
+     * @param uuid The {@link UUID} of the player.
+     * @param location The {@link Location} of the block.
+     * @return true if on cooldown, otherwise false.
+     */
+    @Override
+    public boolean isLocationOnCooldown(@NotNull UUID uuid, @NotNull Location location) {
+        return cooldownManager.isLocationOnCooldown(uuid, location);
+    }
+
+    /**
+     * Handles a {@link BlockBreakEvent} that occurs while in the mine.
+     * Creative players are ignored.
+     * If the player has no time for the mine, a no access message is sent to the player.
+     * If the block's location is on cooldown, a cooldown message is sent to the player.
+     * If the block is not minable at all, a can not mine message is sent to the player.
+     * The {@link BlockBreakEvent} is cancelled in the above 3 scenarios.
      * @param blockBreakEvent A BlockBreakEvent
      */
     @Override
     public void handleBlockBreak(@NotNull BlockBreakEvent blockBreakEvent) {
+        if(mineId == null) return;
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
         Locale locale = localeManager.getLocale();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
-        if(!playerTimes.containsKey(uuid)) {
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             blockBreakEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             return;
         }
 
         Block block = blockBreakEvent.getBlock();
         Location location = block.getLocation();
-        Material material = block.getType();
+        Material blockMaterial = block.getType();
+        BlockType blockType = blockMaterial.asBlockType();
+        if(blockType == null) return;
 
-        if(this.isBlockOnCooldown(uuid, location)) {
+        if(isLocationOnCooldown(uuid, location)) {
             blockBreakEvent.setCancelled(true);
-            this.sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.cooldown()));
+            sendBulkBlockUpdates(player, uuid);
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().cooldown()));
         } else {
-            if(!this.isBlockMineable(player, uuid, location, material)) {
+            if(!isBlockMineable(uuid, location, blockType)) {
                 blockBreakEvent.setCancelled(true);
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.canNotMine()));
+                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
             }
         }
     }
@@ -276,170 +310,326 @@ public class PacketMine extends Mine {
      */
     @Override
     public void handleBlockDropItem(@NotNull BlockDropItemEvent blockDropItemEvent) {
+        if(mineId == null) return;
+
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
         Locale locale = localeManager.getLocale();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
-        if(!playerTimes.containsKey(uuid)) {
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             blockDropItemEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             return;
         }
 
         BlockState blockState = blockDropItemEvent.getBlockState();
         Location location = blockState.getLocation();
-        Material brokenBlockMaterial = blockState.getType();
+        Material brokenMaterial = blockState.getType();
+        BlockType brokenBlockType = brokenMaterial.asBlockType();
+        if(brokenBlockType == null) return;
 
-        for(Map.Entry<ProtectedRegion, List<PacketBlock>> regionEntry : childRegions.entrySet()) {
-            ProtectedRegion region = regionEntry.getKey();
+        blockDropItemEvent.setCancelled(true);
 
-            if(region.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
-                for(PacketBlock packetBlock : regionEntry.getValue()) {
-                    Material allowedMaterial = packetBlock.worldType();
-                    Material replacementMaterial = packetBlock.replacementType();
-                    int delaySeconds = packetBlock.cooldownSeconds();
+        // Replace the broken block
+        skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
+            BlockState currentBlockState = location.getBlock().getState(false);
+            currentBlockState.setType(brokenMaterial);
+            currentBlockState.setBlockData(blockState.getBlockData());
+            currentBlockState.update(true, false);
+        }, 1L);
 
-                    if(brokenBlockMaterial.equals(allowedMaterial)) {
-                        blockDropItemEvent.setCancelled(true);
+        blockDataByRegion.entrySet().stream()
+                .filter(entry -> entry.getKey().contains(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                .map(entry -> entry.getValue().stream()
+                        .filter(packetBlock -> brokenBlockType.equals(packetBlock.worldType()))
+                        .findFirst()
+                )
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(packetBlock -> {
+                    // Add dropped items to the player's inventory.
+                    for(Item droppedItem : blockDropItemEvent.getItems()) {
+                        ItemStack itemStack = droppedItem.getItemStack();
+                        PlayerUtil.giveItem(player.getInventory(), itemStack, itemStack.getAmount(), player.getLocation());
+                    }
 
-                        if(blockState instanceof BrushableBlock brushableBlock) {
-                            LootTable lootTable = packetBlock.lootTable();
-                            if(lootTable != null) {
-                                brushableBlock.setLootTable(lootTable);
-                            }
-                        }
+                    BlockType replacementBlockType = packetBlock.replacementType();
+                    Material replacementMaterial = replacementBlockType.asMaterial();
 
-                        // Replace broken block
-                        skyMines.getServer().getScheduler().runTaskLater(skyMines, () ->
-                                blockState.update(true, false), 1L);
+                    cooldownManager.addLocationCooldown(uuid, location, packetBlock.replacementType(), packetBlock.cooldownSeconds());
 
-                        for(Item item : blockDropItemEvent.getItems()) {
-                            ItemStack itemStack = item.getItemStack();
-                            PlayerUtil.giveItem(player.getInventory(), itemStack, itemStack.getAmount(), player.getLocation());
-                        }
-
-                        List<MineBlock> mineBlocks = playerMinedBlocks.getOrDefault(uuid, new ArrayList<>());
-                        mineBlocks.add(new MineBlock(location, replacementMaterial, delaySeconds));
-
-                        playerMinedBlocks.put(uuid, mineBlocks);
-
-                        // Send the block change
+                    if(replacementMaterial != null) {
                         skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
-                            if(player.isOnline() && player.isConnected()) {
+                            if (player.isOnline() && player.isConnected()) {
                                 player.sendBlockChange(location, replacementMaterial.createBlockData());
                             }
                         }, 2L);
                     }
-                }
-            }
-        }
+                });
     }
 
     /**
-     * Checks if a player has time to access the mine, if the clicked block is on cooldown, or if the clicked block can be mined.
-     * Players in creative mode will be ignored.
-     * @param playerInteractEvent A PlayerInteractEvent
+     * Handles a {@link PlayerBucketFillEvent} that occurs while in the mine.
+     * Creative players are ignored.
+     * If the player has no time for the mine, a no access message is sent to the player.
+     * If the block's location is on cooldown, a cooldown message is sent to the player.
+     * If the block is not minable at all, a can not mine message is sent to the player.
+     * Otherwise, the appropriate bucket will be given to the player and the block state will be reverted.
+     * The event is always cancelled.
+     * @param playerBucketFillEvent A {@link PlayerBucketFillEvent}
+     */
+    @Override
+    public void handleBucketFilled(@NotNull PlayerBucketFillEvent playerBucketFillEvent) {
+        if(mineId == null) return;
+        Player player = playerBucketFillEvent.getPlayer();
+        UUID uuid = player.getUniqueId();
+        Locale locale = localeManager.getLocale();
+
+        if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) {
+            playerBucketFillEvent.setCancelled(true);
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            return;
+        }
+
+        BlockState blockState = playerBucketFillEvent.getBlock().getState();
+        Location location = blockState.getLocation();
+        Material brokenMaterial = blockState.getType();
+        BlockType brokenBlockType = brokenMaterial.asBlockType();
+        if(brokenBlockType == null) return;
+
+        playerBucketFillEvent.setCancelled(true);
+
+        // Replace the broken block
+        skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
+            BlockState currentBlockState = location.getBlock().getState(false);
+            currentBlockState.setType(brokenMaterial);
+            currentBlockState.setBlockData(blockState.getBlockData());
+            currentBlockState.update(true, false);
+        }, 1L);
+
+        blockDataByRegion.entrySet().stream()
+                .filter(entry -> entry.getKey().contains(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                .map(entry -> entry.getValue().stream()
+                        .filter(packetBlock -> brokenBlockType.equals(packetBlock.worldType()))
+                        .findFirst()
+                )
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(packetBlock -> {
+                    ItemStack itemStack = playerBucketFillEvent.getItemStack();
+                    if(itemStack != null) {
+                        PlayerUtil.giveItem(player.getInventory(), itemStack, itemStack.getAmount(), player.getLocation());
+                    }
+
+                    BlockType replacementBlockType = packetBlock.replacementType();
+                    Material replacementMaterial = replacementBlockType.asMaterial();
+
+                    cooldownManager.addLocationCooldown(uuid, location, packetBlock.replacementType(), packetBlock.cooldownSeconds());
+
+                    if (replacementMaterial != null) {
+                        skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
+                            if (player.isOnline() && player.isConnected()) {
+                                player.sendBlockChange(location, replacementMaterial.createBlockData());
+                            }
+                        }, 2L);
+                    }
+                });
+    }
+
+    /**
+     * Handles a {@link PlayerBucketEmptyEvent}.
+     * Creative players are ignored.
+     * This event is always cancelled otherwise.
+     * @param playerBucketEmptyEvent A {@link PlayerBucketEmptyEvent}
+     */
+    @Override
+    public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+        Player player = playerBucketEmptyEvent.getPlayer();
+        Locale locale = localeManager.getLocale();
+
+        if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+
+        playerBucketEmptyEvent.setCancelled(true);
+        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+    }
+
+    /**
+     * Handles a {@link PlayerInteractEvent}.
+     * Creative players are ignored.
+     * Only handles right click interactions where the block is non-null and not air.
+     * If the player has no time for the mine, a no access message is sent to the player.
+     * If the block's location is on cooldown, a cooldown message is sent to the player.
+     * If the block is not minable at all, a can not mine message is sent to the player.
+     * The {@link PlayerInteractEvent} is cancelled in the above 3 scenarios.
+     * @param playerInteractEvent A {@link PlayerInteractEvent}.
      */
     @Override
     public void handlePlayerInteract(@NotNull PlayerInteractEvent playerInteractEvent) {
+        if(mineId == null) return;
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
         Locale locale = localeManager.getLocale();
-        Block block = playerInteractEvent.getClickedBlock();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
-        if(block == null ) return;
-        if(block.getType().equals(Material.AIR)) return;
-        if(!playerTimes.containsKey(uuid)) {
+
+        Action action = playerInteractEvent.getAction();
+        if(!action.equals(Action.RIGHT_CLICK_BLOCK)) return;
+
+        Block block = playerInteractEvent.getClickedBlock();
+        if(block == null) return;
+        Material blockMaterial = block.getType();
+        if(blockMaterial.isAir()) return;
+
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             playerInteractEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             return;
         }
 
         Location location = block.getLocation();
-        if(isBlockOnCooldown(uuid, location)) {
+        BlockType blockType = blockMaterial.asBlockType();
+        if(blockType == null) return;
+
+        if(isLocationOnCooldown(uuid, location)) {
             playerInteractEvent.setCancelled(true);
-            this.sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.cooldown()));
+            sendBulkBlockUpdates(player, uuid);
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().cooldown()));
         } else {
-            if(!this.isBlockMineable(player, uuid, location, block.getType())) {
+            if(!isBlockMineable(uuid, location, blockType)) {
                 playerInteractEvent.setCancelled(true);
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.canNotMine()));
+                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
             }
         }
     }
 
     /**
-     * Checks if the player has time to access the mine and if the block can be harvested.
-     * If the block can be harvested, the block is replaced, the items given to the player, and sends client-side block updates.
-     * Players in creative mode will be ignored.
-     * @param playerHarvestBlockEvent A PlayerHarvestBlockEvent
+     * Handles a {@link PlayerHarvestBlockEvent}.
+     * Creative players are ignored.
+     * If the player has no time for the mine, a no access message is sent to the player.
+     * If the block's location is on cooldown, a cooldown message is sent to the player.
+     * If the block is not minable at all, a can not mine message is sent to the player.
+     * Otherwise, the appropriate items will be given to the player and the block state will be reverted.
+     * @param playerHarvestBlockEvent A {@link PlayerHarvestBlockEvent}.
      */
     @Override
     public void handlePlayerHarvestBlockEvent(@NotNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
+        if(mineId == null) return;
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
         Locale locale = localeManager.getLocale();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
-        if(!playerTimes.containsKey(uuid)) {
+        if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             playerHarvestBlockEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoAccess()));
+            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             return;
         }
 
         BlockState blockState = playerHarvestBlockEvent.getHarvestedBlock().getState();
         Location location = blockState.getLocation();
-        Material brokenBlockMaterial = blockState.getType();
+        Material harvestedMaterial = blockState.getType();
+        BlockType harvestedBlockType = harvestedMaterial.asBlockType();
+        if(harvestedBlockType == null) return;
 
-        for(Map.Entry<ProtectedRegion, List<PacketBlock>> regionEntry : childRegions.entrySet()) {
-            ProtectedRegion region = regionEntry.getKey();
+        playerHarvestBlockEvent.setCancelled(true);
 
-            if(region.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
-                for(PacketBlock packetBlock : regionEntry.getValue()) {
-                    Material allowedMaterial = packetBlock.worldType();
-                    Material replacementMaterial = packetBlock.replacementType();
-                    int delaySeconds = packetBlock.cooldownSeconds();
+        blockDataByRegion.entrySet().stream()
+                .filter(entry -> entry.getKey().contains(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                .map(entry -> entry.getValue().stream()
+                        .filter(packetBlock -> harvestedBlockType.equals(packetBlock.worldType()))
+                        .findFirst()
+                )
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(packetBlock -> {
+                    // Replace the harvested block
+                    skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
+                        BlockState currentBlockState = location.getBlock().getState(false);
+                        currentBlockState.setType(harvestedMaterial);
+                        currentBlockState.setBlockData(blockState.getBlockData());
+                        currentBlockState.update(true, false);
+                    }, 1L);
 
-                    if(brokenBlockMaterial.equals(allowedMaterial)) {
-                        playerHarvestBlockEvent.setCancelled(true);
+                    // Add harvested items to the player's inventory.
+                    for (ItemStack harvestedItem : playerHarvestBlockEvent.getItemsHarvested()) {
+                        PlayerUtil.giveItem(player.getInventory(), harvestedItem, harvestedItem.getAmount(), player.getLocation());
+                    }
 
-                        if(blockState instanceof BrushableBlock brushableBlock) {
-                            LootTable lootTable = packetBlock.lootTable();
-                            if(lootTable != null) {
-                                brushableBlock.setLootTable(lootTable);
-                            }
-                        }
+                    BlockType replacementBlockType = packetBlock.replacementType();
+                    Material replacementMaterial = replacementBlockType.asMaterial();
 
-                        // Replace broken block
-                        skyMines.getServer().getScheduler().runTaskLater(skyMines, () ->
-                                blockState.update(true, false), 1L);
+                    cooldownManager.addLocationCooldown(uuid, location, packetBlock.replacementType(), packetBlock.cooldownSeconds());
 
-                        for(ItemStack itemStack : playerHarvestBlockEvent.getItemsHarvested()) {
-                            PlayerUtil.giveItem(player.getInventory(), itemStack, itemStack.getAmount(), player.getLocation());
-                        }
-
-                        List<MineBlock> mineBlocks = playerMinedBlocks.getOrDefault(uuid, new ArrayList<>());
-                        mineBlocks.add(new MineBlock(location, replacementMaterial, delaySeconds));
-
-                        playerMinedBlocks.put(uuid, mineBlocks);
-
-                        // Send the block change
+                    if(replacementMaterial != null) {
                         skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> {
-                            if(player.isOnline() && player.isConnected()) {
+                            if (player.isOnline() && player.isConnected()) {
                                 player.sendBlockChange(location, replacementMaterial.createBlockData());
                             }
                         }, 2L);
                     }
-                }
-            }
-        }
+                });
     }
 
     /**
-     * Cancels the block place event and sends the player a message that they cannot place blocks in mines/
-     * Players in creative mode will be ignored.
+     * Handles a {@link BlockFertilizeEvent}
+     * This method does nothing.
+     * @param blockFertilizeEvent A {@link BlockFertilizeEvent}
+     */
+    @Override
+    public void handleBlockFertilizeEvent(@NotNull BlockFertilizeEvent blockFertilizeEvent) {}
+
+    /**
+     * Handles a {@link StructureGrowEvent}
+     * This method does nothing.
+     * @param structureGrowEvent A {@link StructureGrowEvent}
+     */
+    @Override
+    public void handleStructureGrowEvent(@NotNull StructureGrowEvent structureGrowEvent) {}
+
+    /**
+     * Handles an {@link EntityChangeBlockEvent}
+     * This method does nothing.
+     * @param entityChangeBlockEvent A {@link EntityChangeBlockEvent}
+     */
+    @Override
+    public void handleEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent entityChangeBlockEvent) {}
+
+    /**
+     * The event is cancelled regardless if a player initiated it or not.
+     * @param player The {@link Player} who initiated the explosion, or null.
+     * @param blockExplodeEvent A {@link BlockExplodeEvent}
+     */
+    @Override
+    public void handleBlockExplodeEvent(@Nullable Player player, @NotNull BlockExplodeEvent blockExplodeEvent) {
+        blockExplodeEvent.setCancelled(true);
+    }
+
+    /**
+     * The event is cancelled regardless if a player initiated it or not.
+     * @param player The {@link Player} who initiated the explosion, or null.
+     * @param entityExplodeEvent An {@link EntityExplodeEvent}
+     */
+    @Override
+    public void handleEntityExplodeEvent(@Nullable Player player, @NotNull EntityExplodeEvent entityExplodeEvent) {
+        entityExplodeEvent.setCancelled(true);
+    }
+
+    /**
+     * Handles a {@link BlockFromToEvent}.
+     * Cancels the movement of lava and water inside the mine.
+     * @param blockFromToEvent A {@link BlockFromToEvent}.
+     */
+    @Override
+    public void handleBlockFromToEvent(@NotNull BlockFromToEvent blockFromToEvent) {
+        blockFromToEvent.setCancelled(true);
+    }
+
+    /**
+     * Handles when a block is placed inside a mine.
+     * Creative players are ignored.
+     * Otherwise, the event is always cancelled and a message is sent to the player.
      * @param blockPlaceEvent A BlockPlaceEvent
      */
     @Override
@@ -447,16 +637,17 @@ public class PacketMine extends Mine {
         Player player = blockPlaceEvent.getPlayer();
         Locale locale = localeManager.getLocale();
 
-        if(blockPlaceEvent.getPlayer().getGameMode().equals(GameMode.CREATIVE)) return;
+        if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         blockPlaceEvent.setCancelled(true);
-        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.mineNoPlace()));
+        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
     }
 
     /**
-     * Checks the location the player moved from and to, checking if that location is inside a mine.
-     * Show the boss bar if they are in said mine or remove it if not.
-     * @param playerMoveEvent A PlayerMoveEvent
+     * Handles a {@link PlayerMoveEvent}.
+     * Hides or shows the boss bar depending on if they are exiting this mine or entering this mine.
+     * If they don't leave or enter a mine, nothing happens.
+     * @param playerMoveEvent A {@link PlayerMoveEvent}.
      */
     @Override
     public void handlePlayerMoveEvent(@NotNull PlayerMoveEvent playerMoveEvent) {
@@ -467,22 +658,17 @@ public class PacketMine extends Mine {
         UUID uuid = player.getUniqueId();
 
         if(isLocationInMine(from) && !isLocationInMine(to)) {
-            BossBar bossBar = getBossBar(uuid);
-            if(bossBar != null) {
-                player.hideBossBar(bossBar);
-            }
+            bossBarManager.removeBossBar(player, uuid);
         } else if(!isLocationInMine(from) && isLocationInMine(to)) {
-            BossBar bossBar = getBossBar(uuid);
-            if(bossBar != null) {
-                player.showBossBar(bossBar);
-            }
+            createAndShowBossBar(player, uuid);
         }
     }
 
     /**
-     * Checks the location the player teleported from and to, checking if that location is inside a mine.
-     * Show the boss bar if they are in said mine, or remove it if not.
-     * @param playerTeleportEvent A PlayerTeleportEvent
+     * Handles a {@link PlayerTeleportEvent}.
+     * Hides or shows the boss bar depending on if they are exiting this mine or entering this mine.
+     * If they don't leave or enter a mine, nothing happens.
+     * @param playerTeleportEvent A {@link PlayerTeleportEvent}.
      */
     @Override
     public void handlePlayerTeleportEvent(@NotNull PlayerTeleportEvent playerTeleportEvent) {
@@ -492,45 +678,17 @@ public class PacketMine extends Mine {
         Player player = playerTeleportEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        BossBar bossBar = getBossBar(uuid);
-        if(bossBar != null) {
-            if(isLocationInMine(from) && !isLocationInMine(to)) {
-                player.hideBossBar(bossBar);
-            } else if(!isLocationInMine(from) && isLocationInMine(to)) {
-                player.showBossBar(bossBar);
-            }
+        if(isLocationInMine(from) && !isLocationInMine(to)) {
+            bossBarManager.removeBossBar(player, uuid);
+        } else if(!isLocationInMine(from) && isLocationInMine(to)) {
+            createAndShowBossBar(player, uuid);
         }
     }
 
     /**
-     * Checks if the player is inside a mine when they login. If they are, show the boss bar.
-     * @param playerJoinEvent A PlayerJoinEvent
-     */
-    @Override
-    public void handlePlayerJoinEvent(@NotNull PlayerJoinEvent playerJoinEvent) {
-        Player player = playerJoinEvent.getPlayer();
-        UUID uuid = player.getUniqueId();
-
-        BossBar bossBar = getBossBar(uuid);
-        if(bossBar != null) {
-            if(isLocationInMine(player.getLocation())) {
-                player.showBossBar(bossBar);
-            }
-        }
-    }
-
-    /**
-     * Removes the stored boss bar for the player that logged out.
-     * @param playerQuitEvent A PlayerQuitEvent
-     */
-    @Override
-    public void handlePlayerQuitEvent(@NotNull PlayerQuitEvent playerQuitEvent) {
-        playerBossBars.remove(playerQuitEvent.getPlayer().getUniqueId());
-    }
-
-    /**
-     * If a chunk inside a mine is loaded, send block updates for already mined blocks.
-     * @param playerChunkLoadEvent A PlayerChunkLoadEvent
+     * Handles a {@link PlayerChunkLoadEvent}.
+     * Handles when a player loads a chunk inside a mine and sends any block updates as needed.
+     * @param playerChunkLoadEvent A {@link PlayerChunkLoadEvent}.
      */
     @Override
     public void handlePlayerChunkLoad(@NotNull PlayerChunkLoadEvent playerChunkLoadEvent) {
@@ -543,311 +701,152 @@ public class PacketMine extends Mine {
         }
     }
 
+    /**
+     * Create and show the boss bar for this mine to the player.
+     * @param player The {@link Player} to show the boss bar.
+     * @param uuid The {@link UUID} of the player.
+     */
     @Override
-    public int addPlayerTime(@NotNull Player player, @NotNull UUID uuid, int time) {
-        Integer playerTime = playerTimes.get(uuid);
-        if(playerTime != null) {
-            playerTime = playerTime + time;
-            playerTimes.put(uuid, playerTime);
+    public void createAndShowBossBar(@NotNull Player player, @NotNull UUID uuid) {
+        if(mineId == null) return;
 
-            databaseManager.setPlayerTime(mineId, uuid.toString(), playerTime);
+        long mineTimeSeconds = mineTimeManager.getMineTime(uuid, mineId);
+        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-            BossBar bossBar = getBossBar(uuid);
-            if(bossBar != null) {
-                if(isLocationInMine(player.getLocation())) {
-                    player.showBossBar(bossBar);
-                }
+        BossBar.Color bossBarColor;
+        BossBar.Overlay bossBarOverlay;
+        try {
+            bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
+            bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
+        } catch (IllegalArgumentException e) {
+            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            return;
+        }
+
+        BossBar bossBar;
+        if(mineTimeSeconds > 0) {
+            if(mineConfig.bossBar().timeText() == null) {
+                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create a boss bar due to invalid boss bar time text."));
+                return;
             }
 
-            return playerTime;
+            bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         } else {
-            playerTimes.put(uuid, time);
-
-            databaseManager.insertPlayerTime(mineId, uuid.toString(), time);
-
-            BossBar bossBar = getBossBar(uuid);
-            if(bossBar != null) {
-                if(isLocationInMine(player.getLocation())) {
-                    player.showBossBar(bossBar);
-                }
+            if(mineConfig.bossBar().noTimeText() == null) {
+                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create a boss bar due to invalid boss bar no time text."));
+                return;
             }
 
-            return time;
+            bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().noTimeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         }
+
+        bossBarManager.setBossBar(player, uuid, bossBar);
     }
 
+    /**
+     * Update the boss bar shown to the player.
+     * @param uuid The {@link UUID} of the player.
+     */
     @Override
-    public int removePlayerTime(@NotNull Player player, @NotNull UUID uuid, int time) {
-        Integer playerTime = playerTimes.get(uuid);
-        if(playerTime != null) {
-            playerTime = playerTime - time;
+    public void updateBossBar(@NotNull UUID uuid) {
+        if(mineId == null) return;
 
-            if(playerTime > 0) {
-                playerTimes.put(uuid, playerTime);
+        long mineTimeSeconds = mineTimeManager.getMineTime(uuid, mineId);
+        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                databaseManager.setPlayerTime(mineId, uuid.toString(), playerTime);
-            } else {
-                playerTimes.remove(uuid);
+        BossBar bossBar = bossBarManager.getBossBar(uuid);
+        if(bossBar == null) return;
 
-                databaseManager.deletePlayerTime(mineId, uuid.toString());
+        if(mineTimeSeconds > 0) {
+            if(mineConfig.bossBar().timeText() == null) {
+                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update a boss bar due to invalid boss bar time text."));
+                return;
             }
 
-            BossBar bossBar = getBossBar(uuid);
-            if (bossBar != null) {
-                if (isLocationInMine(player.getLocation())) {
-                    player.showBossBar(bossBar);
-                }
-            }
-
-            return playerTime;
+            bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
         } else {
-            return 0;
-        }
-    }
-
-    @Override
-    public int setPlayerTime(@NotNull Player player, @NotNull UUID uuid, int time) {
-        playerTimes.put(uuid, time);
-
-        databaseManager.setPlayerTime(mineId, uuid.toString(), time);
-
-        BossBar bossBar = getBossBar(uuid);
-        if(bossBar != null) {
-            if(isLocationInMine(player.getLocation())) {
-                player.showBossBar(bossBar);
+            if(mineConfig.bossBar().noTimeText() == null) {
+                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update a boss bar due to invalid boss bar no time text."));
+                return;
             }
+
+            bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText(), placeholders));
         }
-
-        return time;
     }
 
+    /**
+     * Cleans up any data for this mine on unload.
+     * Will remove any boss bars and revert any client-side block changes.
+     * @param onDisable Is the plugin being disabled?
+     */
     @Override
-    public @Nullable Integer getPlayerTime(@NotNull UUID uuid) {
-        return playerTimes.get(uuid);
-    }
+    public void cleanUp(boolean onDisable) {
+        for(Player player : skyMines.getServer().getOnlinePlayers()) {
+            if(player.isOnline() && player.isConnected()) {
+                UUID uuid = player.getUniqueId();
+                Location playerLocation = player.getLocation();
 
-    @Override
-    public void cleanUp() {
-        stopBlockRevertTask();
-        stopTimeLimitTask();
+                if(isLocationInMine(playerLocation)) {
+                    bossBarManager.removeBossBar(player, uuid);
 
-        for(Map.Entry<UUID, BossBar> entry : playerBossBars.entrySet()) {
-            UUID uuid = entry.getKey();
-            Player player = skyMines.getServer().getPlayer(uuid);
-            if(player != null && player.isOnline() && player.isConnected()) {
-                player.hideBossBar(entry.getValue());
+                    Map<Location, BlockData> blockDataMap = cooldownManager.getBlockDataOnCooldown(uuid);
+                    List<BlockState> blockStates = new ArrayList<>();
+                    blockDataMap.forEach((blockLocation, blockData) -> {
+                        BlockState blockState = blockLocation.getBlock().getState(true);
+                        blockStates.add(blockState);
+                    });
 
-                List<MineBlock> mineBlocks = playerMinedBlocks.get(uuid);
-                if(mineBlocks != null) {
-                    for (MineBlock mineBlock : playerMinedBlocks.get(uuid)) {
-                        player.sendBlockChange(mineBlock.getLocation(), mineBlock.getLocation().getBlock().getBlockData());
+                    if(!onDisable) {
+                        skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> player.sendBlockChanges(blockStates), 1L);
+                    } else {
+                        player.sendBlockChanges(blockStates);
                     }
                 }
             }
         }
     }
 
+    /**
+     * Was the mine created and setup successfully?
+     * @return true if successful, or false.
+     */
     @Override
     public boolean isSetup() {
         return status;
     }
 
     /**
-     * Starts the task to revert client-side blocks.
+     * Gets a WorldGuard region from the provided world and region name.
+     * @param regionName The region name.
+     * @return A ProtectedRegion or null if one was not found in that world and by that name.
      */
-    private void startBlockRevertTask() {
-        blockRevertTask = skyMines.getServer().getScheduler().runTaskTimerAsynchronously(skyMines, () -> {
-            for(Map.Entry<UUID, List<MineBlock>> entry : playerMinedBlocks.entrySet()) {
-                UUID uuid = entry.getKey();
-                List<MineBlock> mineBlocks = entry.getValue();
-                Iterator<MineBlock> iterator = mineBlocks.iterator();
-                List<MineBlock> updatedMineBlocks = new ArrayList<>();
+    private @Nullable ProtectedRegion getRegion(@Nullable String regionName) {
+        if(regionManager == null) return null;
+        if(regionName == null) return null;
 
-                while(iterator.hasNext()) {
-                    MineBlock mineBlock = iterator.next();
-                    int time = mineBlock.getCooldownSeconds();
-                    time--;
-
-                    if(time <= 0) {
-                        // Schedule the block change on the main thread
-                        skyMines.getServer().getScheduler().runTask(skyMines, () -> {
-                            Player player = skyMines.getServer().getPlayer(uuid);
-                            if (player != null && player.isOnline() && player.isConnected() && mineBlock.getLocation().isChunkLoaded()) {
-                                player.sendBlockChange(mineBlock.getLocation(), mineBlock.getLocation().getBlock().getBlockData());
-                            }
-                        });
-                    } else {
-                        mineBlock.setCooldownSeconds(time);
-                        updatedMineBlocks.add(mineBlock);
-                    }
-                }
-
-                mineBlocks.clear();
-                mineBlocks.addAll(updatedMineBlocks);
-
-                if (mineBlocks.isEmpty()) {
-                    playerMinedBlocks.remove(uuid);
-                } else {
-                    playerMinedBlocks.put(uuid, mineBlocks);
-                }
-            }
-        }, 20L, 20L);
-    }
-
-    /**
-     * Stops the task to revert client-side blocks.
-     */
-    private void stopBlockRevertTask() {
-        if(blockRevertTask != null && !blockRevertTask.isCancelled()) {
-            blockRevertTask.cancel();
-            blockRevertTask = null;
-        }
-    }
-
-    /**
-     * Starts the task that tracks the time the player can access the mine for.
-     */
-    private void startTimeLimitTask() {
-        timeLimitTask = skyMines.getServer().getScheduler().runTaskTimer(skyMines, () -> {
-            Iterator<Map.Entry<UUID, Integer>> iterator = playerTimes.entrySet().iterator();
-            while(iterator.hasNext()) {
-                Map.Entry<UUID, Integer> entry = iterator.next();
-                UUID uuid = entry.getKey();
-                Player player = skyMines.getServer().getPlayer(uuid);
-
-                if(player != null && player.isOnline() && player.isConnected()) {
-                    if(isLocationInMine(player.getLocation())) {
-                        int time = entry.getValue();
-                        time--;
-
-                        if(time <= 0) {
-                            iterator.remove();
-
-                            databaseManager.deletePlayerTime(mineId, uuid.toString());
-
-                            BossBar bossBar = playerBossBars.get(uuid);
-                            if(bossBar != null) {
-                                if(mineConfig.bossBar().noTimeText() != null) {
-                                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()));
-                                } else {
-                                    player.hideBossBar(bossBar);
-                                    playerBossBars.remove(uuid);
-                                }
-                            }
-                        } else {
-                            playerTimes.put(uuid, time);
-
-                            databaseManager.setPlayerTime(mineId, uuid.toString(), time);
-
-                            BossBar bossBar = playerBossBars.get(uuid);
-                            if(bossBar != null) {
-                                if(mineConfig.bossBar().timeText() != null) {
-                                    String message = localeManager.getTimeMessage(time);
-
-                                    List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", message));
-                                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }, 0L, 20L);
-    }
-
-    /**
-     * Stops the task that tracks the time the player can access the mine for.
-     */
-    private void stopTimeLimitTask() {
-        if(timeLimitTask != null && !timeLimitTask.isCancelled()) {
-            timeLimitTask.cancel();
-            timeLimitTask = null;
-        }
+        return regionManager.getRegion(regionName);
     }
 
     /**
      * Sends client-side block updates for blocks already mined.
-     * @param player The player.
-     * @param uuid The UUID of the player.
+     * @param player The {@link Player} to send block changes to.
+     * @param uuid The {@link UUID} of the player.
      */
-    private void sendBulkBlockUpdates(Player player, UUID uuid) {
-        List<MineBlock> mineBlocks = playerMinedBlocks.get(uuid);
-        if(mineBlocks != null && !mineBlocks.isEmpty()) {
-            List<BlockState> blockStates = new ArrayList<>();
-            for(MineBlock mineBlock : mineBlocks) {
-                BlockState blockState = mineBlock.getLocation().getBlock().getState(true);
-                blockState.setType(mineBlock.getReplacementMaterial());
+    private void sendBulkBlockUpdates(@NotNull Player player, @NotNull UUID uuid) {
+        Map<Location, BlockData> blockDataMap = cooldownManager.getBlockDataOnCooldown(uuid);
+
+        List<BlockState> blockStates = new ArrayList<>();
+        blockDataMap.forEach((location, blockData) -> {
+            BlockState blockState = location.getBlock().getState(true);
+            BlockType blockType = blockData.getReplacementType();
+            Material material = blockType.asMaterial();
+
+            if(material != null) {
+                blockState.setType(material);
                 blockStates.add(blockState);
             }
+        });
 
-            skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> player.sendBlockChanges(blockStates), 1L);
-        }
-    }
-
-    /**
-     * Gets a WorldGuard region from the provided world and region name.
-     * @param world The Bukkit World the region is in.
-     * @param regionName The region name.
-     * @return A ProtectedRegion or null if one was not found in that world and by that name.
-     */
-    @Nullable
-    private ProtectedRegion getRegion(@NotNull World world, @NotNull String regionName) {
-        if(regionManager != null) {
-            return regionManager.getRegion(regionName);
-        } else {
-            throw new RuntimeException("Unable to find region due to a null RegionManager. Is the world name " + world.getName() + " a valid world?");
-        }
-    }
-
-    /**
-     * Gets the existing boss bar or creates a new one if not disabled by the config.
-     * @param uuid The UUID of the player.
-     * @return The Boss Bar or null.
-     */
-    @Nullable
-    private BossBar getBossBar(@NotNull UUID uuid) {
-        Integer time = playerTimes.get(uuid);
-        BossBar bossBar = playerBossBars.get(uuid);
-
-        if(time != null) {
-            List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("time", localeManager.getTimeMessage(time)));
-            if(bossBar != null) {
-                if(mineConfig.bossBar().timeText() != null) {
-                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
-                    playerBossBars.put(uuid, bossBar);
-
-                    return bossBar;
-                }
-            } else {
-                if(mineConfig.bossBar().timeText() != null) {
-                    BossBar.Color bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
-                    BossBar.Overlay bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
-
-                    bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
-                    playerBossBars.put(uuid, bossBar);
-
-                    return bossBar;
-                }
-            }
-        } else {
-            if(bossBar != null) {
-                if(mineConfig.bossBar().noTimeText() != null) {
-                    bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()));
-                    return bossBar;
-                }
-            } else {
-                if(mineConfig.bossBar().noTimeText() != null) {
-                    BossBar.Color bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
-                    BossBar.Overlay bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
-
-                    bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().noTimeText()), 1, bossBarColor, bossBarOverlay);
-                    playerBossBars.put(uuid, bossBar);
-
-                    return bossBar;
-                }
-            }
-        }
-
-        return null;
+        skyMines.getServer().getScheduler().runTaskLater(skyMines, () -> player.sendBlockChanges(blockStates), 1L);
     }
 }

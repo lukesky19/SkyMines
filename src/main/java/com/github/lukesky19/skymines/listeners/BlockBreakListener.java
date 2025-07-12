@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -17,26 +17,37 @@
 */
 package com.github.lukesky19.skymines.listeners;
 
-import com.github.lukesky19.skymines.manager.MineManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.manager.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.AbstractMine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class listens to when a player breaks a block and if that location is inside a mine, the event is passed to that mine.
  */
 public class BlockBreakListener implements Listener {
-    final MineManager mineManager;
+    private final @NotNull MineDataManager mineDataManager;
+
+    /**
+     * Default Constructor.
+     * You should use {@link #BlockBreakListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #BlockBreakListener(MineDataManager)} instead.
+     * @throws RuntimeException if used.
+     */
+    @Deprecated
+    public BlockBreakListener() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
 
     /**
      * Constructor
-     * @param mineManager A MineManager instance.
+     * @param mineDataManager A MineDataManager instance.
      */
-    public BlockBreakListener(
-            MineManager mineManager) {
-        this.mineManager = mineManager;
+    public BlockBreakListener(@NotNull MineDataManager mineDataManager) {
+        this.mineDataManager = mineDataManager;
     }
 
     /**
@@ -45,7 +56,7 @@ public class BlockBreakListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent blockBreakEvent) {
-        Mine mine = mineManager.getMineByLocation(blockBreakEvent.getBlock().getLocation());
+        AbstractMine mine = mineDataManager.getMineByLocation(blockBreakEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleBlockBreak(blockBreakEvent);
         }

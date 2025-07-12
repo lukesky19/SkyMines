@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -15,7 +15,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.data.config;
+package com.github.lukesky19.skymines.data.config.packet;
 
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * The config for an individual mine.
+ * The config for a packet mine.
  * @param configVersion The config version of the file.
  * @param mineId The mine id.
  * @param bossBar The boss bar configuration to show while in the mine.
@@ -33,7 +33,7 @@ import java.util.List;
  * @param childRegions The child regions that players can actually mine in.
  */
 @ConfigSerializable
-public record MineConfig(
+public record PacketMineConfig(
         @Nullable String configVersion,
         @Nullable String mineId,
         @NotNull BossBarData bossBar,

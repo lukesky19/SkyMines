@@ -6,6 +6,7 @@ authors: [ lukeskywlker19 ]
 load: POSTWORLD
 depend:
   - WorldGuard
+  - Vault
 softdepend:
   - Multiverse-Core
 

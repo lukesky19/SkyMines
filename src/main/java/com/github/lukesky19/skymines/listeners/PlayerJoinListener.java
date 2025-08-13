@@ -52,7 +52,9 @@ public class PlayerJoinListener implements Listener {
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param playerDataManager A {@link PlayerDataManager} instance.
      */
-    public PlayerJoinListener(@NotNull MineDataManager mineDataManager, @NotNull PlayerDataManager playerDataManager) {
+    public PlayerJoinListener(
+            @NotNull MineDataManager mineDataManager,
+            @NotNull PlayerDataManager playerDataManager) {
         this.mineDataManager = mineDataManager;
         this.playerDataManager = playerDataManager;
     }

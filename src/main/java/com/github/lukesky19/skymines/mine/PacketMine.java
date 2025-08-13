@@ -21,12 +21,12 @@ import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.player.PlayerUtil;
 import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
 import com.github.lukesky19.skymines.data.packet.BlockData;
 import com.github.lukesky19.skymines.data.packet.PacketBlock;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -61,6 +61,7 @@ import java.util.*;
  * Blocks that have been mined are still tracked server-side.
  * This allows the existence of a per-player mine system.
  */
+@SuppressWarnings("deprecation")
 public class PacketMine extends AbstractMine {
     // SkyMines
     private final @NotNull SkyMines skyMines;

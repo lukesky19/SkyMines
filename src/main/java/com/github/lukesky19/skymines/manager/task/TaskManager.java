@@ -32,6 +32,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+/**
+ * Manages {@link BukkitTask}s for the plugin.
+ */
 public class TaskManager {
     private final @NotNull SkyMines skyMines;
     private final @NotNull MineDataManager mineDataManager;

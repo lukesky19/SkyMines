@@ -111,6 +111,7 @@ public class BossBarManager {
 
     /**
      * If the player has a boss bar shown from a mine, remove it.
+     * @param player The {@link Player} to remove the boss bar from.
      * @param uuid The {@link UUID} of the player.
      */
     public void removeBossBar(@NotNull Player player, @NotNull UUID uuid) {

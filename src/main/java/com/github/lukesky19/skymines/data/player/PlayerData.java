@@ -158,17 +158,6 @@ public class PlayerData {
     }
 
     /**
-     * Get the {@link BlockType} to display to the client while on cooldown.
-     * @param location A {@link Location} ran through {@link PluginUtils#getCleanLocation(Location)}.
-     */
-    public @Nullable BlockType getLocationReplacementType(@NotNull Location location) {
-        @Nullable BlockData blockData = blockDataByLocation.get(location);
-        if(blockData == null) return null;
-
-        return blockData.getReplacementType();
-    }
-
-    /**
      * Get a {@link Map} mapping {@link Location}s to {@link BlockData} for locations that are on cooldown.
      * @return A {@link Map} mapping {@link Location}s to {@link BlockData}
      */
@@ -186,14 +175,6 @@ public class PlayerData {
         BlockData blockData = new BlockData(replacementType, cooldownSeconds);
 
         blockDataByLocation.put(location, blockData);
-    }
-
-    /**
-     * Remove a cooldown for a particular location.
-     * @param location A {@link Location} ran through {@link PluginUtils#getCleanLocation(Location)}.
-     */
-    public void removeLocationCooldown(@NotNull Location location) {
-        blockDataByLocation.remove(location);
     }
 
     /**
@@ -232,31 +213,25 @@ public class PlayerData {
      * Add a {@link BlockType} to the list of unlocked blocks for the mine id provided.
      * @param mineId THe mine id to unlock the block for.
      * @param blockType The {@link BlockType}.
-     * @return true if added successfully, otherwise false.
      */
-    public boolean addUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
+    public void addUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
         List<BlockType> unlockedBlocks = unlockedBlocksByMineId.getOrDefault(mineId, new ArrayList<>());
 
         unlockedBlocks.add(blockType);
         unlockedBlocksByMineId.put(mineId, unlockedBlocks);
-
-        return true;
     }
 
     /**
      * Remove a {@link BlockType} to the list of unlocked blocks for the mine id provided.
      * @param mineId THe mine id to lock the block for.
      * @param blockType The {@link BlockType}.
-     * @return true if removed successfully, otherwise false.
      */
-    public boolean removeUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
+    public void removeUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
         @Nullable List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
-        if(unlockedBlocks == null) return false;
+        if(unlockedBlocks == null) return;
 
         unlockedBlocks.remove(blockType);
         unlockedBlocksByMineId.put(mineId, unlockedBlocks);
-
-        return true;
     }
 
     /**

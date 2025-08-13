@@ -31,6 +31,7 @@ import java.util.List;
  * @param help The plugin's help message
  * @param reload The plugin's reload message.
  * @param noMineWithId The message sent when a mine was not found for a particular mine id.
+ * @param guiOpenError The message sent to a player when a GUI fails to open.
  * @param packetMineMessages The messages specific to {@link PacketMine}s.
  * @param worldMineMessages The messages specific to {@link WorldMine}s
  * @param timeMessage The message used in the boss bar and when a player views their mine time using a command.
@@ -120,6 +121,7 @@ public record Locale(
     ) {}
 
     /**
+     * This record contains the configuration to create a formatted timestamp message.
      * @param prefix The text to display before the first time unit.
      * @param years The text to display when the player's time enters years.
      * @param months The text to display when the player's time enters months.

@@ -105,7 +105,7 @@ public class FreePreviewGUI extends ChestGUI {
 
     /**
      * A method to create all the buttons in the inventory GUI.
-     * @return A {@link CompletableFuture} containing a {@link Boolean} where true is successful, otherwise false.
+     * @return true is successful, otherwise false.
      */
     @Override
     public boolean update() {
@@ -129,6 +129,9 @@ public class FreePreviewGUI extends ChestGUI {
         clearButtons();
 
         createFillerButtons(guiSize);
+
+        createDummyButtons();
+
         createPreviewButtons(itemsPerPage);
 
         previewsAddedPerPage.put(pageNum, numOfPreviewsAdded);
@@ -354,7 +357,7 @@ public class FreePreviewGUI extends ChestGUI {
     private void createExitButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.exit().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a previous page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.serialize("Unable to add a exit button due to a slot not being configured."));
             return;
         }
 
@@ -379,7 +382,31 @@ public class FreePreviewGUI extends ChestGUI {
     }
 
     /**
-     * Handle when an preview button cannot be shown due to an error.
+     * Create the dummy buttons for the GUI.
+     */
+    private void createDummyButtons() {
+        guiConfig.dummyButtons().forEach(buttonConfig -> {
+            if(buttonConfig.slot() == null) {
+                logger.warn(AdventureUtil.serialize("Unable to add a dummy button to the free preview GUI due to an invalid slot."));
+                return;
+            }
+
+            ItemStackConfig itemStackConfig = buttonConfig.displayItem();
+            ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, List.of());
+            Optional<@NotNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+            optionalItemStack.ifPresent(itemStack -> {
+                GUIButton.Builder builder = new GUIButton.Builder();
+
+                builder.setItemStack(itemStack);
+
+                setButton(buttonConfig.slot(), builder.build());
+            });
+        });
+    }
+
+    /**
+     * Handle when a preview button cannot be shown due to an error.
      */
     private void handlePreviewError() {
         currentPreviewKey++;

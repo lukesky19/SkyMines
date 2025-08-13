@@ -20,15 +20,15 @@ package com.github.lukesky19.skymines;
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
 import com.github.lukesky19.skymines.commands.SkyMinesCommand;
-import com.github.lukesky19.skymines.configuration.GUIConfigManager;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
-import com.github.lukesky19.skymines.configuration.MineConfigManager;
-import com.github.lukesky19.skymines.configuration.SettingsManager;
 import com.github.lukesky19.skymines.database.ConnectionManager;
 import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.database.QueueManager;
 import com.github.lukesky19.skymines.listeners.*;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
+import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.MineConfigManager;
+import com.github.lukesky19.skymines.manager.config.SettingsManager;
 import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.MineManager;
@@ -56,27 +56,16 @@ import java.util.List;
  * The main plugin class
  */
 public class SkyMines extends JavaPlugin {
-    // Config
     private SettingsManager settingsManager;
     private LocaleManager localeManager;
     private MineConfigManager mineConfigManager;
     private GUIConfigManager guiConfigManager;
-
-    // GUI
     private GUIManager guiManager;
-
-    // Mine
     private MineManager mineManager;
     private MineDataManager mineDataManager;
-
-    // Player Data
     private PlayerDataManager playerDataManager;
     private BossBarManager bossBarManager;
-
-    // Database
     private DatabaseManager databaseManager;
-
-    // Task
     private TaskManager taskManager;
 
     // Economy
@@ -89,6 +78,11 @@ public class SkyMines extends JavaPlugin {
     public @NotNull Economy getEconomy() {
         return this.economy;
     }
+
+    /**
+     * Default Constructor
+     */
+    public SkyMines() {}
 
     /**
      * The method ran on plugin startup.
@@ -162,7 +156,7 @@ public class SkyMines extends JavaPlugin {
         pm.registerEvents(new PlayerTeleportListener(mineDataManager), this);
         pm.registerEvents(new StructureGrowListener(mineDataManager), this);
 
-        reload();
+        reload(true);
 
         List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers().stream().filter(player -> player.isOnline() && player.isConnected()).toList());
         onlinePlayers.forEach(player ->
@@ -202,8 +196,9 @@ public class SkyMines extends JavaPlugin {
 
     /**
      * Reloads all plugin data.
+     * @param onEnable Is the reload occurring during plugin enable?
      */
-    public void reload() {
+    public void reload(boolean onEnable) {
         guiManager.closeOpenGUIs(false);
 
         settingsManager.reload();
@@ -211,6 +206,20 @@ public class SkyMines extends JavaPlugin {
         guiConfigManager.reload();
         mineConfigManager.reload();
         mineManager.reload();
+
+        if(!onEnable) {
+            taskManager.stopMineTask();
+            taskManager.stopSaveTask();
+
+            // Show boss bars to players in mines
+            for(Player onlinePlayer : this.getServer().getOnlinePlayers()) {
+                AbstractMine mine = mineDataManager.getMineByLocation(onlinePlayer.getLocation());
+                if(mine == null) continue;
+                if(mine.getMineId() == null) continue;
+
+                bossBarManager.createAndShowBossBar(mine.getMineId(), onlinePlayer, onlinePlayer.getUniqueId());
+            }
+        }
 
         taskManager.startMineTask();
         taskManager.startSaveTask();
@@ -251,7 +260,7 @@ public class SkyMines extends JavaPlugin {
             }
         }
 
-        this.getComponentLogger().error(MiniMessage.miniMessage().deserialize("<red>SkyShop has been disabled due to no Vault dependency found!</red>"));
+        this.getComponentLogger().error(MiniMessage.miniMessage().deserialize("<red>SkyMines has been disabled due to no Vault dependency found!</red>"));
         this.getServer().getPluginManager().disablePlugin(this);
         return false;
     }

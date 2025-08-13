@@ -22,7 +22,7 @@ import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.UUID;
 
 /**
  * This class manages the blocks players have unlocked for mines.
@@ -67,12 +67,10 @@ public class BlocksManager {
      * @param uuid The {@link UUID} of the player.
      * @param mineId THe mine id to unlock the block for.
      * @param blockType The {@link BlockType}.
-     * @return true if added successfully, otherwise false.
      */
-    public boolean addUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
+    public void addUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
         @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
-
-        return playerData.addUnlockedBlock(mineId, blockType);
+        playerData.addUnlockedBlock(mineId, blockType);
     }
 
     /**
@@ -80,11 +78,9 @@ public class BlocksManager {
      * @param uuid The {@link UUID} of the player.
      * @param mineId The mine id to lock the block for.
      * @param blockType The {@link BlockType}.
-     * @return true if removed successfully, otherwise false.
      */
-    public boolean removeUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
+    public void removeUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
         @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
-
-        return playerData.removeUnlockedBlock(mineId, blockType);
+        playerData.removeUnlockedBlock(mineId, blockType);
     }
 }

@@ -26,7 +26,6 @@ import org.bukkit.Location;
 import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.UUID;
@@ -74,20 +73,6 @@ public class CooldownManager {
     }
 
     /**
-     * Get the cooldown in seconds for a particular location.
-     * @param uuid The {@link UUID} of the player.
-     * @param location A {@link Location} to get the cooldown for.
-     * @return The cooldown in seconds as a {@link Long} or null if no cooldown.
-     */
-    public @Nullable Long getLocationCooldownSeconds(@NotNull UUID uuid, @NotNull Location location) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
-
-        Location cleanLocation = PluginUtils.getCleanLocation(location);
-
-        return playerData.getLocationCooldownSeconds(cleanLocation);
-    }
-
-    /**
      * Add a cooldown for a particular location.
      * @param uuid The {@link UUID} of the player.
      * @param location A {@link Location} add a cooldown for.
@@ -103,19 +88,6 @@ public class CooldownManager {
     }
 
     /**
-     * Get the {@link BlockType} to display to the client while on cooldown.
-     * @param uuid The {@link UUID} of the player.
-     * @param location The {@link Location} to get the replacement type for.
-     */
-    public @Nullable BlockType getLocationReplacementType(@NotNull UUID uuid, @NotNull Location location) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
-
-        Location cleanLocation = PluginUtils.getCleanLocation(location);
-
-        return playerData.getLocationReplacementType(cleanLocation);
-    }
-
-    /**
      * Get a {@link Map} mapping {@link Location}s to {@link BlockData} for locations that are on cooldown for the player.
      * @param uuid The {@link UUID} of the player.
      * @return A {@link Map} mapping {@link Location}s to {@link BlockData}
@@ -127,18 +99,10 @@ public class CooldownManager {
     }
 
     /**
-     * Remove a cooldown for a particular location.
+     * Decrement the block's cooldown for the location provided and revet client-side changes if necessary.
      * @param uuid The {@link UUID} of the player.
-     * @param location A {@link Location} ran through {@link PluginUtils#getCleanLocation(Location)}.
+     * @param location The {@link Location}.
      */
-    public void removeLocationCooldown(@NotNull UUID uuid, @NotNull Location location) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
-
-        Location cleanLocation = PluginUtils.getCleanLocation(location);
-
-        playerData.removeLocationCooldown(cleanLocation);
-    }
-
     public void decrementLocationCooldown(@NotNull UUID uuid, @NotNull Location location) {
         @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 

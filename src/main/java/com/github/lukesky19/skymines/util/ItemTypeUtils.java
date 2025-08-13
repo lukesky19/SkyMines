@@ -40,6 +40,16 @@ public class ItemTypeUtils {
             ItemType.LAVA_BUCKET, BlockType.LAVA);
 
     /**
+     * Default Constructor. All methods in this class are static.
+     * @deprecated All methods in this class are static.
+     * @throws RuntimeException if this method is used.
+     */
+    @Deprecated
+    public ItemTypeUtils() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
+
+    /**
      * Map an {@link ItemType} that is a bucket to the appropriate {@link BlockType} that would be placed.
      * For example, {@link ItemType#AXOLOTL_BUCKET} -> {@link BlockType#WATER}.
      * @param itemType The {@link ItemType} to get the {@link BlockType} for.

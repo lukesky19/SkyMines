@@ -19,13 +19,13 @@ package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.GUIConfigManager;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
-import com.github.lukesky19.skymines.configuration.MineConfigManager;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
 import com.github.lukesky19.skymines.gui.FreePreviewGUI;
+import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
@@ -90,64 +90,64 @@ public class PreviewCommand {
      */
     public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("preview")
-                .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.preview") && ctx.getSender() instanceof Player)
-                .executes(ctx -> {
-                    ComponentLogger logger = skyMines.getComponentLogger();
-                    Player player = (Player) ctx.getSource().getSender();
-                    Locale locale = localeManager.getLocale();
-                    @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
+            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.preview") && ctx.getSender() instanceof Player)
+            .executes(ctx -> {
+                ComponentLogger logger = skyMines.getComponentLogger();
+                Player player = (Player) ctx.getSource().getSender();
+                Locale locale = localeManager.getLocale();
+                @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getMinePreviewConfig();
 
-                    if(guiConfig == null) {
-                        logger.warn(AdventureUtil.serialize("The gui config for the world mine preview gui is invalid."));
-                        player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                if(guiConfig == null) {
+                    logger.warn(AdventureUtil.serialize("The gui config for the world mine preview gui is invalid."));
+                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
-                    if(mine == null) {
-                        player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
-                        return 0;
-                    }
+                AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                if(mine == null) {
+                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
+                    return 0;
+                }
 
-                    @Nullable String mineId = mine.getMineId();
-                    if(mineId == null) {
-                        logger.warn(AdventureUtil.serialize("The mine id for a mine is invalid."));
-                        player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                @Nullable String mineId = mine.getMineId();
+                if(mineId == null) {
+                    logger.warn(AdventureUtil.serialize("The mine id for a mine is invalid."));
+                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
-                    if(mineConfig == null) {
-                        logger.warn(AdventureUtil.serialize("The mine config for mine id " + mineId + " is invalid."));
-                        player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
+                if(mineConfig == null) {
+                    logger.warn(AdventureUtil.serialize("The mine config for mine id " + mineId + " is invalid."));
+                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    FreePreviewGUI freePreviewGUI = new FreePreviewGUI(skyMines, guiManager, player, mineId, mineConfig, guiConfig);
+                FreePreviewGUI freePreviewGUI = new FreePreviewGUI(skyMines, guiManager, player, mineId, mineConfig, guiConfig);
 
-                    boolean creationResult = freePreviewGUI.create();
-                    if(!creationResult) {
-                        logger.error(AdventureUtil.serialize("Unable to create the InventoryView for the preview GUI for player " + player.getName() + " due to a configuration error."));
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                boolean creationResult = freePreviewGUI.create();
+                if(!creationResult) {
+                    logger.error(AdventureUtil.serialize("Unable to create the InventoryView for the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    boolean updateResult = freePreviewGUI.update();
-                    if(!updateResult) {
-                        logger.error(AdventureUtil.serialize("Unable to decorate the preview GUI for player " + player.getName() + " due to a configuration error."));
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                boolean updateResult = freePreviewGUI.update();
+                if(!updateResult) {
+                    logger.error(AdventureUtil.serialize("Unable to decorate the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    boolean openResult = freePreviewGUI.open();
-                    if(!openResult) {
-                        logger.error(AdventureUtil.serialize("Unable to open the preview GUI for player " + player.getName() + " due to a configuration error."));
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
-                        return 0;
-                    }
+                boolean openResult = freePreviewGUI.open();
+                if(!openResult) {
+                    logger.error(AdventureUtil.serialize("Unable to open the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    return 0;
+                }
 
-                    return 1;
-                });
+                return 1;
+            });
 
         return builder.build();
     }

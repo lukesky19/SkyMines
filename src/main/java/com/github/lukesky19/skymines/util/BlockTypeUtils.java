@@ -25,6 +25,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BlockTypeUtils {
     /**
+     * Default Constructor. All methods in this class are static.
+     * @deprecated All methods in this class are static.
+     * @throws RuntimeException if this method is used.
+     */
+    @Deprecated
+    public BlockTypeUtils() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
+
+    /**
      * Checks if a {@link BlockType} is that of a bed.
      * @param blockType The {@link BlockType} to check.
      * @return true if a bed, otherwise false.

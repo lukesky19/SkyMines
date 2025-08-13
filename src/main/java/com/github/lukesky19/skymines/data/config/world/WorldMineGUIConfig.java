@@ -35,6 +35,7 @@ import java.util.List;
  * @param nextPage The next page button configuration.
  * @param prevPage The previous page button configuration.
  * @param exit The exit button configuration.
+ * @param dummyButtons A {@link List} of {@link ButtonConfig} to display in the GUI. These buttons are like filler, but can have a configured slot.
  * @param slots The slots to display items in.
  */
 @ConfigSerializable
@@ -43,10 +44,11 @@ public record WorldMineGUIConfig(
         @Nullable GUIType guiType,
         @Nullable String guiName,
         @Nullable Integer itemsPerPage,
-        @NotNull Button filler,
-        @NotNull Button nextPage,
-        @NotNull Button prevPage,
-        @NotNull Button exit,
+        @NotNull WorldMineGUIConfig.ButtonConfig filler,
+        @NotNull WorldMineGUIConfig.ButtonConfig nextPage,
+        @NotNull WorldMineGUIConfig.ButtonConfig prevPage,
+        @NotNull WorldMineGUIConfig.ButtonConfig exit,
+        @NotNull List<ButtonConfig> dummyButtons,
         @NotNull List<Integer> slots) {
     /**
      * This record contains the config to display buttons in the GUI.
@@ -54,7 +56,7 @@ public record WorldMineGUIConfig(
      * @param displayItem The {@link ItemStackConfig} for the button.
      */
     @ConfigSerializable
-    public record Button(
+    public record ButtonConfig(
             @Nullable Integer slot,
             @NotNull ItemStackConfig displayItem) {}
 }

@@ -18,11 +18,11 @@
 package com.github.lukesky19.skymines.manager.mine;
 
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
-import com.github.lukesky19.skymines.configuration.MineConfigManager;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
@@ -89,6 +89,9 @@ public class MineManager {
         this.pdcManager = new PDCManager();
     }
 
+    /**
+     * Re-create the mines from their configuration files.
+     */
     public void reload() {
         clearMines(false);
 

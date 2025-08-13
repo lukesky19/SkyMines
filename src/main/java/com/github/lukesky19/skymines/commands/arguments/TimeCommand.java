@@ -18,8 +18,9 @@
 package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
+import com.github.lukesky19.skylib.api.time.TimeUtil;
 import com.github.lukesky19.skymines.data.config.Locale;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
@@ -40,7 +41,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-// TODO Replace time with like 10d50m
 /**
  * This class is used to create the time command argument.
  */
@@ -81,235 +81,237 @@ public class TimeCommand {
      */
     public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("time")
-                .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time") && ctx.getSender() instanceof Player);
+            .requires(ctx ->
+                ctx.getSender().hasPermission("skymines.commands.skymines.time")
+                    && ctx.getSender() instanceof Player);
 
-        builder.then(
-                Commands.argument("mine_id", StringArgumentType.string())
-                        .suggests((commandContext, suggestionsBuilder) -> {
-                            for(String mineId : mineDataManager.getMineIdsWithTime()) {
-                                suggestionsBuilder.suggest(mineId);
-                            }
+        builder.then(Commands.argument("mine_id", StringArgumentType.string())
+            .suggests((commandContext, suggestionsBuilder) -> {
+                for(String mineId : mineDataManager.getMineIdsWithTime()) {
+                    suggestionsBuilder.suggest(mineId);
+                }
 
-                            return suggestionsBuilder.buildFuture();
-                        })
+                return suggestionsBuilder.buildFuture();
+            })
 
-                        .then(Commands.argument("player", ArgumentTypes.player())
-                                .executes(ctx -> {
-                                    CommandSender sender = ctx.getSource().getSender();
-                                    String mineId = ctx.getArgument("mine_id", String.class);
-                                    PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                                    Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                                    UUID targetPlayerId = targetPlayer.getUniqueId();
-                                    Locale locale = localeManager.getLocale();
+            .then(Commands.argument("player", ArgumentTypes.player())
+                .executes(ctx -> {
+                    CommandSender sender = ctx.getSource().getSender();
+                    String mineId = ctx.getArgument("mine_id", String.class);
+                    PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+                    Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
+                    UUID targetPlayerId = targetPlayer.getUniqueId();
+                    Locale locale = localeManager.getLocale();
 
-                                    AbstractMine mine = mineDataManager.getMineById(mineId);
-                                    if(mine == null) {
-                                        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
+                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                    if(mine == null) {
+                        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
-                                        return 0;
-                                    }
+                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                        return 0;
+                    }
 
-                                    long time = mineTimeManager.getMineTime(targetPlayerId, mineId);
-                                    List<TagResolver.Single> placeholders = List.of(
-                                            Placeholder.parsed("mine_id", mineId),
-                                            Placeholder.parsed("time", localeManager.getTimeMessage(time)));
+                    long time = mineTimeManager.getMineTime(targetPlayerId, mineId);
+                    List<TagResolver.Single> placeholders = List.of(
+                            Placeholder.parsed("mine_id", mineId),
+                            Placeholder.parsed("time", localeManager.getTimeMessage(time)));
 
-                                    if(time <= 0) {
-                                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
-                                    } else {
-                                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
-                                    }
+                    if(time <= 0) {
+                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
+                    } else {
+                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
+                    }
 
-                                    return 1;
-                                })
-                        )
+                    return 1;
+                }))
 
+                .executes(ctx -> {
+                    Locale locale = localeManager.getLocale();
+                    Player player = (Player) ctx.getSource().getSender();
+                    UUID uuid = player.getUniqueId();
+                    String mineId = ctx.getArgument("mine_id", String.class);
+
+                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                    if(mine == null) {
+                        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
+
+                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                        return 0;
+                    }
+
+                    long time = mineTimeManager.getMineTime(uuid, mineId);
+                    List<TagResolver.Single> placeholders = List.of(
+                            Placeholder.parsed("mine_id", mineId),
+                            Placeholder.parsed("time", localeManager.getTimeMessage(time)));
+
+                    if(time <= 0) {
+                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
+                    } else {
+                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
+                    }
+
+                    return 1;
+                }));
+
+        builder.then(Commands.literal("add")
+            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.add"))
+            .then(Commands.argument("player", ArgumentTypes.player())
+                .then(Commands.argument("mine_id", StringArgumentType.string())
+                    .suggests((commandContext, suggestionsBuilder) -> {
+                        for(String mineId : mineDataManager.getMineIdsWithTime()) {
+                            suggestionsBuilder.suggest(mineId);
+                        }
+                        return suggestionsBuilder.buildFuture();
+                    })
+                    .then(Commands.argument("time", StringArgumentType.string())
                         .executes(ctx -> {
                             Locale locale = localeManager.getLocale();
-                            Player player = (Player) ctx.getSource().getSender();
-                            UUID uuid = player.getUniqueId();
+                            CommandSender sender = ctx.getSource().getSender();
+                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
+                            UUID targetUUID = targetPlayer.getUniqueId();
                             String mineId = ctx.getArgument("mine_id", String.class);
+                            String timeString = ctx.getArgument("time", String.class);
+                            long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
                             AbstractMine mine = mineDataManager.getMineById(mineId);
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                 return 0;
                             }
 
-                            long time = mineTimeManager.getMineTime(uuid, mineId);
-                            List<TagResolver.Single> placeholders = List.of(
-                                    Placeholder.parsed("mine_id", mineId),
-                                    Placeholder.parsed("time", localeManager.getTimeMessage(time)));
+                            if(timeSeconds >= 1) {
+                                mineTimeManager.incrementMineTime(targetUUID, mineId, timeSeconds);
 
-                            if(time <= 0) {
-                                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
+                                long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
+
+                                List<TagResolver.Single> placeholders = List.of(
+                                        Placeholder.parsed("player_name", targetPlayer.getName()),
+                                        Placeholder.parsed("mine_id", mineId),
+                                        Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
+
+                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+
+                                return 1;
                             } else {
-                                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
+                                return 0;
                             }
-
-                            return 1;
                         })
-        );
-
-        builder.then(Commands.literal("add")
-                .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.add"))
-                .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
-                                    for(String mineId : mineDataManager.getMineIdsWithTime()) {
-                                        suggestionsBuilder.suggest(mineId);
-                                    }
-                                    return suggestionsBuilder.buildFuture();
-                                })
-                                .then(Commands.argument("time", IntegerArgumentType.integer())
-                                        .executes(ctx -> {
-                                            Locale locale = localeManager.getLocale();
-                                            CommandSender sender = ctx.getSource().getSender();
-                                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                                            UUID targetUUID = targetPlayer.getUniqueId();
-                                            String mineId = ctx.getArgument("mine_id", String.class);
-                                            int time = ctx.getArgument("time", int.class);
-
-                                            AbstractMine mine = mineDataManager.getMineById(mineId);
-                                            if(mine == null) {
-                                                List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
-
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
-                                                return 0;
-                                            }
-
-                                            if(time >= 1) {
-                                                mineTimeManager.incrementMineTime(targetUUID, mineId, time);
-
-                                                long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
-
-                                                List<TagResolver.Single> placeholders = List.of(
-                                                        Placeholder.parsed("player_name", targetPlayer.getName()),
-                                                        Placeholder.parsed("mine_id", mineId),
-                                                        Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
-
-                                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
-
-                                                return 1;
-                                            } else {
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
-                                                return 0;
-                                            }
-                                        })
-                                )
-                        )
+                    )
                 )
+            )
         );
 
         builder.then(Commands.literal("remove")
-                .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.remove"))
-                .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
-                                    for(String mineId : mineDataManager.getMineIds()) {
-                                        suggestionsBuilder.suggest(mineId);
-                                    }
+            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.remove"))
+            .then(Commands.argument("player", ArgumentTypes.player())
+                .then(Commands.argument("mine_id", StringArgumentType.string())
+                    .suggests((commandContext, suggestionsBuilder) -> {
+                        for(String mineId : mineDataManager.getMineIds()) {
+                            suggestionsBuilder.suggest(mineId);
+                        }
 
-                                    return suggestionsBuilder.buildFuture();
-                                })
-                                .then(Commands.argument("time", IntegerArgumentType.integer())
-                                        .executes(ctx -> {
-                                            Locale locale = localeManager.getLocale();
-                                            CommandSender sender = ctx.getSource().getSender();
-                                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                                            UUID targetUUID = targetPlayer.getUniqueId();
-                                            String mineId = ctx.getArgument("mine_id", String.class);
-                                            int time = ctx.getArgument("time", int.class);
+                        return suggestionsBuilder.buildFuture();
+                    })
+                    .then(Commands.argument("time", StringArgumentType.string())
+                        .executes(ctx -> {
+                            Locale locale = localeManager.getLocale();
+                            CommandSender sender = ctx.getSource().getSender();
+                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
+                            UUID targetUUID = targetPlayer.getUniqueId();
+                            String mineId = ctx.getArgument("mine_id", String.class);
+                            String timeString = ctx.getArgument("time", String.class);
+                            long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
-                                            AbstractMine mine = mineDataManager.getMineById(mineId);
-                                            if(mine == null) {
-                                                List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
+                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                            if(mine == null) {
+                                List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
-                                                return 0;
-                                            }
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                return 0;
+                            }
 
-                                            if(time >= 1) {
-                                                mineTimeManager.decrementMineTime(targetUUID, mineId, time);
+                            if(timeSeconds >= 1) {
+                                mineTimeManager.decrementMineTime(targetUUID, mineId, timeSeconds);
 
-                                                long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
+                                long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
 
-                                                List<TagResolver.Single> placeholders = List.of(
-                                                        Placeholder.parsed("player_name", targetPlayer.getName()),
-                                                        Placeholder.parsed("mine_id", mineId),
-                                                        Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
+                                List<TagResolver.Single> placeholders = List.of(
+                                        Placeholder.parsed("player_name", targetPlayer.getName()),
+                                        Placeholder.parsed("mine_id", mineId),
+                                        Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
 
-                                                return 1;
-                                            } else {
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
-                                                return 0;
-                                            }
-                                        })
-                                )
-                        )
+                                return 1;
+                            } else {
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
+                                return 0;
+                            }
+                        })
+                    )
                 )
+            )
         );
 
         builder.then(Commands.literal("set")
-                .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.set"))
-                .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
-                                    for(String mineId : mineDataManager.getMineIds()) {
-                                        suggestionsBuilder.suggest(mineId);
-                                    }
+            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time.set"))
+            .then(Commands.argument("player", ArgumentTypes.player())
+                .then(Commands.argument("mine_id", StringArgumentType.string())
+                    .suggests((commandContext, suggestionsBuilder) -> {
+                        for(String mineId : mineDataManager.getMineIds()) {
+                            suggestionsBuilder.suggest(mineId);
+                        }
 
-                                    return suggestionsBuilder.buildFuture();
-                                })
-                                .then(Commands.argument("time", IntegerArgumentType.integer())
-                                        .executes(ctx -> {
-                                            Locale locale = localeManager.getLocale();
-                                            CommandSender sender = ctx.getSource().getSender();
-                                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                                            UUID targetUUID = targetPlayer.getUniqueId();
-                                            String mineId = ctx.getArgument("mine_id", String.class);
-                                            int time = ctx.getArgument("time", int.class);
+                        return suggestionsBuilder.buildFuture();
+                    })
+                    .then(Commands.argument("time", IntegerArgumentType.integer())
+                        .executes(ctx -> {
+                            Locale locale = localeManager.getLocale();
+                            CommandSender sender = ctx.getSource().getSender();
+                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
+                            UUID targetUUID = targetPlayer.getUniqueId();
+                            String mineId = ctx.getArgument("mine_id", String.class);
+                            String timeString = ctx.getArgument("time", String.class);
+                            long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
-                                            AbstractMine mine = mineDataManager.getMineById(mineId);
-                                            if(mine == null) {
-                                                List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
+                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                            if(mine == null) {
+                                List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
-                                                return 0;
-                                            }
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                return 0;
+                            }
 
-                                            if(time < 0) {
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenZero()));
-                                                return 0;
-                                            }
+                            if(timeSeconds < 0) {
+                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenZero()));
+                                return 0;
+                            }
 
-                                            mineTimeManager.setMineTime(targetUUID, mineId, time);
+                            mineTimeManager.setMineTime(targetUUID, mineId, timeSeconds);
 
-                                            long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
+                            long mineTimeSeconds = mineTimeManager.getMineTime(targetUUID, mineId);
 
-                                            List<TagResolver.Single> placeholders = List.of(
-                                                    Placeholder.parsed("player_name", targetPlayer.getName()),
-                                                    Placeholder.parsed("mine_id", mineId),
-                                                    Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
+                            List<TagResolver.Single> placeholders = List.of(
+                                    Placeholder.parsed("player_name", targetPlayer.getName()),
+                                    Placeholder.parsed("mine_id", mineId),
+                                    Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                                            targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                                            sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+                            targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                            sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
 
-                                            return 1;
-                                        })
-                                )
-                        )
+                            return 1;
+                        })
+                    )
                 )
+            )
         );
 
         return builder.build();

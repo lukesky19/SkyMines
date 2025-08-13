@@ -19,9 +19,9 @@ package com.github.lukesky19.skymines.commands;
 
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.commands.arguments.*;
-import com.github.lukesky19.skymines.configuration.GUIConfigManager;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
-import com.github.lukesky19.skymines.configuration.MineConfigManager;
+import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
@@ -58,7 +58,6 @@ public final class SkyMinesCommand {
 
     /**
      * Constructor
-     *
      * @param skyMines A {@link SkyMines} instance.
      * @param localeManager A {@link LocaleManager} instance.
      * @param guiConfigManager A {@link GUIConfigManager} instance.
@@ -91,7 +90,7 @@ public final class SkyMinesCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
      */
-    public LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("skymines")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines"));
 

@@ -65,22 +65,6 @@ public class DatabaseManager extends AbstractDatabaseManager {
     }
 
     /**
-     * Get the {@link PlayerIdsTable}.
-     * @return The {@link PlayerIdsTable}.
-     */
-    public @NotNull PlayerIdsTable getPlayerIdsTable() {
-        return playerIdsTable;
-    }
-
-    /**
-     * Get the {@link MineIdsTable}.
-     * @return The {@link MineIdsTable}.
-     */
-    public @NotNull MineIdsTable getMineIdsTable() {
-        return mineIdsTable;
-    }
-
-    /**
      * Get the {@link TimesTable}.
      * @return The {@link TimesTable}.
      */

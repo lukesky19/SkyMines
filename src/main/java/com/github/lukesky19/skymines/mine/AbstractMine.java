@@ -36,6 +36,11 @@ import java.util.UUID;
  */
 public abstract class AbstractMine {
     /**
+     * Default Constructor
+     */
+    public AbstractMine() {}
+
+    /**
      * Get the identifying name of the mine.
      * @return A String
      */
@@ -165,11 +170,14 @@ public abstract class AbstractMine {
 
     /**
      * Handles the creation and showing of the mine's boss bar to the player.
+     * @param player The {@link Player} to show the boss bar to.
+     * @param uuid The {@link UUID} of the player.
      */
     public abstract void createAndShowBossBar(@NotNull Player player, @NotNull UUID uuid);
 
     /**
      * Handles updating of the mine's boss bar currently shown to the player.
+     * @param uuid The {@link UUID} of the player.
      */
     public abstract void updateBossBar(@NotNull UUID uuid);
 

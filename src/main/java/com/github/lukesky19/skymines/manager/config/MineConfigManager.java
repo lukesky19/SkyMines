@@ -15,7 +15,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.configuration;
+package com.github.lukesky19.skymines.manager.config;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
@@ -50,15 +50,6 @@ public class MineConfigManager {
      */
     public MineConfigManager(@NotNull SkyMines skyMines) {
         this.skyMines = skyMines;
-    }
-
-    /**
-     * Get the {@link PacketMineConfig} for the mine id provided.
-     * @param mineId The mine id to get the config for.
-     * @return A {@link PacketMineConfig} or null.
-     */
-    public @Nullable PacketMineConfig getPacketMineConfig(@NotNull String mineId) {
-        return packetMineConfigs.get(mineId);
     }
 
     /**

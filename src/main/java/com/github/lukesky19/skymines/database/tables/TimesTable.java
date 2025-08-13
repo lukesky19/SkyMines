@@ -55,6 +55,7 @@ public class TimesTable {
 
     /**
      * Creates the table in the database if it doesn't exist and any indexes that don't exist.
+     * @return A {@link CompletableFuture} of type {@link Void} when complete.
      */
     public @NotNull CompletableFuture<Void> createTable() {
         String tableCreationSql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
@@ -63,8 +64,8 @@ public class TimesTable {
                 "player_id LONG NOT NULL DEFAULT 0, " + // Unique
                 "time LONG NOT NULL DEFAULT 0, " +
                 "last_updated LONG NOT NULL DEFAULT 0, " +
-                "FOREIGN KEY (mine_id) REFERENCES mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
-                "FOREIGN KEY (player_id) REFERENCES player_ids(player_id), " +
+                "FOREIGN KEY (mine_id) REFERENCES skymines_mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
+                "FOREIGN KEY (player_id) REFERENCES skymines_player_ids(player_id), " +
                 "UNIQUE (mine_id, player_id))";
         String mineIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_mine_ids ON " + tableName + "(mine_id)";
         String playerIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_player_ids ON " + tableName + "(player_id)";
@@ -100,30 +101,8 @@ public class TimesTable {
     }
 
     /**
-     * Save the time the player has access to a mine for.
-     * @param uuid The {@link UUID} of the player.
-     * @param mineId The id of the mine.
-     * @param mineTimeSeconds The time in seconds.
-     * @return A {@link CompletableFuture} containing a {@link Boolean} where true is successful, otherwise false.
-     */
-    public @NotNull CompletableFuture<Boolean> saveMineTime(@NotNull UUID uuid, @NotNull String mineId, long mineTimeSeconds) {
-        String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, time, last_updated) " +
-                "VALUES (?, ?, ?, ?) " +
-                "ON CONFLICT (mine_id, player_id) DO UPDATE SET " +
-                "time = ?, last_updated = ? WHERE last_updated < ?";
-
-        StringParameter mineIdParameter = new StringParameter(mineId);
-        UUIDParameter playerIdParameter = new UUIDParameter(uuid);
-        LongParameter timeParameter = new LongParameter(mineTimeSeconds);
-        LongParameter lastUpdatedParameter = new LongParameter(System.currentTimeMillis());
-
-        List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, timeParameter, lastUpdatedParameter, timeParameter, lastUpdatedParameter, lastUpdatedParameter);
-
-        return queueManager.queueWriteTransaction(insertOrUpdateSql, parameterList).thenApply(result -> result > 0);
-    }
-
-    /**
      * Saves all mine time for a player to the database.
+     * @param uuid The {@link UUID} to save data for.
      * @param data A {@link Map} mapping mine ids to mine time as a {@link Long}.
      * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
      * The list will contain false if an operation failed.
@@ -267,6 +246,7 @@ public class TimesTable {
     /**
      * Remove the legacy table from the database
      * @deprecated This method is planned for removal in version 3.2.0.0.
+     * @return A {@link CompletableFuture} of type {@link Boolean} when complete.
      */
     @Deprecated(since = "3.1.0.0", forRemoval = true)
     public @NotNull CompletableFuture<Boolean> dropTable() {

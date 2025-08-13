@@ -26,7 +26,6 @@ import com.github.lukesky19.skymines.database.tables.UnlockedBlocksTable;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -35,7 +34,6 @@ import java.util.concurrent.CompletableFuture;
  * This class manages player data.
  */
 public class PlayerDataManager {
-    private final @NotNull SkyMines skyMines;
     private final @NotNull ComponentLogger logger;
     private final @NotNull DatabaseManager databaseManager;
 
@@ -58,19 +56,19 @@ public class PlayerDataManager {
      * @param databaseManager A {@link DatabaseManager} instance.
      */
     public PlayerDataManager(@NotNull SkyMines skyMines, @NotNull DatabaseManager databaseManager) {
-        this.skyMines = skyMines;
         this.logger = skyMines.getComponentLogger();
         this.databaseManager = databaseManager;
     }
 
+    /**
+     * Get the {@link PlayerData} for the {@link UUID} provided.
+     * @param uuid The {@link UUID} of the player.
+     * @return The {@link PlayerData} for the player.
+     */
     public @NotNull PlayerData getPlayerData(@NotNull UUID uuid) {
-        @Nullable PlayerData playerData = playerDataMap.get(uuid);
-        if(playerData == null) {
-            logger.warn(AdventureUtil.serialize("No player data found for UUID " + uuid + ". Creating new player data."));
+        @NotNull PlayerData playerData = playerDataMap.getOrDefault(uuid, new PlayerData());
 
-            playerData = new PlayerData();
-            playerDataMap.put(uuid, playerData);
-        }
+        playerDataMap.put(uuid, playerData);
 
         return playerData;
     }
@@ -84,15 +82,6 @@ public class PlayerDataManager {
     }
 
     /**
-     * Creates {@link PlayerData} for the player.
-     * @param uuid The {@link UUID} of the player.
-     */
-    public void createPlayerData(@NotNull UUID uuid) {
-        PlayerData playerData = new PlayerData();
-        playerDataMap.put(uuid, playerData);
-    }
-
-    /**
      * Save all player data for the player's uuid provided to the database.
      * @param uuid The {@link UUID} of the player.
      * @return A {@link CompletableFuture} containing a {@link Boolean} where true means all data saved successfully and false for any errors.
@@ -100,7 +89,7 @@ public class PlayerDataManager {
     public @NotNull CompletableFuture<Boolean> savePlayerData(@NotNull UUID uuid) {
         PlayerData playerData = playerDataMap.get(uuid);
         if(playerData == null) {
-            skyMines.getComponentLogger().error(AdventureUtil.serialize("Failed to save player data for " + uuid + " as they have no player data stored."));
+            logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " as they have no player data stored."));
             return CompletableFuture.completedFuture(false);
         }
 
@@ -117,7 +106,7 @@ public class PlayerDataManager {
                     return allTimesSuccessful && allBlocksSuccessful;
                 })
                 .exceptionally(e -> {
-                    skyMines.getComponentLogger().error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                    logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                     return false;
                 });
     }
@@ -143,7 +132,7 @@ public class PlayerDataManager {
                         return allTimesSuccessful && allBlocksSuccessful;
                     })
                     .exceptionally(e -> {
-                        skyMines.getComponentLogger().error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                        logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                         return false;
                     });
 
@@ -154,6 +143,11 @@ public class PlayerDataManager {
                 .thenApply(v -> saveFutures.stream().allMatch(CompletableFuture::join));
     }
 
+    /**
+     * Load player data from the database.
+     * @param uuid The {@link UUID} to load player data for.
+     * @return A {@link CompletableFuture} of type {@link Void} when complete.
+     */
     public @NotNull CompletableFuture<Void> loadPlayerData(@NotNull UUID uuid) {
         TimesTable timesTable = databaseManager.getTimesTable();
         UnlockedBlocksTable unlockedBlocksTable = databaseManager.getUnlockedBlocksTable();
@@ -169,11 +163,16 @@ public class PlayerDataManager {
                     playerDataMap.put(uuid, playerData);
                 })
                 .exceptionally(e -> {
-                    skyMines.getComponentLogger().error(AdventureUtil.serialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
+                    logger.error(AdventureUtil.serialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
                     return null;
                 });
     }
 
+    /**
+     * Saves and then unloads player data.
+     * @param uuid The {@link UUID} of the player to save and unload player data for.
+     * @return A {@link CompletableFuture} of type {@link Void} when complete.
+     */
     public @NotNull CompletableFuture<Void> unloadPlayerData(@NotNull UUID uuid) {
         return savePlayerData(uuid).thenAccept(result -> playerDataMap.remove(uuid));
     }

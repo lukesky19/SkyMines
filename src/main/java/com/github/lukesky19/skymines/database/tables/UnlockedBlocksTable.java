@@ -72,8 +72,8 @@ public class UnlockedBlocksTable {
                 "player_id LONG NOT NULL DEFAULT 0, " + // Unique
                 "unlocked_blocks TEXT NOT NULL DEFAULT 0, " +
                 "last_updated LONG NOT NULL DEFAULT 0, " +
-                "FOREIGN KEY (mine_id) REFERENCES mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
-                "FOREIGN KEY (player_id) REFERENCES player_ids(player_id), " +
+                "FOREIGN KEY (mine_id) REFERENCES skymines_mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
+                "FOREIGN KEY (player_id) REFERENCES skymines_player_ids(player_id), " +
                 "UNIQUE (mine_id, player_id))";
         String mineIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_mine_ids ON " + tableName + "(mine_id);";
         String playerIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_player_ids ON " + tableName + "(player_id);";
@@ -119,33 +119,8 @@ public class UnlockedBlocksTable {
     }
 
     /**
-     * Save the blocks the player has access to for a mine.
-     * @param uuid The {@link UUID} of the player.
-     * @param mineId The id of the mine.
-     * @param unlockedBlocks A {@link List} of {@link BlockType}.
-     * @return A {@link CompletableFuture} containing a {@link Boolean} where true is successful, otherwise false.
-     */
-    public @NotNull CompletableFuture<Boolean> saveUnlockedBlocks(@NotNull UUID uuid, @NotNull String mineId, @NotNull List<BlockType> unlockedBlocks) {
-        String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, unlocked_blocks, last_updated) " +
-                "VALUES (?, ?, ?, ?) " +
-                "ON CONFLICT (mine_id, player_id) DO UPDATE SET " +
-                "unlocked_blocks = ?, last_updated = ? WHERE last_updated < ?";
-
-        Gson gson = new Gson();
-        String jsonList = gson.toJson(unlockedBlocks);
-
-        StringParameter mineIdParameter = new StringParameter(mineId);
-        UUIDParameter playerIdParameter = new UUIDParameter(uuid);
-        StringParameter unlockedBlocksParameter = new StringParameter(jsonList);
-        LongParameter lastUpdatedParameter = new LongParameter(System.currentTimeMillis());
-
-        List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, unlockedBlocksParameter, lastUpdatedParameter, unlockedBlocksParameter, lastUpdatedParameter, lastUpdatedParameter);
-
-        return queueManager.queueWriteTransaction(insertOrUpdateSql, parameterList).thenApply(result -> result > 0);
-    }
-
-    /**
-     * Saves all mine time for a player to the database.
+     * For all mines, save all unlocked blocks for a player to the database.
+     * @param uuid The {@link UUID} of the player to save data for.
      * @param data A {@link Map} mapping mine ids to mine time as a {@link Long}.
      * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
      * The list will contain false if an operation failed.
@@ -170,51 +145,6 @@ public class UnlockedBlocksTable {
             List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, unlockedBlocksParameter, lastUpdatedParameter, unlockedBlocksParameter, lastUpdatedParameter, lastUpdatedParameter);
 
             sqlStatementsAndParameters.put(insertOrUpdateSql, parameterList);
-        });
-
-        return queueManager.queueBulkWriteTransaction(sqlStatementsAndParameters).thenApply(list -> {
-                    List<Boolean> results = new ArrayList<>();
-
-                    list.forEach(rowsUpdated -> {
-                        if(rowsUpdated > 0) {
-                            results.add(true);
-                        } else  {
-                            results.add(false);
-                        }
-                    });
-
-                    return results;
-                }
-        );
-    }
-
-    /**
-     * Saves all mine time to the database for all mines and players.
-     * @param data A {@link Map} mapping mine ids to a {@link Map} mapping {@link UUID} to mine time as a {@link Long}.
-     * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
-     * The list will contain false if an operation failed.
-     */
-    public @NotNull CompletableFuture<@NotNull List<@NotNull Boolean>> saveUnlockedBlocks(@NotNull Map<String, Map<UUID, List<BlockType>>> data) {
-        Map<String, List<Parameter<?>>> sqlStatementsAndParameters = new HashMap<>();
-        String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, unlocked_blocks, last_updated) " +
-                "VALUES (?, ?, ?, ?) " +
-                "ON CONFLICT (mine_id, player_id) DO UPDATE SET " +
-                "unlocked_blocks = ?, last_updated = ? WHERE last_updated < ?";
-
-        data.forEach((mineId, unlockedBlocksByPlayerId) -> {
-            unlockedBlocksByPlayerId.forEach((uuid, unlockedBlocks) -> {
-                Gson gson = new Gson();
-                String jsonList = gson.toJson(unlockedBlocks);
-
-                StringParameter mineIdParameter = new StringParameter(mineId);
-                UUIDParameter playerIdParameter = new UUIDParameter(uuid);
-                StringParameter unlockedBlocksParameter = new StringParameter(jsonList);
-                LongParameter lastUpdatedParameter = new LongParameter(System.currentTimeMillis());
-
-                List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, unlockedBlocksParameter, lastUpdatedParameter, unlockedBlocksParameter, lastUpdatedParameter, lastUpdatedParameter);
-
-                sqlStatementsAndParameters.put(insertOrUpdateSql, parameterList);
-            });
         });
 
         return queueManager.queueBulkWriteTransaction(sqlStatementsAndParameters).thenApply(list -> {

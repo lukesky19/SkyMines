@@ -47,6 +47,7 @@ public class BlockData {
 
     /**
      * Set the seconds that this block is on cooldown for.
+     * @param cooldownSeconds The cooldown for the block in seconds.
      */
     public void setCooldownSeconds(long cooldownSeconds) {
         this.cooldownSeconds = cooldownSeconds;

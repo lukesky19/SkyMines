@@ -25,6 +25,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PluginUtils {
     /**
+     * Default Constructor. All methods in this class are static.
+     * @deprecated All methods in this class are static.
+     * @throws RuntimeException if this method is used.
+     */
+    @Deprecated
+    public PluginUtils() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
+
+    /**
      * Create a new {@link Location} that removes the yaw and pitch.
      * @param location The {@link Location} to clean.
      * @return A {@link Location} without the yaw and pitch.

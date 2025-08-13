@@ -26,10 +26,10 @@ import com.github.lukesky19.skylib.api.itemstack.ItemStackBuilder;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
 import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.LocaleManager;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -51,19 +51,16 @@ import java.util.concurrent.CompletableFuture;
  * This GUI allows players to unlock blocks for a world mine by purchasing them.
  */
 public class UnlocksShopGUI extends ChestGUI {
-    // SkyMines
+    // Plugin Data
     private final @NotNull SkyMines skyMines;
     private final @NotNull LocaleManager localeManager;
     private final @NotNull BlocksManager blocksManager;
-
-    // Player
+    // Player data
     private final @NotNull UUID uuid;
-
-    // Config
+    // Config Data
     private final @NotNull String mineId;
     private final @NotNull WorldMineConfig mineConfig;
     private final @NotNull WorldMineGUIConfig guiConfig;
-
     // GUI data
     private int pageNum = 0;
     private int currentUnlockKey = 0;
@@ -146,6 +143,9 @@ public class UnlocksShopGUI extends ChestGUI {
         clearButtons();
 
         createFillerButtons(guiSize);
+
+        createDummyButtons();
+
         createUnlockButtons(itemsPerPage);
 
         unlocksAddedPerPage.put(pageNum, numOfUnlocksAdded);
@@ -402,7 +402,7 @@ public class UnlocksShopGUI extends ChestGUI {
     private void createExitButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.exit().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a previous page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.serialize("Unable to add a exit button due to a slot not being configured."));
             return;
         }
 
@@ -423,6 +423,30 @@ public class UnlocksShopGUI extends ChestGUI {
             });
 
             setButton(guiConfig.exit().slot(), guiButtonBuilder.build());
+        });
+    }
+
+    /**
+     * Create the dummy buttons for the GUI.
+     */
+    private void createDummyButtons() {
+        guiConfig.dummyButtons().forEach(buttonConfig -> {
+            if(buttonConfig.slot() == null) {
+                logger.warn(AdventureUtil.serialize("Unable to add a dummy button to the unlocks shop GUI due to an invalid slot."));
+                return;
+            }
+
+            ItemStackConfig itemStackConfig = buttonConfig.displayItem();
+            ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, List.of());
+            Optional<@NotNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+            optionalItemStack.ifPresent(itemStack -> {
+                GUIButton.Builder builder = new GUIButton.Builder();
+
+                builder.setItemStack(itemStack);
+
+                setButton(buttonConfig.slot(), builder.build());
+            });
         });
     }
 

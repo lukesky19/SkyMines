@@ -5,6 +5,7 @@ api-version: '1.21'
 authors: [ lukeskywlker19 ]
 load: POSTWORLD
 depend:
+  - SkyLib
   - WorldGuard
   - Vault
 softdepend:

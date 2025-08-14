@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -17,26 +17,38 @@
 */
 package com.github.lukesky19.skymines.listeners;
 
-import com.github.lukesky19.skymines.manager.MineManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.manager.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.AbstractMine;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class listens to when a player loads a chunk and passes that event to the mine they are in (if any).
  */
 public class ChunkLoadListener implements Listener {
-    private final MineManager mineManager;
+    private final @NotNull MineDataManager mineDataManager;
+
+    /**
+     * Default Constructor.
+     * You should use {@link #ChunkLoadListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #ChunkLoadListener(MineDataManager)} instead.
+     * @throws RuntimeException if used.
+     */
+    @Deprecated
+    public ChunkLoadListener() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
+    }
 
     /**
      * Constructor
-     * @param mineManager A MineManager instance.
+     * @param mineDataManager A MineDataManager instance.
      */
-    public ChunkLoadListener(MineManager mineManager) {
-        this.mineManager = mineManager;
+    public ChunkLoadListener(@NotNull MineDataManager mineDataManager) {
+        this.mineDataManager = mineDataManager;
     }
 
     /**
@@ -47,7 +59,7 @@ public class ChunkLoadListener implements Listener {
     public void onChunkLoad(PlayerChunkLoadEvent playerChunkLoadEvent) {
         Location location = playerChunkLoadEvent.getPlayer().getLocation();
 
-        Mine mine = mineManager.getMineByLocation(location);
+        AbstractMine mine = mineDataManager.getMineByLocation(location);
         if(mine != null) {
             mine.handlePlayerChunkLoad(playerChunkLoadEvent);
         }

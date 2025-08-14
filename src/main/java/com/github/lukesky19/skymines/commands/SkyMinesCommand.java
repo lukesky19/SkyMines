@@ -1,6 +1,6 @@
 /*
-    SkyMines tracks blocks broken in specific regions, replaces them, gives items, and sends client-side block changes.
-    Copyright (C) 2023-2025  lukeskywlker19
+    SkyMines offers different types mines to get resources from.
+    Copyright (C) 2023 lukeskywlker19
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as published
@@ -17,263 +17,96 @@
 */
 package com.github.lukesky19.skymines.commands;
 
-import com.github.lukesky19.skylib.format.FormatUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.configuration.loader.LocaleManager;
-import com.github.lukesky19.skymines.configuration.record.Locale;
-import com.github.lukesky19.skymines.manager.MineManager;
-import com.github.lukesky19.skymines.mine.Mine;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
+import com.github.lukesky19.skymines.commands.arguments.*;
+import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
+import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.MineConfigManager;
+import com.github.lukesky19.skymines.manager.gui.GUIManager;
+import com.github.lukesky19.skymines.manager.mine.MineDataManager;
+import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
+import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
-import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
-import java.util.List;
-import java.util.UUID;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This class handles the creation of the SkyMines command.
  */
 public final class SkyMinesCommand {
-    private final SkyMines skyMines;
-    private final LocaleManager localeManager;
-    private final MineManager mineManager;
+    private final @NotNull SkyMines skyMines;
+    private final @NotNull LocaleManager localeManager;
+    private final @NotNull GUIConfigManager guiConfigManager;
+    private final @NotNull MineConfigManager mineConfigManager;
+    private final @NotNull GUIManager guiManager;
+    private final @NotNull MineDataManager mineDataManager;
+    private final @NotNull MineTimeManager mineTimeManager;
+    private final @NotNull BlocksManager blocksManager;
 
-    public SkyMinesCommand(
-            SkyMines skyMines,
-            LocaleManager localeManager, MineManager mineManager) {
-        this.skyMines = skyMines;
-        this.localeManager = localeManager;
-        this.mineManager = mineManager;
+    /**
+     * Default Constructor.
+     * You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, GUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
+     * @deprecated You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, GUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
+     * @throws RuntimeException if used.
+     */
+    @Deprecated
+    public SkyMinesCommand() {
+        throw new RuntimeException("The use of the default constructor is not allowed.");
     }
 
     /**
-     * Creates a command to be passed into the LifeCycleAPI.
-     * @return A LiteralCommandNode of a CommandSourceStack.
+     * Constructor
+     * @param skyMines A {@link SkyMines} instance.
+     * @param localeManager A {@link LocaleManager} instance.
+     * @param guiConfigManager A {@link GUIConfigManager} instance.
+     * @param mineConfigManager A {@link MineConfigManager} instance.
+     * @param guiManager A {@link GUIManager} instance.
+     * @param mineDataManager A {@link MineDataManager} instance.
+     * @param mineTimeManager A {@link MineTimeManager} instance.
+     * @param blocksManager A {@link BlocksManager} instance.
      */
-    public LiteralCommandNode<CommandSourceStack> createCommand() {
+    public SkyMinesCommand(
+            @NotNull SkyMines skyMines,
+            @NotNull LocaleManager localeManager,
+            @NotNull GUIConfigManager guiConfigManager,
+            @NotNull MineConfigManager mineConfigManager,
+            @NotNull GUIManager guiManager,
+            @NotNull MineDataManager mineDataManager,
+            @NotNull MineTimeManager mineTimeManager,
+            @NotNull BlocksManager blocksManager) {
+        this.skyMines = skyMines;
+        this.localeManager = localeManager;
+        this.guiConfigManager = guiConfigManager;
+        this.mineConfigManager = mineConfigManager;
+        this.guiManager = guiManager;
+        this.mineDataManager = mineDataManager;
+        this.mineTimeManager = mineTimeManager;
+        this.blocksManager = blocksManager;
+    }
+
+    /**
+     * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
+     * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
+     */
+    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("skymines")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines"));
-        
-        builder.then(Commands.literal("time")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.time") && ctx.getSender() instanceof Player)
-            .then(Commands.argument("mine_id", StringArgumentType.string())
-                .suggests((commandContext, suggestionsBuilder) -> {
-                    for(String mineId : mineManager.getMineIds()) {
-                        suggestionsBuilder.suggest(mineId);
-                    }
 
-                    return suggestionsBuilder.buildFuture();
-                })
-                .executes(ctx -> {
-                    Locale locale = localeManager.getLocale();
-                    Player player = (Player) ctx.getSource().getSender();
-                    UUID uuid = player.getUniqueId();
-                    String mineId = ctx.getArgument("mine_id", String.class);
+        TimeCommand timeCommand = new TimeCommand(localeManager, mineDataManager, mineTimeManager);
+        BlocksCommand blocksCommand = new BlocksCommand(skyMines, localeManager, mineConfigManager, mineDataManager, blocksManager);
+        HelpCommand helpCommand = new HelpCommand(localeManager);
+        ReloadCommand reloadCommand = new ReloadCommand(skyMines, localeManager);
+        ShopCommand shopCommand = new ShopCommand(skyMines, localeManager, guiConfigManager,mineConfigManager, mineDataManager, guiManager, blocksManager);
+        PreviewCommand previewCommand = new PreviewCommand(skyMines, localeManager, guiConfigManager, mineConfigManager, mineDataManager, guiManager);
 
-                    Mine mine = mineManager.getMineById(mineId);
-                    if(mine != null) {
-                        Integer time = mine.getPlayerTime(uuid);
-                        if(time != null) {
-                            List<TagResolver.Single> placeholders = List.of(
-                                    Placeholder.parsed("mine_id", mineId),
-                                    Placeholder.parsed("time", localeManager.getTimeMessage(time)));
-
-                            player.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTime(), placeholders));
-
-                            return 1;
-                        } else {
-                            player.sendMessage(FormatUtil.format(locale.prefix() + "You do not have any time for this mine."));
-                            return 0;
-                        }
-                    } else {
-                        player.sendMessage(FormatUtil.format("No mine for mine id " + mineId));
-                        return 0;
-                    }
-                })
-            )
-        );
-
-        builder.then(Commands.literal("add")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.add"))
-            .then(Commands.argument("player", ArgumentTypes.player())
-                .then(Commands.argument("mine_id", StringArgumentType.string())
-                    .suggests((commandContext, suggestionsBuilder) -> {
-                        for(String mineId : mineManager.getMineIds()) {
-                            suggestionsBuilder.suggest(mineId);
-                        }
-                        return suggestionsBuilder.buildFuture();
-                    })
-                    .then(Commands.argument("time", IntegerArgumentType.integer())
-                        .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
-                            CommandSender sender = ctx.getSource().getSender();
-                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                            UUID targetUUID = targetPlayer.getUniqueId();
-                            String mineId = ctx.getArgument("mine_id", String.class);
-                            int time = ctx.getArgument("time", int.class);
-
-                            Mine mine = mineManager.getMineById(mineId);
-                            if(mine != null) {
-                                if(time >= 1) {
-                                    int result = mine.addPlayerTime(targetPlayer, targetUUID, time);
-
-                                    List<TagResolver.Single> placeholders = List.of(
-                                            Placeholder.parsed("player_name", targetPlayer.getName()),
-                                            Placeholder.parsed("mine_id", mineId),
-                                            Placeholder.parsed("time", localeManager.getTimeMessage(result)));
-
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
-
-                                    return 1;
-                                } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 1!</red>"));
-                                    return 0;
-                                }
-                            } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
-                                return 0;
-                            }
-                        })
-                    )
-                )
-            )
-        );
-        
-        builder.then(Commands.literal("remove")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.remove"))
-            .then(Commands.argument("player", ArgumentTypes.player())
-                .then(Commands.argument("mine_id", StringArgumentType.string())
-                    .suggests((commandContext, suggestionsBuilder) -> {
-                        for(String mineId : mineManager.getMineIds()) {
-                            suggestionsBuilder.suggest(mineId);
-                        }
-
-                        return suggestionsBuilder.buildFuture();
-                    })
-                    .then(Commands.argument("time", IntegerArgumentType.integer())
-                        .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
-                            CommandSender sender = ctx.getSource().getSender();
-                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                            UUID targetUUID = targetPlayer.getUniqueId();
-                            String mineId = ctx.getArgument("mine_id", String.class);
-                            int time = ctx.getArgument("time", int.class);
-
-                            Mine mine = mineManager.getMineById(mineId);
-                            if(mine != null) {
-                                if(time >= 1) {
-                                    int result = mine.removePlayerTime(targetPlayer, targetUUID, time);
-
-                                    List<TagResolver.Single> placeholders = List.of(
-                                            Placeholder.parsed("player_name", targetPlayer.getName()),
-                                            Placeholder.parsed("mine_id", mineId),
-                                            Placeholder.parsed("time", localeManager.getTimeMessage(result)));
-
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
-
-                                    return 1;
-                                } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 1!</red>"));
-                                    return 0;
-                                }
-                            } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
-                                return 0;
-                            }
-                        })
-                    )
-                )
-            )
-        );
-        
-        builder.then(Commands.literal("set")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.set"))
-            .then(Commands.argument("player", ArgumentTypes.player())
-                .then(Commands.argument("mine_id", StringArgumentType.string())
-                    .suggests((commandContext, suggestionsBuilder) -> {
-                        for(String mineId : mineManager.getMineIds()) {
-                            suggestionsBuilder.suggest(mineId);
-                        }
-
-                        return suggestionsBuilder.buildFuture();
-                    })
-                    .then(Commands.argument("time", IntegerArgumentType.integer())
-                        .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
-                            CommandSender sender = ctx.getSource().getSender();
-                            PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
-                            Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                            UUID targetUUID = targetPlayer.getUniqueId();
-                            String mineId = ctx.getArgument("mine_id", String.class);
-                            int time = ctx.getArgument("time", int.class);
-
-                            Mine mine = mineManager.getMineById(mineId);
-                            if(mine != null) {
-                                if(time >= 0) {
-                                    int result = mine.setPlayerTime(targetPlayer, targetUUID, time);
-
-                                    List<TagResolver.Single> placeholders = List.of(
-                                            Placeholder.parsed("player_name", targetPlayer.getName()),
-                                            Placeholder.parsed("mine_id", mineId),
-                                            Placeholder.parsed("time", localeManager.getTimeMessage(result)));
-
-                                    targetPlayer.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGiven(), placeholders));
-                                    sender.sendMessage(FormatUtil.format(locale.prefix() + locale.mineTimeGivenTo(), placeholders));
-
-                                    return 1;
-                                } else {
-                                    sender.sendMessage(FormatUtil.format("<red>Time must be greater than or equal to 0!</red>"));
-                                    return 0;
-                                }
-                            } else {
-                                sender.sendMessage(FormatUtil.format("<red>No mine for mine id <yellow>" + mineId + "</yellow>.</red>"));
-                                return 0;
-                            }
-                        })
-                    )
-                )
-            )
-        );
-
-        builder.then(Commands.literal("help")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.help"))
-            .executes(ctx -> {
-                CommandSender sender = ctx.getSource().getSender();
-                Locale locale = localeManager.getLocale();
-
-                for (String msg : locale.help()) {
-                    sender.sendMessage(FormatUtil.format(msg));
-                }
-
-                return 1;
-            })
-        );
-
-        builder.then(Commands.literal("reload")
-            .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.reload"))
-            .executes(ctx -> {
-                Locale locale = localeManager.getLocale();
-
-                skyMines.reload();
-
-                ctx.getSource().getSender().sendMessage(FormatUtil.format(locale.prefix() + locale.reload()));
-
-                return 1;
-            })
-        );
+        builder.then(timeCommand.createCommand());
+        builder.then(blocksCommand.createCommand());
+        builder.then(helpCommand.createCommand());
+        builder.then(reloadCommand.createCommand());
+        builder.then(shopCommand.createCommand());
+        builder.then(previewCommand.createCommand());
 
         return builder.build();
     }

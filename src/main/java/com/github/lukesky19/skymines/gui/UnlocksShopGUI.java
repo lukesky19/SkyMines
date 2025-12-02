@@ -304,6 +304,8 @@ public class UnlocksShopGUI extends ChestGUI {
                         return;
                     }
 
+                    economy.withdrawPlayer(player, buyPrice);
+
                     List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)), Placeholder.parsed("mine_id", mineId));
 
                     blocksManager.addUnlockedBlock(uuid, mineId, blockType);

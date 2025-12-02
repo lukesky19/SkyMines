@@ -81,6 +81,9 @@ public class MineConfigManager {
      * Loads all mine config files in the mines folder.
      */
     public void reload() {
+        packetMineConfigs.clear();
+        worldMineConfigMap.clear();
+
         try(Stream<Path> paths = Files.walk(Paths.get(skyMines.getDataFolder() + File.separator + "mines" + File.separator + "packet"))) {
             paths.filter(Files::isRegularFile)
                     .forEach(path -> {

@@ -237,7 +237,7 @@ public class SkyMines extends JavaPlugin {
             String[] splitVersion = version.split("\\.");
             int second = Integer.parseInt(splitVersion[1]);
 
-            if(second >= 3) {
+            if(second >= 4) {
                 return true;
             }
         }

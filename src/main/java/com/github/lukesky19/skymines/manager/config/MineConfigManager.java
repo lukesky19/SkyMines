@@ -24,6 +24,8 @@ import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
+import com.github.lukesky19.skymines.database.DatabaseManager;
+import com.github.lukesky19.skymines.database.tables.MineIdsTable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,15 +43,18 @@ import java.util.stream.Stream;
  */
 public class MineConfigManager {
     private final @NotNull SkyMines skyMines;
+    private final @NotNull DatabaseManager databaseManager;
     private final @NotNull Map<String, PacketMineConfig> packetMineConfigs = new HashMap<>();
     private final @NotNull Map<String, WorldMineConfig> worldMineConfigMap = new HashMap<>();
 
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
+     * @param databaseManager A {@link DatabaseManager} instance.
      */
-    public MineConfigManager(@NotNull SkyMines skyMines) {
+    public MineConfigManager(@NotNull SkyMines skyMines, @NotNull DatabaseManager databaseManager) {
         this.skyMines = skyMines;
+        this.databaseManager = databaseManager;
     }
 
     /**
@@ -81,6 +86,7 @@ public class MineConfigManager {
      * Loads all mine config files in the mines folder.
      */
     public void reload() {
+        @NotNull MineIdsTable mineIdsTable = databaseManager.getMineIdsTable();
         packetMineConfigs.clear();
         worldMineConfigMap.clear();
 
@@ -96,6 +102,8 @@ public class MineConfigManager {
                         }
 
                         if(mineConfig != null && mineConfig.mineId() != null) {
+                            mineIdsTable.insertMineId(mineConfig.mineId());
+
                             packetMineConfigs.put(mineConfig.mineId(), mineConfig);
                         } else {
                             skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load packet mine config for " + path.toFile()));
@@ -117,6 +125,8 @@ public class MineConfigManager {
                         }
 
                         if(mineConfig != null && mineConfig.mineId() != null) {
+                            mineIdsTable.insertMineId(mineConfig.mineId());
+
                             worldMineConfigMap.put(mineConfig.mineId(), mineConfig);
                         } else {
                             skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load world mine config for " + path.toFile()));

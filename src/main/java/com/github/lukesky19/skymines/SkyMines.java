@@ -97,16 +97,16 @@ public class SkyMines extends JavaPlugin {
         int pluginId = 22278;
         new Metrics(this, pluginId);
 
-        // Config Classes
-        settingsManager = new SettingsManager(this);
-        localeManager = new LocaleManager(this, settingsManager);
-        mineConfigManager = new MineConfigManager(this);
-        guiConfigManager = new GUIConfigManager(this);
-
         // Database Classes
         ConnectionManager connectionManager = new ConnectionManager(this);
         QueueManager queueManager = new QueueManager(connectionManager);
         databaseManager = new DatabaseManager(this, connectionManager, queueManager);
+
+        // Config Classes
+        settingsManager = new SettingsManager(this);
+        localeManager = new LocaleManager(this, settingsManager);
+        mineConfigManager = new MineConfigManager(this, databaseManager);
+        guiConfigManager = new GUIConfigManager(this);
 
         // Mine Data Classes
         mineDataManager = new MineDataManager();
@@ -150,7 +150,7 @@ public class SkyMines extends JavaPlugin {
         pm.registerEvents(new InventoryListener(guiManager), this);
         pm.registerEvents(new PlayerHarvestBlockListener(mineDataManager), this);
         pm.registerEvents(new PlayerInteractListener(mineDataManager), this);
-        pm.registerEvents(new PlayerJoinListener(mineDataManager, playerDataManager), this);
+        pm.registerEvents(new PlayerJoinListener(mineDataManager, playerDataManager, databaseManager), this);
         pm.registerEvents(new PlayerMoveListener(mineDataManager), this);
         pm.registerEvents(new PlayerQuitListener(playerDataManager, bossBarManager), this);
         pm.registerEvents(new PlayerTeleportListener(mineDataManager), this);

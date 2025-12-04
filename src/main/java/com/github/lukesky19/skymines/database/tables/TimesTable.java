@@ -61,7 +61,7 @@ public class TimesTable {
         String tableCreationSql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "mine_id TEXT NOT NULL, " + // Unique
-                "player_id LONG NOT NULL DEFAULT 0, " + // Unique
+                "player_id TEXT NOT NULL DEFAULT 0, " + // Unique
                 "time LONG NOT NULL DEFAULT 0, " +
                 "last_updated LONG NOT NULL DEFAULT 0, " +
                 "FOREIGN KEY (mine_id) REFERENCES skymines_mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +

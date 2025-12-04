@@ -17,6 +17,7 @@
 */
 package com.github.lukesky19.skymines.listeners;
 
+import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
@@ -35,11 +36,12 @@ import java.util.UUID;
 public class PlayerJoinListener implements Listener {
     private final @NotNull MineDataManager mineDataManager;
     private final @NotNull PlayerDataManager playerDataManager;
+    private final @NotNull DatabaseManager databaseManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #PlayerJoinListener(MineDataManager, PlayerDataManager)} instead.
-     * @deprecated You should use {@link #PlayerJoinListener(MineDataManager, PlayerDataManager)} instead.
+     * You should use {@link #PlayerJoinListener(MineDataManager, PlayerDataManager, DatabaseManager)} instead.
+     * @deprecated You should use {@link #PlayerJoinListener(MineDataManager, PlayerDataManager, DatabaseManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -49,14 +51,18 @@ public class PlayerJoinListener implements Listener {
 
     /**
      * Constructor
+     *
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param playerDataManager A {@link PlayerDataManager} instance.
+     * @param databaseManager A {@link DatabaseManager} instance.
      */
     public PlayerJoinListener(
             @NotNull MineDataManager mineDataManager,
-            @NotNull PlayerDataManager playerDataManager) {
+            @NotNull PlayerDataManager playerDataManager,
+            @NotNull DatabaseManager databaseManager) {
         this.mineDataManager = mineDataManager;
         this.playerDataManager = playerDataManager;
+        this.databaseManager = databaseManager;
     }
 
     /**
@@ -67,6 +73,8 @@ public class PlayerJoinListener implements Listener {
     public void onJoin(PlayerJoinEvent playerJoinEvent) {
         Player player = playerJoinEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+
+        databaseManager.getPlayerIdsTable().insertPlayerId(uuid);
 
         playerDataManager.loadPlayerData(uuid).thenAccept(v -> {
             AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());

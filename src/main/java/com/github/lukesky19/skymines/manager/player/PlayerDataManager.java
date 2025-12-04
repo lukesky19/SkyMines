@@ -174,6 +174,11 @@ public class PlayerDataManager {
      * @return A {@link CompletableFuture} of type {@link Void} when complete.
      */
     public @NotNull CompletableFuture<Void> unloadPlayerData(@NotNull UUID uuid) {
-        return savePlayerData(uuid).thenAccept(result -> playerDataMap.remove(uuid));
+        return savePlayerData(uuid)
+                .thenAccept(result -> playerDataMap.remove(uuid))
+                .exceptionally(ex -> {
+                    System.err.println("Failed to save player data. " + ex.getMessage());
+                    return null;
+                });
     }
 }

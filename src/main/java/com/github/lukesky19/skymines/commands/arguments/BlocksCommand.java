@@ -144,7 +144,7 @@ public class BlocksCommand {
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
                                                 return 0;
                                             }
                                             BlockType blockType = optionalBlockType.get();
@@ -153,7 +153,7 @@ public class BlocksCommand {
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                                 return 0;
                                             }
 
@@ -163,14 +163,14 @@ public class BlocksCommand {
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
                                             if(blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockAlreadyUnlocked(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyUnlocked(), placeholders));
                                                 return 1;
                                             }
 
                                             blocksManager.addUnlockedBlock(targetPlayerId, mineId, blockType);
 
-                                            sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
-                                            targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
+                                            sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
+                                            targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
                                             return 1;
                                         })
                                 )
@@ -227,7 +227,7 @@ public class BlocksCommand {
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
                                                 return 0;
                                             }
                                             BlockType blockType = optionalBlockType.get();
@@ -236,7 +236,7 @@ public class BlocksCommand {
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                                 return 0;
                                             }
 
@@ -246,14 +246,14 @@ public class BlocksCommand {
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
                                             if(!blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
-                                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockAlreadyLocked(), placeholders));
+                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyLocked(), placeholders));
                                                 return 1;
                                             }
 
                                             blocksManager.removeUnlockedBlock(targetPlayerId, mineId, blockType);
 
-                                            sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().playerBlockLocked(), placeholders));
-                                            targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockLocked(), placeholders));
+                                            sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockLocked(), placeholders));
+                                            targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockLocked(), placeholders));
                                             return 1;
                                         })
                                 )

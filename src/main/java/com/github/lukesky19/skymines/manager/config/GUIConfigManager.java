@@ -85,18 +85,18 @@ public class GUIConfigManager {
         try {
             worldMineShopConfig = shopLoader.load().get(WorldMineGUIConfig.class);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.serialize("<red>Failed to load world mine shop config.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Failed to load world mine shop config.</red>"));
             if(e.getMessage() != null) {
-                logger.error(AdventureUtil.serialize(e.getMessage()));
+                logger.error(AdventureUtil.deserialize(e.getMessage()));
             }
         }
 
         try {
             worldMinePreviewConfig = previewLoader.load().get(WorldMineGUIConfig.class);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.serialize("<red>Failed to load preview GUI config.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Failed to load preview GUI config.</red>"));
             if(e.getMessage() != null) {
-                logger.error(AdventureUtil.serialize(e.getMessage()));
+                logger.error(AdventureUtil.deserialize(e.getMessage()));
             }
         }
     }

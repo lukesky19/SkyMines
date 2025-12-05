@@ -18,6 +18,7 @@
 package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
@@ -26,7 +27,6 @@ import com.github.lukesky19.skymines.gui.FreePreviewGUI;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -47,12 +47,12 @@ public class PreviewCommand {
     private final @NotNull GUIConfigManager guiConfigManager;
     private final @NotNull MineConfigManager mineConfigManager;
     private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull GUIManager guiManager;
+    private final @NotNull UUIDGUIManager guiManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #PreviewCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, GUIManager)} instead.
-     * @deprecated You should use {@link #PreviewCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, GUIManager)} instead.
+     * You should use {@link #PreviewCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager)} instead.
+     * @deprecated You should use {@link #PreviewCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -67,7 +67,7 @@ public class PreviewCommand {
      * @param guiConfigManager A {@link GUIConfigManager} instance.
      * @param mineConfigManager A {@link MineConfigManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
-     * @param guiManager A {@link GUIManager} instance.
+     * @param guiManager A {@link UUIDGUIManager} instance.
      */
     public PreviewCommand(
             @NotNull SkyMines skyMines,
@@ -75,7 +75,7 @@ public class PreviewCommand {
             @NotNull GUIConfigManager guiConfigManager,
             @NotNull MineConfigManager mineConfigManager,
             @NotNull MineDataManager mineDataManager,
-            @NotNull GUIManager guiManager) {
+            @NotNull UUIDGUIManager guiManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -98,28 +98,28 @@ public class PreviewCommand {
                 @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getMinePreviewConfig();
 
                 if(guiConfig == null) {
-                    logger.warn(AdventureUtil.serialize("The gui config for the world mine preview gui is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The gui config for the world mine preview gui is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
                 if(mine == null) {
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
                     return 0;
                 }
 
                 @Nullable String mineId = mine.getMineId();
                 if(mineId == null) {
-                    logger.warn(AdventureUtil.serialize("The mine id for a mine is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The mine id for a mine is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                 if(mineConfig == null) {
-                    logger.warn(AdventureUtil.serialize("The mine config for mine id " + mineId + " is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The mine config for mine id " + mineId + " is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
@@ -127,22 +127,22 @@ public class PreviewCommand {
 
                 boolean creationResult = freePreviewGUI.create();
                 if(!creationResult) {
-                    logger.error(AdventureUtil.serialize("Unable to create the InventoryView for the preview GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to create the InventoryView for the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 boolean updateResult = freePreviewGUI.update();
                 if(!updateResult) {
-                    logger.error(AdventureUtil.serialize("Unable to decorate the preview GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to decorate the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 boolean openResult = freePreviewGUI.open();
                 if(!openResult) {
-                    logger.error(AdventureUtil.serialize("Unable to open the preview GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to open the preview GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 

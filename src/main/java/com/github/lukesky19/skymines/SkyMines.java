@@ -18,6 +18,8 @@
 package com.github.lukesky19.skymines;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIListener;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
 import com.github.lukesky19.skymines.commands.SkyMinesCommand;
 import com.github.lukesky19.skymines.database.ConnectionManager;
@@ -29,7 +31,6 @@ import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.config.SettingsManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.MineManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
@@ -60,7 +61,7 @@ public class SkyMines extends JavaPlugin {
     private LocaleManager localeManager;
     private MineConfigManager mineConfigManager;
     private GUIConfigManager guiConfigManager;
-    private GUIManager guiManager;
+    private UUIDGUIManager guiManager;
     private MineManager mineManager;
     private MineDataManager mineDataManager;
     private PlayerDataManager playerDataManager;
@@ -122,7 +123,7 @@ public class SkyMines extends JavaPlugin {
         mineManager = new MineManager(this, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, bossBarManager, blocksManager);
 
         // GUI Classes
-        guiManager = new GUIManager(this);
+        guiManager = new UUIDGUIManager();
 
         // Task Classes
         taskManager = new TaskManager(this, mineDataManager, playerDataManager, mineTimeManager, cooldownManager);
@@ -147,7 +148,7 @@ public class SkyMines extends JavaPlugin {
         pm.registerEvents(new ChunkLoadListener(mineDataManager), this);
         pm.registerEvents(new EntityChangeBlockListener(mineDataManager), this);
         pm.registerEvents(new ExplosionListener(this, mineDataManager), this);
-        pm.registerEvents(new InventoryListener(guiManager), this);
+        pm.registerEvents(new UUIDGUIListener(guiManager), this);
         pm.registerEvents(new PlayerHarvestBlockListener(mineDataManager), this);
         pm.registerEvents(new PlayerInteractListener(mineDataManager), this);
         pm.registerEvents(new PlayerJoinListener(mineDataManager, playerDataManager, databaseManager), this);
@@ -242,7 +243,7 @@ public class SkyMines extends JavaPlugin {
             }
         }
 
-        this.getComponentLogger().error(AdventureUtil.serialize("SkyLib Version 1.3.0.0 or newer is required to run this plugin."));
+        this.getComponentLogger().error(AdventureUtil.deserialize("SkyLib Version 1.4.0.0 or newer is required to run this plugin."));
         this.getServer().getPluginManager().disablePlugin(this);
         return false;
     }

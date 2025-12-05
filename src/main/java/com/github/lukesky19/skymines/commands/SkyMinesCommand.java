@@ -17,12 +17,12 @@
 */
 package com.github.lukesky19.skymines.commands;
 
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.commands.arguments.*;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
@@ -40,15 +40,15 @@ public final class SkyMinesCommand {
     private final @NotNull LocaleManager localeManager;
     private final @NotNull GUIConfigManager guiConfigManager;
     private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull GUIManager guiManager;
+    private final @NotNull UUIDGUIManager guiManager;
     private final @NotNull MineDataManager mineDataManager;
     private final @NotNull MineTimeManager mineTimeManager;
     private final @NotNull BlocksManager blocksManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, GUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, GUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
+     * You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
+     * @deprecated You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -62,7 +62,7 @@ public final class SkyMinesCommand {
      * @param localeManager A {@link LocaleManager} instance.
      * @param guiConfigManager A {@link GUIConfigManager} instance.
      * @param mineConfigManager A {@link MineConfigManager} instance.
-     * @param guiManager A {@link GUIManager} instance.
+     * @param guiManager A {@link UUIDGUIManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param mineTimeManager A {@link MineTimeManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
@@ -72,7 +72,7 @@ public final class SkyMinesCommand {
             @NotNull LocaleManager localeManager,
             @NotNull GUIConfigManager guiConfigManager,
             @NotNull MineConfigManager mineConfigManager,
-            @NotNull GUIManager guiManager,
+            @NotNull UUIDGUIManager guiManager,
             @NotNull MineDataManager mineDataManager,
             @NotNull MineTimeManager mineTimeManager,
             @NotNull BlocksManager blocksManager) {

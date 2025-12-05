@@ -98,7 +98,7 @@ public class MineConfigManager {
                         try {
                             mineConfig = loader.load().get(PacketMineConfig.class);
                         } catch (ConfigurateException e) {
-                            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load packet mine config for " + path.toFile()));
+                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
                         }
 
                         if(mineConfig != null && mineConfig.mineId() != null) {
@@ -106,7 +106,7 @@ public class MineConfigManager {
 
                             packetMineConfigs.put(mineConfig.mineId(), mineConfig);
                         } else {
-                            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load packet mine config for " + path.toFile()));
+                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
                         }
                     });
         } catch (IOException e) {
@@ -121,7 +121,7 @@ public class MineConfigManager {
                         try {
                             mineConfig = loader.load().get(WorldMineConfig.class);
                         } catch (ConfigurateException e) {
-                            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load world mine config for " + path.toFile()));
+                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load world mine config for " + path.toFile()));
                         }
 
                         if(mineConfig != null && mineConfig.mineId() != null) {
@@ -129,7 +129,7 @@ public class MineConfigManager {
 
                             worldMineConfigMap.put(mineConfig.mineId(), mineConfig);
                         } else {
-                            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Failed to load world mine config for " + path.toFile()));
+                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load world mine config for " + path.toFile()));
                         }
                     });
         } catch (IOException e) {

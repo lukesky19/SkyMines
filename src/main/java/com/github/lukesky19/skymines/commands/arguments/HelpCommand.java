@@ -64,7 +64,7 @@ public class HelpCommand {
                     Locale locale = localeManager.getLocale();
 
                     for (String msg : locale.help()) {
-                        sender.sendMessage(AdventureUtil.serialize(msg));
+                        sender.sendMessage(AdventureUtil.deserialize(msg));
                     }
 
                     return 1;

@@ -89,7 +89,7 @@ public class PlayerDataManager {
     public @NotNull CompletableFuture<Boolean> savePlayerData(@NotNull UUID uuid) {
         PlayerData playerData = playerDataMap.get(uuid);
         if(playerData == null) {
-            logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " as they have no player data stored."));
+            logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " as they have no player data stored."));
             return CompletableFuture.completedFuture(false);
         }
 
@@ -106,7 +106,7 @@ public class PlayerDataManager {
                     return allTimesSuccessful && allBlocksSuccessful;
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                    logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                     return false;
                 });
     }
@@ -132,7 +132,7 @@ public class PlayerDataManager {
                         return allTimesSuccessful && allBlocksSuccessful;
                     })
                     .exceptionally(e -> {
-                        logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                        logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                         return false;
                     });
 
@@ -163,7 +163,7 @@ public class PlayerDataManager {
                     playerDataMap.put(uuid, playerData);
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.serialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
+                    logger.error(AdventureUtil.deserialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
                     return null;
                 });
     }

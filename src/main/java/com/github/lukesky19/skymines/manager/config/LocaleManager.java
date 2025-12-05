@@ -27,7 +27,6 @@ import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.Settings;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jetbrains.annotations.NotNull;
@@ -79,11 +78,11 @@ public class LocaleManager {
 
         Settings settings = settingsManager.getSettings();
         if(settings == null) {
-            logger.error(AdventureUtil.serialize("<red>Failed to load plugin's locale due to plugin settings being null.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin's locale due to plugin settings being null.</red>"));
             return;
         }
         if(settings.locale() == null) {
-            logger.error(AdventureUtil.serialize("<red>Failed to load plugin's locale to use in settings.yml is null.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin's locale to use in settings.yml is null.</red>"));
             return;
         }
 
@@ -116,7 +115,7 @@ public class LocaleManager {
     private void validateLocale() {
         ComponentLogger logger = skyMines.getComponentLogger();
         if(locale == null) {
-            logger.warn(AdventureUtil.serialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
+            logger.warn(AdventureUtil.deserialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
             return;
         }
 
@@ -128,7 +127,7 @@ public class LocaleManager {
                         || locale.reload() == null
                         || locale.noMineWithId() == null
                         || locale.guiOpenError() == null) {
-                    logger.warn(AdventureUtil.serialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
+                    logger.warn(AdventureUtil.deserialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
                     locale = null;
                     return;
                 }
@@ -146,7 +145,7 @@ public class LocaleManager {
                         || packetMessages.cooldown() == null
                         || packetMessages.timeInvalidLessThenOne() == null
                         || packetMessages.timeInvalidLessThenZero() == null) {
-                    logger.warn(AdventureUtil.serialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
+                    logger.warn(AdventureUtil.deserialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
                     locale = null;
                     return;
                 }
@@ -166,7 +165,7 @@ public class LocaleManager {
                         || worldMineMessages.blockInteractionNotAllowed() == null
                         || worldMineMessages.notEnoughMoney() == null
                         || worldMineMessages.guiErrorNotInMine() == null) {
-                    logger.warn(AdventureUtil.serialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
+                    logger.warn(AdventureUtil.deserialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
                     locale = null;
                     return;
                 }
@@ -181,23 +180,23 @@ public class LocaleManager {
                         || timeMessage.minutes() == null
                         || timeMessage.seconds() == null
                         || timeMessage.suffix() == null) {
-                    logger.warn(AdventureUtil.serialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
+                    logger.warn(AdventureUtil.deserialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
                     locale = null;
                 }
             }
 
             case "3.0.0.0" -> {
-                logger.warn(AdventureUtil.serialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
+                logger.warn(AdventureUtil.deserialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
                 locale = null;
             }
 
             case null -> {
-                logger.warn(AdventureUtil.serialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
+                logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
                 locale = null;
             }
 
             default -> {
-                logger.warn(AdventureUtil.serialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
+                logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
                 locale = null;
             }
         }
@@ -224,7 +223,7 @@ public class LocaleManager {
 
         StringBuilder stringBuilder = getStringBuilder(locale, timeRecord);
 
-        return MiniMessage.miniMessage().serialize(AdventureUtil.serialize(stringBuilder.toString(), placeholders));
+        return AdventureUtil.serialize(AdventureUtil.deserialize(stringBuilder.toString(), placeholders));
     }
 
     /**

@@ -20,14 +20,14 @@ package com.github.lukesky19.skymines.gui;
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.gui.GUIButton;
 import com.github.lukesky19.skylib.api.gui.GUIType;
-import com.github.lukesky19.skylib.api.gui.abstracts.ChestGUI;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
+import com.github.lukesky19.skylib.api.gui.templates.ChestGUI;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackBuilder;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
 import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.block.BlockType;
@@ -45,7 +45,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * This GUI allows players to view free blocks for a world mine.
  */
-public class FreePreviewGUI extends ChestGUI {
+public class FreePreviewGUI extends ChestGUI<UUID> {
     // Config
     private final @NotNull String mineId;
     private final @NotNull WorldMineConfig mineConfig;
@@ -65,7 +65,7 @@ public class FreePreviewGUI extends ChestGUI {
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
-     * @param guiManager A {@link GUIManager} instance.
+     * @param guiManager A {@link UUIDGUIManager} instance.
      * @param player The {@link Player} this GUI is being created for.
      * @param mineId The mine id the gui is for.
      * @param mineConfig The {@link WorldMineConfig} for the mine.
@@ -73,12 +73,12 @@ public class FreePreviewGUI extends ChestGUI {
      */
     public FreePreviewGUI(
             @NotNull SkyMines skyMines,
-            @NotNull GUIManager guiManager,
+            @NotNull UUIDGUIManager guiManager,
             @NotNull Player player,
             @NotNull String mineId,
             @NotNull WorldMineConfig mineConfig,
             @NotNull WorldMineGUIConfig guiConfig) {
-        super(skyMines, guiManager, player);
+        super(skyMines, guiManager, player.getUniqueId(), player);
         this.uuid = player.getUniqueId();
         this.mineId = mineId;
         this.mineConfig = mineConfig;
@@ -92,7 +92,7 @@ public class FreePreviewGUI extends ChestGUI {
     public boolean create() {
         GUIType guiType = guiConfig.guiType();
         if(guiType == null) {
-            logger.warn(AdventureUtil.serialize("Unable to create the InventoryView for the block previews shop due to an invalid GUIType"));
+            logger.warn(AdventureUtil.deserialize("Unable to create the InventoryView for the block previews shop due to an invalid GUIType"));
             return false;
         }
 
@@ -111,13 +111,13 @@ public class FreePreviewGUI extends ChestGUI {
     public boolean update() {
         // If the InventoryView was not created, log a warning and return false.
         if(inventoryView == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add buttons to the GUI as the InventoryView was not created."));
+            logger.warn(AdventureUtil.deserialize("Unable to add buttons to the GUI as the InventoryView was not created."));
             return false;
         }
 
         // If the items per page was not configured log a warning and return false.
         if(guiConfig.itemsPerPage() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add buttons to the GUI as the items per page is not configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add buttons to the GUI as the items per page is not configured."));
             return false;
         }
         int itemsPerPage = guiConfig.itemsPerPage();
@@ -247,14 +247,14 @@ public class FreePreviewGUI extends ChestGUI {
 
             WorldMineConfig.FreeBlockData freeBlockData = mineConfig.freeBreakable().get(currentPreviewKey);
             if(freeBlockData.blockType() == null) {
-                logger.warn(AdventureUtil.serialize("For mine " + mineId + " a block type is null for preview key: " + currentPreviewKey));
+                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a block type is null for preview key: " + currentPreviewKey));
                 handlePreviewError();
                 continue;
             }
 
             Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, freeBlockData.blockType());
             if(optionalBlockType.isEmpty()) {
-                logger.warn(AdventureUtil.serialize("For mine " + mineId + " a block type of name " + freeBlockData.blockType() + " is invalid for preview key: " + currentPreviewKey));
+                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a block type of name " + freeBlockData.blockType() + " is invalid for preview key: " + currentPreviewKey));
                 handlePreviewError();
                 continue;
             }
@@ -282,7 +282,7 @@ public class FreePreviewGUI extends ChestGUI {
     private void createPreviousPageButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.prevPage().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a previous page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a previous page button due to a slot not being configured."));
             return;
         }
 
@@ -323,7 +323,7 @@ public class FreePreviewGUI extends ChestGUI {
     private void createNextPageButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.nextPage().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a next page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a next page button due to a slot not being configured."));
             return;
         }
 
@@ -357,7 +357,7 @@ public class FreePreviewGUI extends ChestGUI {
     private void createExitButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.exit().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a exit button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a exit button due to a slot not being configured."));
             return;
         }
 
@@ -387,7 +387,7 @@ public class FreePreviewGUI extends ChestGUI {
     private void createDummyButtons() {
         guiConfig.dummyButtons().forEach(buttonConfig -> {
             if(buttonConfig.slot() == null) {
-                logger.warn(AdventureUtil.serialize("Unable to add a dummy button to the free preview GUI due to an invalid slot."));
+                logger.warn(AdventureUtil.deserialize("Unable to add a dummy button to the free preview GUI due to an invalid slot."));
                 return;
             }
 

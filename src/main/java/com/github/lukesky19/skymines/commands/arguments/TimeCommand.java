@@ -107,7 +107,7 @@ public class TimeCommand {
                     if(mine == null) {
                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                        sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                         return 0;
                     }
 
@@ -117,9 +117,9 @@ public class TimeCommand {
                             Placeholder.parsed("time", localeManager.getTimeMessage(time)));
 
                     if(time <= 0) {
-                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
+                        sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
                     } else {
-                        sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
+                        sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
                     }
 
                     return 1;
@@ -135,7 +135,7 @@ public class TimeCommand {
                     if(mine == null) {
                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                         return 0;
                     }
 
@@ -145,9 +145,9 @@ public class TimeCommand {
                             Placeholder.parsed("time", localeManager.getTimeMessage(time)));
 
                     if(time <= 0) {
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().noMineTime(), placeholders));
                     } else {
-                        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTime(), placeholders));
                     }
 
                     return 1;
@@ -178,7 +178,7 @@ public class TimeCommand {
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                 return 0;
                             }
 
@@ -192,12 +192,12 @@ public class TimeCommand {
                                         Placeholder.parsed("mine_id", mineId),
                                         Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+                                targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
 
                                 return 1;
                             } else {
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
                                 return 0;
                             }
                         })
@@ -232,7 +232,7 @@ public class TimeCommand {
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                 return 0;
                             }
 
@@ -246,12 +246,12 @@ public class TimeCommand {
                                         Placeholder.parsed("mine_id", mineId),
                                         Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                                targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+                                targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
 
                                 return 1;
                             } else {
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenOne()));
                                 return 0;
                             }
                         })
@@ -286,12 +286,12 @@ public class TimeCommand {
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                 return 0;
                             }
 
                             if(timeSeconds < 0) {
-                                sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenZero()));
+                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().timeInvalidLessThenZero()));
                                 return 0;
                             }
 
@@ -304,8 +304,8 @@ public class TimeCommand {
                                     Placeholder.parsed("mine_id", mineId),
                                     Placeholder.parsed("time", localeManager.getTimeMessage(mineTimeSeconds)));
 
-                            targetPlayer.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
-                            sender.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
+                            targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChanged(), placeholders));
+                            sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineTimeChangedTo(), placeholders));
 
                             return 1;
                         })

@@ -73,9 +73,9 @@ public class SettingsManager {
         } catch (SerializationException e) {
             throw new RuntimeException(e);
         } catch (ConfigurateException configurateException) {
-            logger.error(AdventureUtil.serialize("<red>Failed to load plugin settings.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin settings.</red>"));
             if(configurateException.getMessage() != null) {
-                logger.error(AdventureUtil.serialize(configurateException.getMessage()));
+                logger.error(AdventureUtil.deserialize(configurateException.getMessage()));
             }
         }
     }

@@ -119,20 +119,20 @@ public class WorldMine extends AbstractMine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.serialize("Unable to create a world mine due to a null mine id."));
+            logger.error(AdventureUtil.deserialize("Unable to create a world mine due to a null mine id."));
             status = false;
             return;
         }
 
         if(mineConfig.worldName() == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create a world mine due to a world name not being configured.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to a world name not being configured.</red>"));
             status = false;
             return;
         }
 
         World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
         if(mineWorld == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create a world mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to world " + mineConfig.worldName() + " not being found.</red>"));
             status = false;
             return;
         }
@@ -259,7 +259,7 @@ public class WorldMine extends AbstractMine {
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     blockBreakEvent.setCancelled(true);
                     return;
                 }
@@ -287,21 +287,21 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockBreakEvent.setCancelled(true);
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
         }
     }
@@ -346,7 +346,7 @@ public class WorldMine extends AbstractMine {
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     blockDropItemEvent.setCancelled(true);
 
                     // Revert the block state
@@ -387,7 +387,7 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockDropItemEvent.setCancelled(true);
 
             // Revert the block state
@@ -401,7 +401,7 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
 
             // Revert the block state
@@ -415,7 +415,7 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
 
             // Revert the block state
@@ -463,28 +463,28 @@ public class WorldMine extends AbstractMine {
                 return;
             }
 
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
             return;
         }
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerBucketFillEvent.setCancelled(true);
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
             return;
         }
@@ -548,13 +548,13 @@ public class WorldMine extends AbstractMine {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
                     return;
                 }
             }
@@ -619,21 +619,21 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
             playerInteractEvent.setCancelled(true);
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
             playerInteractEvent.setCancelled(true);
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
             playerInteractEvent.setCancelled(true);
         }
     }
@@ -674,21 +674,21 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerHarvestBlockEvent.setCancelled(true);
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
         }
     }
@@ -881,21 +881,21 @@ public class WorldMine extends AbstractMine {
 
             // Check if the block is unlockable, but not unlocked.
             if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
                 entityChangeBlockEvent.setCancelled(true);
                 return;
             }
 
             // Check if the block is not unlockable and is not unlocked.
             if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
                 return;
             }
 
             // Check if the block type is not unlockable and is unlocked.
             if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
             }
         }
@@ -1110,14 +1110,14 @@ public class WorldMine extends AbstractMine {
         // Check if the mine is configured to allow player placed blocks.
         if(mineConfig.canPlacePlayerBlocks() == null || !mineConfig.canPlacePlayerBlocks()) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             return;
         }
 
         // Check if the block type is a restricted block
         if(isBlockTypePlacementRestricted(blockType)) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             return;
         }
 
@@ -1126,13 +1126,13 @@ public class WorldMine extends AbstractMine {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
                     return;
                 }
             }
@@ -1222,16 +1222,16 @@ public class WorldMine extends AbstractMine {
             bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
             bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
         } catch (IllegalArgumentException e) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
             return;
         }
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create boss bar due no text configured."));
             return;
         }
 
-        BossBar bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
+        BossBar bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
 
         bossBarManager.setBossBar(player, uuid, bossBar);
     }
@@ -1248,11 +1248,11 @@ public class WorldMine extends AbstractMine {
         if(bossBar == null) return;
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update boss bar due no text configured."));
             return;
         }
 
-        bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().text()));
+        bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().text()));
     }
 
     /**

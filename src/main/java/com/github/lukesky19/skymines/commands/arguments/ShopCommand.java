@@ -121,8 +121,6 @@ public class ShopCommand {
                     return 0;
                 }
 
-                System.out.println("Mine Id: " + mineId);
-
                 @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                 if(mineConfig == null) {
                     logger.warn(AdventureUtil.deserialize("The mine config for mine id " + mineId + " is invalid."));

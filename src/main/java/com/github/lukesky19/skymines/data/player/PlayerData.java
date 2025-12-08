@@ -215,8 +215,7 @@ public class PlayerData {
      * @param blockType The {@link BlockType}.
      */
     public void addUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
-        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.getOrDefault(mineId, new ArrayList<>());
-
+        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.computeIfAbsent(mineId, id -> new ArrayList<>());
         unlockedBlocks.add(blockType);
         unlockedBlocksByMineId.put(mineId, unlockedBlocks);
     }

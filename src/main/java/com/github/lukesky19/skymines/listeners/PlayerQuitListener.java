@@ -54,6 +54,8 @@ public class PlayerQuitListener implements Listener {
         Player player = playerQuitEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        playerDataManager.unloadPlayerData(uuid).thenAccept(v -> bossBarManager.removeBossBar(player, uuid));
+        playerDataManager.savePlayerData(uuid)
+                .thenAccept(v1 -> playerDataManager.unloadPlayerData(uuid)
+                        .thenAccept(v2 -> bossBarManager.removeBossBar(player, uuid)));
     }
 }

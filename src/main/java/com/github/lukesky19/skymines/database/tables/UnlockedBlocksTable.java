@@ -126,7 +126,7 @@ public class UnlockedBlocksTable {
      * The list will contain false if an operation failed.
      */
     public @NotNull CompletableFuture<List<Boolean>> saveUnlockedBlocks(@NotNull UUID uuid, @NotNull Map<String, List<BlockType>> data) {
-        Map<String, List<Parameter<?>>> sqlStatementsAndParameters = new HashMap<>();
+        List<List<Parameter<?>>> listOfParameterLists = new ArrayList<>();
         String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, unlocked_blocks, last_updated) " +
                 "VALUES (?, ?, ?, ?) " +
                 "ON CONFLICT (mine_id, player_id) DO UPDATE SET " +
@@ -144,19 +144,13 @@ public class UnlockedBlocksTable {
 
             List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, unlockedBlocksParameter, lastUpdatedParameter, unlockedBlocksParameter, lastUpdatedParameter, lastUpdatedParameter);
 
-            sqlStatementsAndParameters.put(insertOrUpdateSql, parameterList);
+            listOfParameterLists.add(parameterList);
         });
 
-        return queueManager.queueBulkWriteTransaction(sqlStatementsAndParameters).thenApply(list -> {
+        return queueManager.queueBulkWriteTransaction(insertOrUpdateSql, listOfParameterLists).thenApply(list -> {
                     List<Boolean> results = new ArrayList<>();
 
-                    list.forEach(rowsUpdated -> {
-                        if(rowsUpdated > 0) {
-                            results.add(true);
-                        } else  {
-                            results.add(false);
-                        }
-                    });
+                    list.forEach(rowsUpdated -> results.add(rowsUpdated > 0));
 
                     return results;
                 }

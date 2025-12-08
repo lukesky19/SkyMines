@@ -174,7 +174,7 @@ public class SkyMines extends JavaPlugin {
      */
     @Override
     public void onDisable() {
-        guiManager.closeOpenGUIs(true);
+        if(guiManager != null) guiManager.closeOpenGUIs(true);
 
         if(taskManager != null) {
             taskManager.stopMineTask();
@@ -185,14 +185,15 @@ public class SkyMines extends JavaPlugin {
             mineManager.clearMines(true);
         }
 
-        playerDataManager.savePlayerData().thenAccept(result -> {
-            if(playerDataManager != null) {
-                List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers().stream().filter(player -> player.isOnline() && player.isConnected()).toList());
-                onlinePlayers.forEach(player -> bossBarManager.removeBossBar(player, player.getUniqueId()));
-            }
+        if(playerDataManager != null) {
+            List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers());
 
-            if(databaseManager != null) databaseManager.handlePluginDisable();
-        });
+            playerDataManager.savePlayerData().thenAccept(result -> {
+                onlinePlayers.forEach(player -> bossBarManager.removeBossBar(player, player.getUniqueId()));
+
+                if(databaseManager != null) databaseManager.handlePluginDisable();
+            });
+        }
     }
 
     /**

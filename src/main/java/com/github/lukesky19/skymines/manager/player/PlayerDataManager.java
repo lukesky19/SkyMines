@@ -66,11 +66,7 @@ public class PlayerDataManager {
      * @return The {@link PlayerData} for the player.
      */
     public @NotNull PlayerData getPlayerData(@NotNull UUID uuid) {
-        @NotNull PlayerData playerData = playerDataMap.getOrDefault(uuid, new PlayerData());
-
-        playerDataMap.put(uuid, playerData);
-
-        return playerData;
+        return playerDataMap.computeIfAbsent(uuid, playerId -> new PlayerData());
     }
 
     /**
@@ -127,8 +123,8 @@ public class PlayerDataManager {
 
             CompletableFuture<Boolean> resultFuture = timeFuture
                     .thenCombine(blocksFuture, (timeResults, blockResults) -> {
-                        boolean allTimesSuccessful = timeResults.stream().allMatch(result -> result);
-                        boolean allBlocksSuccessful = blockResults.stream().allMatch(result -> result);
+                        boolean allTimesSuccessful = timeResults.stream().allMatch(result -> result.equals(true));
+                        boolean allBlocksSuccessful = blockResults.stream().allMatch(result -> result.equals(true));
                         return allTimesSuccessful && allBlocksSuccessful;
                     })
                     .exceptionally(e -> {

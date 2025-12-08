@@ -296,6 +296,8 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
                 GUIButton.Builder guiButtonBuilder = new GUIButton.Builder();
                 guiButtonBuilder.setItemStack(itemStack);
                 guiButtonBuilder.setAction(inventoryClickEvent -> {
+                    if(blocksManager.isBlockTypeUnlocked(uuid, mineId, blockType)) return;
+
                     @NotNull Economy economy = skyMines.getEconomy();
 
                     if(economy.getBalance(player) < buyPrice) {

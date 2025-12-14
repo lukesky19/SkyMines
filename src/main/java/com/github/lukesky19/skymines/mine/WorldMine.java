@@ -235,7 +235,7 @@ public class WorldMine extends AbstractMine {
     public void handleBlockBreak(@NotNull BlockBreakEvent blockBreakEvent) {
         if(mineId == null) return;
 
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -321,7 +321,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBlockDropItem(@NotNull BlockDropItemEvent blockDropItemEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -439,7 +439,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBucketFilled(@NotNull PlayerBucketFillEvent playerBucketFillEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = playerBucketFillEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -508,7 +508,7 @@ public class WorldMine extends AbstractMine {
     @Override
     public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
         // Locale
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         // Player
         Player player = playerBucketEmptyEvent.getPlayer();
@@ -579,7 +579,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handlePlayerInteract(@NotNull PlayerInteractEvent playerInteractEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -649,7 +649,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handlePlayerHarvestBlockEvent(@NotNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
@@ -854,7 +854,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent entityChangeBlockEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Entity entity = entityChangeBlockEvent.getEntity();
         if(entity instanceof Player player) {
             if(player.getGameMode().equals(GameMode.CREATIVE)) return;
@@ -1096,7 +1096,7 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBlockPlace(@NotNull BlockPlaceEvent blockPlaceEvent) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         Player player = blockPlaceEvent.getPlayer();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;

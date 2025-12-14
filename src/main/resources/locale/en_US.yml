@@ -1,4 +1,4 @@
-config-version: 3.1.0.0
+config-version: 3.2.0.0
 prefix: "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>"
 help:
     - "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>"
@@ -46,8 +46,11 @@ world-mine-messages:
     block-place-not-allowed: "<red>This block cannot be placed.<red>"
     block-interaction-not-unlocked: "<red>You cannot interact with this block because it has not been unlocked. Unlock blocks in <yellow>/skymines shop</yellow>.</red>"
     block-interaction-not-allowed: "<red>This block cannot be interacted with.<red>"
-    not-enough-money: "<red>You do not have enough money to unlock this block.</red>"
+    not-enough-currency: "<red>You do not have enough <currency> to unlock this block.</red>"
+    block-not-purchasable: "<red>The block <yellow><block_type></yellow> is not purchasable with currency <yellow><currency></yellow>.</red>"
     gui-error-not-in-mine: "<red>You must be inside a mine to open this GUI.</red>"
+    money-currency-name: "money"
+    player-points-currency-name: "player points"
 time-message:
     prefix: ""
     years: "<yellow><years></yellow> year(s)"

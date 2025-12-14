@@ -21,6 +21,13 @@ exit:
     display-item:
         item-type: BARRIER
         name: "<white>Click to exit the menu.</white>"
+currency:
+    slot: 45
+    display-item:
+        item-type: gold_ingot
+        name: "<white>Click to change currencies.</white>"
+        lore:
+            - "<gray>Selected Currency:</gray> <white><currency></white>"
 slots:
     - 10
     - 11

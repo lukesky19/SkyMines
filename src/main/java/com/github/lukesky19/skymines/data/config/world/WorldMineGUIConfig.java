@@ -35,6 +35,7 @@ import java.util.List;
  * @param nextPage The next page button configuration.
  * @param prevPage The previous page button configuration.
  * @param exit The exit button configuration.
+ * @param currency The currency toggle button.
  * @param dummyButtons A {@link List} of {@link ButtonConfig} to display in the GUI. These buttons are like filler, but can have a configured slot.
  * @param slots The slots to display items in.
  */
@@ -48,6 +49,7 @@ public record WorldMineGUIConfig(
         @NotNull WorldMineGUIConfig.ButtonConfig nextPage,
         @NotNull WorldMineGUIConfig.ButtonConfig prevPage,
         @NotNull WorldMineGUIConfig.ButtonConfig exit,
+        @NotNull WorldMineGUIConfig.ButtonConfig currency,
         @NotNull List<ButtonConfig> dummyButtons,
         @NotNull List<Integer> slots) {
     /**

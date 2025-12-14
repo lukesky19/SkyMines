@@ -127,7 +127,7 @@ public class BlocksCommand {
 
                                         .executes(ctx -> {
                                             ComponentLogger logger = skyMines.getComponentLogger();
-                                            Locale locale = localeManager.getLocale();
+                                            Locale locale = localeManager.getConfiguration();
 
                                             CommandSender sender = ctx.getSource().getSender();
 
@@ -210,7 +210,7 @@ public class BlocksCommand {
 
                                         .executes(ctx -> {
                                             ComponentLogger logger = skyMines.getComponentLogger();
-                                            Locale locale = localeManager.getLocale();
+                                            Locale locale = localeManager.getConfiguration();
 
                                             CommandSender sender = ctx.getSource().getSender();
 

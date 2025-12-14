@@ -63,7 +63,7 @@ public class ReloadCommand {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("reload")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.reload"))
                 .executes(ctx -> {
-                    Locale locale = localeManager.getLocale();
+                    Locale locale = localeManager.getConfiguration();
 
                     skyMines.reload(false);
 

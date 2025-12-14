@@ -18,6 +18,7 @@
 package com.github.lukesky19.skymines;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.common.abstracts.SkyPlugin;
 import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIListener;
 import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
@@ -31,6 +32,7 @@ import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.config.SettingsManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.MineManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
@@ -41,22 +43,17 @@ import com.github.lukesky19.skymines.manager.task.TaskManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
 import com.google.common.collect.ImmutableList;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 /**
  * The main plugin class
  */
-public class SkyMines extends JavaPlugin {
+public class SkyMines extends SkyPlugin {
     private SettingsManager settingsManager;
     private LocaleManager localeManager;
     private MineConfigManager mineConfigManager;
@@ -69,17 +66,6 @@ public class SkyMines extends JavaPlugin {
     private DatabaseManager databaseManager;
     private TaskManager taskManager;
 
-    // Economy
-    private Economy economy;
-
-    /**
-     * Get the {@link Economy} for the server.
-     * @return The server's {@link Economy}.
-     */
-    public @NotNull Economy getEconomy() {
-        return this.economy;
-    }
-
     /**
      * Default Constructor
      */
@@ -91,8 +77,6 @@ public class SkyMines extends JavaPlugin {
     @Override
     public void onEnable() {
         if(!checkSkyLibVersion()) return;
-        // Check for and set up Vault/Economy.
-        if(!setupEconomy()) return;
 
         // Setup bstats
         int pluginId = 22278;
@@ -118,6 +102,7 @@ public class SkyMines extends JavaPlugin {
         MineTimeManager mineTimeManager = new MineTimeManager(playerDataManager, bossBarManager);
         CooldownManager cooldownManager = new CooldownManager(this, playerDataManager);
         BlocksManager blocksManager = new BlocksManager(playerDataManager);
+        HookManager hookManager = new HookManager(this);
 
         // Mine Classes
         mineManager = new MineManager(this, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, bossBarManager, blocksManager);
@@ -129,7 +114,7 @@ public class SkyMines extends JavaPlugin {
         taskManager = new TaskManager(this, mineDataManager, playerDataManager, mineTimeManager, cooldownManager);
 
         // Register plugin command
-        SkyMinesCommand skyMinesCommand = new SkyMinesCommand(this, localeManager, guiConfigManager, mineConfigManager, guiManager, mineDataManager, mineTimeManager, blocksManager);
+        SkyMinesCommand skyMinesCommand = new SkyMinesCommand(this, localeManager, guiConfigManager, mineConfigManager, guiManager, mineDataManager, mineTimeManager, blocksManager, hookManager);
 
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
                 commands ->
@@ -204,7 +189,7 @@ public class SkyMines extends JavaPlugin {
         guiManager.closeOpenGUIs(false);
 
         settingsManager.reload();
-        localeManager.reload();
+        localeManager.loadConfiguration();
         guiConfigManager.reload();
         mineConfigManager.reload();
         mineManager.reload();
@@ -227,6 +212,11 @@ public class SkyMines extends JavaPlugin {
         taskManager.startSaveTask();
     }
 
+    @Override
+    public void reload() {
+        this.reload(false);
+    }
+
     /**
      * Checks if the Server has the proper SkyLib version.
      * @return true if it does, false if not.
@@ -245,24 +235,6 @@ public class SkyMines extends JavaPlugin {
         }
 
         this.getComponentLogger().error(AdventureUtil.deserialize("SkyLib Version 1.4.0.0 or newer is required to run this plugin."));
-        this.getServer().getPluginManager().disablePlugin(this);
-        return false;
-    }
-
-    /**
-     * Checks for Vault as a dependency and sets up the Economy instance.
-     */
-    private boolean setupEconomy() {
-        if(getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) {
-                this.economy = rsp.getProvider();
-
-                return true;
-            }
-        }
-
-        this.getComponentLogger().error(MiniMessage.miniMessage().deserialize("<red>SkyMines has been disabled due to no Vault dependency found!</red>"));
         this.getServer().getPluginManager().disablePlugin(this);
         return false;
     }

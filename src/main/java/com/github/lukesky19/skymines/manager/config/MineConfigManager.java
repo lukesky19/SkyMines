@@ -20,12 +20,14 @@ package com.github.lukesky19.skymines.manager.config;
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
+import com.github.lukesky19.skylib.libs.configurate.ConfigurationNode;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.database.tables.MineIdsTable;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -43,6 +46,7 @@ import java.util.stream.Stream;
  */
 public class MineConfigManager {
     private final @NotNull SkyMines skyMines;
+    private final @NotNull ComponentLogger logger;
     private final @NotNull DatabaseManager databaseManager;
     private final @NotNull Map<String, PacketMineConfig> packetMineConfigs = new HashMap<>();
     private final @NotNull Map<String, WorldMineConfig> worldMineConfigMap = new HashMap<>();
@@ -54,6 +58,7 @@ public class MineConfigManager {
      */
     public MineConfigManager(@NotNull SkyMines skyMines, @NotNull DatabaseManager databaseManager) {
         this.skyMines = skyMines;
+        this.logger = skyMines.getComponentLogger();
         this.databaseManager = databaseManager;
     }
 
@@ -98,7 +103,7 @@ public class MineConfigManager {
                         try {
                             mineConfig = loader.load().get(PacketMineConfig.class);
                         } catch (ConfigurateException e) {
-                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
+                            logger.warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
                         }
 
                         if(mineConfig != null && mineConfig.mineId() != null) {
@@ -106,7 +111,7 @@ public class MineConfigManager {
 
                             packetMineConfigs.put(mineConfig.mineId(), mineConfig);
                         } else {
-                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
+                            logger.warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
                         }
                     });
         } catch (IOException e) {
@@ -114,26 +119,102 @@ public class MineConfigManager {
         }
 
         try(Stream<Path> paths = Files.walk(Paths.get(skyMines.getDataFolder() + File.separator + "mines" + File.separator + "world"))) {
-            paths.filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        WorldMineConfig mineConfig = null;
-                        @NotNull YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
-                        try {
-                            mineConfig = loader.load().get(WorldMineConfig.class);
-                        } catch (ConfigurateException e) {
-                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load world mine config for " + path.toFile()));
-                        }
+            for(Path path : paths.filter(Files::isRegularFile).toList()) {
+                WorldMineConfig mineConfig;
+                @NotNull YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
+                String fileName = path.toFile().getName();
+                try {
+                    mineConfig = loader.load().get(WorldMineConfig.class);
+                } catch (ConfigurateException e) {
+                    logger.warn(AdventureUtil.deserialize("Failed to load world mine config for " + fileName));
+                    continue;
+                }
 
-                        if(mineConfig != null && mineConfig.mineId() != null) {
-                            mineIdsTable.insertMineId(mineConfig.mineId());
+                if(mineConfig != null) {
+                    @Nullable WorldMineConfig migratedMineConfig = migrateWorldMineConfig(mineConfig, fileName);
+                    if(migratedMineConfig == null) {
+                        logger.warn(AdventureUtil.deserialize("Failed to migrate world mine config for " + fileName));
+                        continue;
+                    }
 
-                            worldMineConfigMap.put(mineConfig.mineId(), mineConfig);
-                        } else {
-                            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Failed to load world mine config for " + path.toFile()));
-                        }
-                    });
+                    if(mineConfig != migratedMineConfig) {
+                        saveWorldMineConfig(path, migratedMineConfig);
+                    }
+
+                    if(migratedMineConfig.mineId() != null) {
+                        mineIdsTable.insertMineId(migratedMineConfig.mineId());
+
+                        worldMineConfigMap.put(migratedMineConfig.mineId(), migratedMineConfig);
+                    } else {
+                        logger.warn(AdventureUtil.deserialize("The world mine config for " + fileName + " has an invalid mine id."));
+                    }
+                } else {
+                    logger.warn(AdventureUtil.deserialize("Failed to load world mine config for " + fileName));
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Migrate the {@link WorldMineConfig} to the latest version.
+     * @param worldMineConfig The {@link WorldMineConfig} to migrate.
+     * @return The migrated {@link WorldMineConfig} or null.
+     */
+    private @Nullable WorldMineConfig migrateWorldMineConfig(@NotNull WorldMineConfig worldMineConfig, @NotNull String fileName) {
+        switch(worldMineConfig.configVersion()) {
+            case "1.1.0.0" -> {
+                // Latest version, do nothing
+                return worldMineConfig;
+            }
+
+            case "1.0.0.0" -> {
+                List<WorldMineConfig.UnlockBlockData> migratedUnlockBlockData = worldMineConfig.unlockableBreakable().stream().map(unlockBlockData -> {
+                    return new WorldMineConfig.UnlockBlockData(
+                            unlockBlockData.blockType(),
+                            unlockBlockData.displayItemLocked(),
+                            unlockBlockData.displayItemUnlocked(),
+                            new WorldMineConfig.PriceData(unlockBlockData.buyPrice(), -1),
+                            null);
+                }).toList();
+
+                return new WorldMineConfig(
+                        "1.1.0.0",
+                        worldMineConfig.mineId(),
+                        worldMineConfig.worldName(),
+                        worldMineConfig.canPlacePlayerBlocks(),
+                        worldMineConfig.canBreakPlayerBlocks(),
+                        worldMineConfig.restrictPlaceToUnlockedAndFree(),
+                        worldMineConfig.allowPlayerExplosions(),
+                        worldMineConfig.bossBar(),
+                        migratedUnlockBlockData,
+                        worldMineConfig.freeBreakable(),
+                        worldMineConfig.restrictedPlaceable());
+            }
+
+            case null, default -> {
+                logger.warn(AdventureUtil.deserialize("Unknown config version for world mine config " + fileName));
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Save the {@link WorldMineConfig} to the disk.
+     * The {@link WorldMineConfig} to save.
+     */
+    private void saveWorldMineConfig(@NotNull Path path, @NotNull WorldMineConfig worldMineConfig) {
+        try {
+            @NotNull YamlConfigurationLoader yamlConfigurationLoader = ConfigurationUtility.getYamlConfigurationLoader(path);
+
+            ConfigurationNode node = yamlConfigurationLoader.createNode();
+
+            node.set(WorldMineConfig.class, worldMineConfig);
+
+            yamlConfigurationLoader.save(node);
+        } catch (ConfigurateException e) {
+            logger.error(AdventureUtil.deserialize("Failed to save world mine config file. Error: " + e.getMessage()));
         }
     }
 }

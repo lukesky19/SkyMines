@@ -101,7 +101,7 @@ public class TimeCommand {
                     PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
                     Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
                     UUID targetPlayerId = targetPlayer.getUniqueId();
-                    Locale locale = localeManager.getLocale();
+                    Locale locale = localeManager.getConfiguration();
 
                     AbstractMine mine = mineDataManager.getMineById(mineId);
                     if(mine == null) {
@@ -126,7 +126,7 @@ public class TimeCommand {
                 }))
 
                 .executes(ctx -> {
-                    Locale locale = localeManager.getLocale();
+                    Locale locale = localeManager.getConfiguration();
                     Player player = (Player) ctx.getSource().getSender();
                     UUID uuid = player.getUniqueId();
                     String mineId = ctx.getArgument("mine_id", String.class);
@@ -165,7 +165,7 @@ public class TimeCommand {
                     })
                     .then(Commands.argument("time", StringArgumentType.string())
                         .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
+                            Locale locale = localeManager.getConfiguration();
                             CommandSender sender = ctx.getSource().getSender();
                             PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
                             Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
@@ -219,7 +219,7 @@ public class TimeCommand {
                     })
                     .then(Commands.argument("time", StringArgumentType.string())
                         .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
+                            Locale locale = localeManager.getConfiguration();
                             CommandSender sender = ctx.getSource().getSender();
                             PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
                             Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
@@ -273,7 +273,7 @@ public class TimeCommand {
                     })
                     .then(Commands.argument("time", IntegerArgumentType.integer())
                         .executes(ctx -> {
-                            Locale locale = localeManager.getLocale();
+                            Locale locale = localeManager.getConfiguration();
                             CommandSender sender = ctx.getSource().getSender();
                             PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
                             Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();

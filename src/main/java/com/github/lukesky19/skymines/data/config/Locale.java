@@ -76,8 +76,7 @@ public record Locale(
             String canNotPlaceBlock,
             String cooldown,
             String timeInvalidLessThenOne,
-            String timeInvalidLessThenZero
-    ) {}
+            String timeInvalidLessThenZero) {}
 
     /**
      * This record contains messages related to world mines.
@@ -96,8 +95,11 @@ public record Locale(
      * @param blockPlaceNotAllowed The message sent to the player trying to place a block, but the placement was cancelled.
      * @param blockInteractionNotUnlocked The message sent to the player when attempting a block interaction, but the block is not unlocked.
      * @param blockInteractionNotAllowed The message sent to the player when attempting a block interaction, but is not allowed for said block.
-     * @param notEnoughMoney The message sent to the player when trying to unlock a block through purchase, but lacks the funds to do so.
+     * @param notEnoughCurrency The message sent to the player when trying to unlock a block through purchase, but lacks the funds to do so.
+     * @param blockNotPurchasable The message sent to the player when a block is not purchasable for a particular currency.
      * @param guiErrorNotInMine The message sent to the player attempting to open a shop GUI while not inside a mine.
+     * @param moneyCurrencyName The currency name for the money currency.
+     * @param playerPointsCurrencyName The currency name for player points.
      */
     @ConfigSerializable
     public record WorldMineMessages(
@@ -116,9 +118,11 @@ public record Locale(
             String blockPlaceNotAllowed,
             String blockInteractionNotUnlocked,
             String blockInteractionNotAllowed,
-            String notEnoughMoney,
-            String guiErrorNotInMine
-    ) {}
+            String notEnoughCurrency,
+            String blockNotPurchasable,
+            String guiErrorNotInMine,
+            String moneyCurrencyName,
+            String playerPointsCurrencyName) {}
 
     /**
      * This record contains the configuration to create a formatted timestamp message.

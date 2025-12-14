@@ -7,9 +7,10 @@ load: POSTWORLD
 depend:
   - SkyLib
   - WorldGuard
-  - Vault
 softdepend:
   - Multiverse-Core
+  - Vault
+  - PlayerPoints
 
 permissions:
   skymines.commands.skymines:

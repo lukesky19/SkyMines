@@ -94,7 +94,7 @@ public class PreviewCommand {
             .executes(ctx -> {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
-                Locale locale = localeManager.getLocale();
+                Locale locale = localeManager.getConfiguration();
                 @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getMinePreviewConfig();
 
                 if(guiConfig == null) {

@@ -61,7 +61,7 @@ public class HelpCommand {
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.help"))
                 .executes(ctx -> {
                     CommandSender sender = ctx.getSource().getSender();
-                    Locale locale = localeManager.getLocale();
+                    Locale locale = localeManager.getConfiguration();
 
                     for (String msg : locale.help()) {
                         sender.sendMessage(AdventureUtil.deserialize(msg));

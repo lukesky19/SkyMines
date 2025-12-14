@@ -18,11 +18,9 @@
 package com.github.lukesky19.skymines.manager.config;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
+import com.github.lukesky19.skylib.api.common.abstracts.config.SimpleConfigManager;
 import com.github.lukesky19.skylib.api.time.Time;
 import com.github.lukesky19.skylib.api.time.TimeUtil;
-import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
-import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.Settings;
@@ -39,11 +37,10 @@ import java.util.List;
 /**
  * This class loads the plugin's locale configuration.
  */
-public class LocaleManager {
+public class LocaleManager extends SimpleConfigManager<Locale> {
     private final @NotNull SkyMines skyMines;
     private final @NotNull SettingsManager settingsManager;
     private @NotNull Locale DEFAULT_LOCALE;
-    private @Nullable Locale locale;
 
     /**
      * Constructor
@@ -51,88 +48,119 @@ public class LocaleManager {
      * @param settingsManager A SettingsLoader instance.
      */
     public LocaleManager(@NotNull SkyMines skyMines, @NotNull SettingsManager settingsManager)  {
+        super(skyMines, Locale.class);
         this.skyMines = skyMines;
         this.settingsManager = settingsManager;
 
         createDefaultLocale();
     }
 
-    /**
-     * Gets the plugin's locale if not null or the default locale otherwise.
-     * @return The plugin's locale if not null or the default locale otherwise.
-     */
-    @NotNull
-    public Locale getLocale() {
-        if(locale == null) return DEFAULT_LOCALE;
-        return locale;
+    @Override
+    public @NotNull Locale getConfiguration() {
+        if(configuration == null) return DEFAULT_LOCALE;
+        return configuration;
     }
 
-    /**
-     * Reloads the plugin's locale.
-     */
-    public void reload() {
-        ComponentLogger logger = skyMines.getComponentLogger();
-        locale = null;
-
-        copyDefaultLocales();
-
+    @Override
+    public void loadConfiguration() {
         Settings settings = settingsManager.getSettings();
         if(settings == null) {
-            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin's locale due to plugin settings being null.</red>"));
+            logger.error(AdventureUtil.deserialize("Failed to load plugin's locale due to plugin settings being null."));
             return;
         }
         if(settings.locale() == null) {
-            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin's locale to use in settings.yml is null.</red>"));
+            logger.error(AdventureUtil.deserialize("Failed to load plugin's locale to use in settings.yml is null."));
             return;
         }
 
         String localeString = settings.locale();
-        Path path = Path.of(skyMines.getDataFolder() + File.separator + "locale" + File.separator + (localeString + ".yml"));
+        Path path = Path.of(plugin.getDataFolder() + File.separator + "locale" + File.separator + (localeString + ".yml"));
+        setConfigurationPath(path);
 
-        YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
-        try {
-            locale = loader.load().get(Locale.class);
-        } catch (ConfigurateException exception) {
-            throw new RuntimeException(exception);
-        }
-
-        validateLocale();
+        super.loadConfiguration();
     }
 
-    /**
-     * Copies the default locale files that come bundled with the plugin, if they do not exist at least.
-    */
-    private void copyDefaultLocales() {
+    @Override
+    protected void saveBundledConfig() {
         Path path = Path.of(skyMines.getDataFolder() + File.separator + "locale" + File.separator + "en_US.yml");
         if (!path.toFile().exists()) {
             skyMines.saveResource("locale" + File.separator + "en_US.yml", false);
         }
     }
 
-    /**
-     * Checks if the locale configuration has any null-values.
-     */
-    private void validateLocale() {
+    @Override
+    protected @Nullable Locale migrateConfiguration(@NotNull Locale locale) {
+        switch(locale.configVersion()) {
+            case "3.2.0.0" -> {
+                // Latest version, do nothing
+                return locale;
+            }
+
+            case "3.1.0.0" -> {
+                Locale.WorldMineMessages oldWorldMineMessages = locale.worldMineMessages();
+                Locale.WorldMineMessages newWorldMineMessages = new Locale.WorldMineMessages(
+                        oldWorldMineMessages.invalidBlockType(),
+                        oldWorldMineMessages.blockAlreadyUnlocked(),
+                        oldWorldMineMessages.blockAlreadyLocked(),
+                        oldWorldMineMessages.blockUnlocked(),
+                        oldWorldMineMessages.blockLocked(),
+                        oldWorldMineMessages.playerBlockUnlocked(),
+                        oldWorldMineMessages.playerBlockLocked(),
+                        oldWorldMineMessages.blockBreakNotUnlocked(),
+                        oldWorldMineMessages.blockBreakNotAllowed(),
+                        oldWorldMineMessages.blockBreakNotPlayerPlaced(),
+                        oldWorldMineMessages.blockBreakNotPlayerWaterLogged(),
+                        oldWorldMineMessages.blockPlaceNotUnlocked(),
+                        oldWorldMineMessages.blockPlaceNotAllowed(),
+                        oldWorldMineMessages.blockInteractionNotUnlocked(),
+                        oldWorldMineMessages.blockInteractionNotAllowed(),
+                        "<red>You do not have enough <currency> to unlock this block.</red>",
+                        "<red>The block <yellow><block_type></yellow> is not purchasable with currency <yellow><currency></yellow>.</red>",
+                        oldWorldMineMessages.guiErrorNotInMine(),
+                        "money",
+                        "player points");
+
+                return new Locale(
+                        "3.2.0.0",
+                        locale.prefix(),
+                        locale.help(),
+                        locale.reload(),
+                        locale.noMineWithId(),
+                        locale.guiOpenError(),
+                        locale.packetMineMessages(),
+                        newWorldMineMessages,
+                        locale.timeMessage());
+            }
+
+            case null, default -> {
+                logger.warn(AdventureUtil.deserialize("Failed to migrate your locale configuration. Please update to the newest version or regenerate your locale file. The default locale will be used."));
+                return null;
+            }
+        }
+    }
+
+    @Override
+    protected boolean validateConfiguration() {
         ComponentLogger logger = skyMines.getComponentLogger();
-        if(locale == null) {
+        if(configuration == null) {
             logger.warn(AdventureUtil.deserialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
-            return;
+            return false;
         }
 
-        switch(locale.configVersion()) {
-            case "3.1.0.0" -> {
+        switch(configuration.configVersion()) {
+            case "3.2.0.0" -> {
                 // Validate
-                if(locale.prefix() == null
-                        || locale.help() == null
-                        || locale.reload() == null
-                        || locale.noMineWithId() == null
-                        || locale.guiOpenError() == null) {
+                if(configuration.prefix() == null
+                        || configuration.help() == null
+                        || configuration.reload() == null
+                        || configuration.noMineWithId() == null
+                        || configuration.guiOpenError() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
-                    locale = null;
-                    return;
+                    configuration = null;
+                    return false;
                 }
 
-                Locale.PacketMineMessages packetMessages = locale.packetMineMessages();
+                Locale.PacketMineMessages packetMessages = configuration.packetMineMessages();
                 if(packetMessages.mineTimeChanged() == null
                         || packetMessages.mineTimeChangedTo() == null
                         || packetMessages.mineTime() == null
@@ -146,11 +174,11 @@ public class LocaleManager {
                         || packetMessages.timeInvalidLessThenOne() == null
                         || packetMessages.timeInvalidLessThenZero() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    locale = null;
-                    return;
+                    configuration = null;
+                    return false;
                 }
 
-                Locale.WorldMineMessages worldMineMessages = locale.worldMineMessages();
+                Locale.WorldMineMessages worldMineMessages = configuration.worldMineMessages();
                 if(worldMineMessages.invalidBlockType() == null
                         || worldMineMessages.blockAlreadyUnlocked() == null
                         || worldMineMessages.blockAlreadyLocked() == null
@@ -163,14 +191,16 @@ public class LocaleManager {
                         || worldMineMessages.blockPlaceNotUnlocked() == null
                         || worldMineMessages.blockInteractionNotUnlocked() == null
                         || worldMineMessages.blockInteractionNotAllowed() == null
-                        || worldMineMessages.notEnoughMoney() == null
-                        || worldMineMessages.guiErrorNotInMine() == null) {
+                        || worldMineMessages.notEnoughCurrency() == null
+                        || worldMineMessages.guiErrorNotInMine() == null
+                        || worldMineMessages.moneyCurrencyName() == null
+                        || worldMineMessages.playerPointsCurrencyName() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    locale = null;
-                    return;
+                    configuration = null;
+                    return false;
                 }
 
-                Locale.TimeMessage timeMessage= locale.timeMessage();
+                Locale.TimeMessage timeMessage= configuration.timeMessage();
                 if(timeMessage.prefix() == null
                         || timeMessage.years() == null
                         || timeMessage.months() == null
@@ -181,25 +211,31 @@ public class LocaleManager {
                         || timeMessage.seconds() == null
                         || timeMessage.suffix() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
-                    locale = null;
+                    configuration = null;
+                    return false;
                 }
             }
 
-            case "3.0.0.0" -> {
+            case "3.1.0.0", "3.0.0.0" -> {
                 logger.warn(AdventureUtil.deserialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
-                locale = null;
+                configuration = null;
+                return false;
             }
 
             case null -> {
                 logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
-                locale = null;
+                configuration = null;
+                return false;
             }
 
             default -> {
                 logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
-                locale = null;
+                configuration = null;
+                return false;
             }
         }
+
+        return true;
     }
 
     /**
@@ -209,7 +245,7 @@ public class LocaleManager {
      */
     @NotNull
     public String getTimeMessage(long timeSeconds) {
-        Locale locale = this.getLocale();
+        Locale locale = this.getConfiguration();
         Time timeRecord = TimeUtil.millisToTime(timeSeconds * 1000L);
 
         List<TagResolver.Single> placeholders = List.of(
@@ -232,7 +268,7 @@ public class LocaleManager {
      * @param timeRecord The record containing the individual time units to display.
      * @return A populated StringBuilder. May be empty if all time units were 0 and no suffix was configured.
      */
-    private @NotNull StringBuilder getStringBuilder(Locale locale, Time timeRecord) {
+    private @NotNull StringBuilder getStringBuilder(@NotNull Locale locale, @NotNull Time timeRecord) {
         Locale.TimeMessage timeMessage = locale.timeMessage();
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -354,8 +390,11 @@ public class LocaleManager {
                         "<red>This block cannot be placed.<red>",
                         "<red>You cannot interact with this block because it has not been unlocked. Unlock blocks in <yellow>/skymines shop</yellow>.</red>",
                         "<red>This block cannot be interacted with.<red>",
-                        "<red>You do not have enough money to unlock this block.</red>",
-                        "<red>You must be inside a mine to open <yellow>/skymines shop</yellow>.</red>"),
+                        "<red>You do not have enough <currency> to unlock this block.</red>",
+                        "<red>The block <yellow><block_type></yellow> is not purchasable with currency <yellow><currency></yellow>.</red>",
+                        "<red>You must be inside a mine to open <yellow>/skymines shop</yellow>.</red>",
+                        "money",
+                        "player points"),
                 new Locale.TimeMessage(
                         "",
                         "<yellow><years></yellow> year(s)",

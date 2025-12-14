@@ -59,14 +59,16 @@ public record WorldMineConfig(
      * @param blockType The {@link BlockType} to purchase access to.
      * @param displayItemLocked The {@link ItemStackConfig} to create the button displayed in the shop when a block is not yet purchased.
      * @param displayItemUnlocked The {@link ItemStackConfig} to create the button displayed in the shop when a block has been unlocked/purchased.
-     * @param buyPrice The buy price to unlock the block type.
+     * @param priceData The {@link PriceData} to unlock the block type.
+     * @param buyPrice The legacy buy price to unlock the block type. For migration purposes only.
      */
     @ConfigSerializable
     public record UnlockBlockData(
             @Nullable String blockType,
             @NotNull ItemStackConfig displayItemLocked,
             @NotNull ItemStackConfig displayItemUnlocked,
-            @Nullable Double buyPrice) {}
+            @NotNull PriceData priceData,
+            @Deprecated(since = "3.2.0.0") @Nullable Double buyPrice) {}
 
     /**
      * This record contains data to populate the preview gui with free blocks.
@@ -87,4 +89,15 @@ public record WorldMineConfig(
             @Nullable String text,
             @Nullable String color,
             @Nullable String overlay) {}
+
+    /**
+     * The price data for unlocking a block in the mine.
+     * @apiNote The data here is money OR player points, not both.
+     * @param money The money required to unlock the block.
+     * @param playerPoints The player points required to unlock the block.
+     */
+    @ConfigSerializable
+    public record PriceData(
+            @Nullable Double money,
+            @Nullable Integer playerPoints) {}
 }

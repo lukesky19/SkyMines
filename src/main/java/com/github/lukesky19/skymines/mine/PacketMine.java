@@ -276,7 +276,7 @@ public class PacketMine extends AbstractMine {
         if(mineId == null) return;
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
@@ -315,7 +315,7 @@ public class PacketMine extends AbstractMine {
 
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
@@ -385,7 +385,7 @@ public class PacketMine extends AbstractMine {
         if(mineId == null) return;
         Player player = playerBucketFillEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
@@ -448,7 +448,7 @@ public class PacketMine extends AbstractMine {
     @Override
     public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
         Player player = playerBucketEmptyEvent.getPlayer();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -471,7 +471,7 @@ public class PacketMine extends AbstractMine {
         if(mineId == null) return;
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -519,7 +519,7 @@ public class PacketMine extends AbstractMine {
         if(mineId == null) return;
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
@@ -636,7 +636,7 @@ public class PacketMine extends AbstractMine {
     @Override
     public void handleBlockPlace(@NotNull BlockPlaceEvent blockPlaceEvent) {
         Player player = blockPlaceEvent.getPlayer();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 

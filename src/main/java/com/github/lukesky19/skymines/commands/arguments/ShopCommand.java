@@ -27,6 +27,7 @@ import com.github.lukesky19.skymines.gui.UnlocksShopGUI;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
@@ -50,11 +51,12 @@ public class ShopCommand {
     private final @NotNull MineDataManager mineDataManager;
     private final @NotNull UUIDGUIManager guiManager;
     private final @NotNull BlocksManager blocksManager;
+    private final @NotNull HookManager hookManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager)} instead.
+     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
+     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -71,6 +73,7 @@ public class ShopCommand {
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param guiManager A {@link UUIDGUIManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
+     * @param hookManager A {@link HookManager} instance.
      */
     public ShopCommand(
             @NotNull SkyMines skyMines,
@@ -79,7 +82,8 @@ public class ShopCommand {
             @NotNull MineConfigManager mineConfigManager,
             @NotNull MineDataManager mineDataManager,
             @NotNull UUIDGUIManager guiManager,
-            @NotNull BlocksManager blocksManager) {
+            @NotNull BlocksManager blocksManager,
+            @NotNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -87,6 +91,7 @@ public class ShopCommand {
         this.mineDataManager = mineDataManager;
         this.guiManager = guiManager;
         this.blocksManager = blocksManager;
+        this.hookManager = hookManager;
     }
 
     /**
@@ -99,7 +104,7 @@ public class ShopCommand {
             .executes(ctx -> {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
-                Locale locale = localeManager.getLocale();
+                Locale locale = localeManager.getConfiguration();
                 @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
 
                 if(guiConfig == null) {
@@ -128,7 +133,7 @@ public class ShopCommand {
                     return 0;
                 }
 
-                UnlocksShopGUI unlocksShopGUI = new UnlocksShopGUI(skyMines, guiManager, player, localeManager, blocksManager, mineId, mineConfig, guiConfig);
+                UnlocksShopGUI unlocksShopGUI = new UnlocksShopGUI(skyMines, guiManager, player, localeManager, blocksManager, hookManager, mineId, mineConfig, guiConfig);
 
                 boolean creationResult = unlocksShopGUI.create();
                 if(!creationResult) {

@@ -23,6 +23,7 @@ import com.github.lukesky19.skymines.commands.arguments.*;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
@@ -44,11 +45,12 @@ public final class SkyMinesCommand {
     private final @NotNull MineDataManager mineDataManager;
     private final @NotNull MineTimeManager mineTimeManager;
     private final @NotNull BlocksManager blocksManager;
+    private final @NotNull HookManager hookManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager)} instead.
+     * You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager, HookManager)} instead.
+     * @deprecated You should use {@link #SkyMinesCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, UUIDGUIManager, MineDataManager, MineTimeManager, BlocksManager, HookManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -66,6 +68,7 @@ public final class SkyMinesCommand {
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param mineTimeManager A {@link MineTimeManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
+     * @param hookManager A {@link HookManager} instance.
      */
     public SkyMinesCommand(
             @NotNull SkyMines skyMines,
@@ -75,7 +78,8 @@ public final class SkyMinesCommand {
             @NotNull UUIDGUIManager guiManager,
             @NotNull MineDataManager mineDataManager,
             @NotNull MineTimeManager mineTimeManager,
-            @NotNull BlocksManager blocksManager) {
+            @NotNull BlocksManager blocksManager,
+            @NotNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -84,6 +88,7 @@ public final class SkyMinesCommand {
         this.mineDataManager = mineDataManager;
         this.mineTimeManager = mineTimeManager;
         this.blocksManager = blocksManager;
+        this.hookManager = hookManager;
     }
 
     /**
@@ -98,7 +103,7 @@ public final class SkyMinesCommand {
         BlocksCommand blocksCommand = new BlocksCommand(skyMines, localeManager, mineConfigManager, mineDataManager, blocksManager);
         HelpCommand helpCommand = new HelpCommand(localeManager);
         ReloadCommand reloadCommand = new ReloadCommand(skyMines, localeManager);
-        ShopCommand shopCommand = new ShopCommand(skyMines, localeManager, guiConfigManager,mineConfigManager, mineDataManager, guiManager, blocksManager);
+        ShopCommand shopCommand = new ShopCommand(skyMines, localeManager, guiConfigManager,mineConfigManager, mineDataManager, guiManager, blocksManager, hookManager);
         PreviewCommand previewCommand = new PreviewCommand(skyMines, localeManager, guiConfigManager, mineConfigManager, mineDataManager, guiManager);
 
         builder.then(timeCommand.createCommand());

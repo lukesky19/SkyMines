@@ -41,8 +41,11 @@ public class PlayerData {
     // World Mines
     private @NotNull Map<String, List<BlockType>> unlockedBlocksByMineId = new HashMap<>();
 
-    // Other
+    // BossBar
     private @Nullable BossBar bossBar;
+
+    // Message Cooldown
+    private @Nullable Long messageCooldown;
 
     /**
      * Default Constructor
@@ -255,5 +258,31 @@ public class PlayerData {
      */
     public @Nullable BossBar getBossBar() {
         return this.bossBar;
+    }
+
+    /**
+     * Get the next time the player should be sent a message.
+     * @return A {@link Long} to compare against {@link System#currentTimeMillis()} or null.
+     */
+    public @Nullable Long getMessageCooldown() {
+        return messageCooldown;
+    }
+
+    /**
+     * Set the next time the player should be sent a message.
+     * @param messageCooldown A {@link Long} or null.
+     */
+    public void setMessageCooldown(@Nullable Long messageCooldown) {
+        this.messageCooldown = messageCooldown;
+    }
+
+    /**
+     * Based on the current player's message cooldown, should the player be sent a message?
+     * @return true if a message should be sent, or false if on cooldown.
+     */
+    public boolean shouldSendMessage() {
+        if(messageCooldown == null) return true;
+
+        return System.currentTimeMillis() >= messageCooldown;
     }
 }

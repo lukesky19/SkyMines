@@ -18,13 +18,10 @@
 package com.github.lukesky19.skymines.manager.config;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
-import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
-import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
-import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
+import com.github.lukesky19.skylib.api.common.abstracts.config.SimpleConfigManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Settings;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -33,50 +30,58 @@ import java.nio.file.Path;
 /**
  * This class manages everything related to handling the plugin's settings.
 */
-public class SettingsManager {
-    private final SkyMines skyMines;
-    private Settings settings;
-
+public class SettingsManager extends SimpleConfigManager<Settings> {
     /**
      * Constructor
      * @param skyMines The Plugin's Instance.
     */
-    public SettingsManager(
-            SkyMines skyMines) {
-        this.skyMines = skyMines;
+    public SettingsManager(@NotNull SkyMines skyMines) {
+        super(skyMines, Path.of(skyMines.getDataFolder() + File.separator + "settings.yml"), Settings.class);
     }
 
-    /**
-     * A getter to get the plugin's settings.
-     * @return A SettingsConfiguration object that represents the plugin's settings.
-    */
-    @Nullable
-    public Settings getSettings() {
-        return settings;
-    }
+    @Override
+    protected void saveBundledConfig() {
+        if(configurationPath == null) return;
 
-    /**
-     * A method to reload the plugin's settings config.
-    */
-    public void reload() {
-        ComponentLogger logger = skyMines.getComponentLogger();
-        settings = null;
-
-        Path path = Path.of(skyMines.getDataFolder() + File.separator + "settings.yml");
-        if(!path.toFile().exists()) {
-            skyMines.saveResource("settings.yml", false);
+        if(!configurationPath.toFile().exists()) {
+            plugin.saveResource("settings.yml", false);
         }
+    }
 
-        YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
-        try {
-            settings = loader.load().get(Settings.class);
-        } catch (SerializationException e) {
-            throw new RuntimeException(e);
-        } catch (ConfigurateException configurateException) {
-            logger.error(AdventureUtil.deserialize("<red>Failed to load plugin settings.</red>"));
-            if(configurateException.getMessage() != null) {
-                logger.error(AdventureUtil.deserialize(configurateException.getMessage()));
+    /**
+     * Migrate the configuration to the latest version.
+     * @param configuration The configuration to migrate.
+     * @return The migrated configuration or null.
+     */
+    @Override
+    protected @Nullable Settings migrateConfiguration(@NotNull Settings configuration) {
+        switch(configuration.configVersion()) {
+            case "3.1.0.0" -> {
+                // Latest version, do nothing.
+                return configuration;
+            }
+
+            case "3.0.0.0" -> {
+                return new Settings(
+                        "3.1.0.0",
+                        configuration.locale(),
+                        10);
+            }
+
+            case null -> {
+                logger.warn(AdventureUtil.deserialize("Unable to migrate settings because the config version is not configured."));
+                return null;
+            }
+
+            default -> {
+                logger.warn(AdventureUtil.deserialize("Unable to migrate settings because the config version is not recognized."));
+                return null;
             }
         }
+    }
+
+    @Override
+    protected boolean validateConfiguration() {
+        return true;
     }
 }

@@ -24,7 +24,6 @@ import com.github.lukesky19.skylib.api.time.TimeUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.Settings;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +37,6 @@ import java.util.List;
  * This class loads the plugin's locale configuration.
  */
 public class LocaleManager extends SimpleConfigManager<Locale> {
-    private final @NotNull SkyMines skyMines;
     private final @NotNull SettingsManager settingsManager;
     private @NotNull Locale DEFAULT_LOCALE;
 
@@ -49,7 +47,6 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
      */
     public LocaleManager(@NotNull SkyMines skyMines, @NotNull SettingsManager settingsManager)  {
         super(skyMines, Locale.class);
-        this.skyMines = skyMines;
         this.settingsManager = settingsManager;
 
         createDefaultLocale();
@@ -63,7 +60,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
 
     @Override
     public void loadConfiguration() {
-        Settings settings = settingsManager.getSettings();
+        @Nullable Settings settings = settingsManager.getConfiguration();
         if(settings == null) {
             logger.error(AdventureUtil.deserialize("Failed to load plugin's locale due to plugin settings being null."));
             return;
@@ -82,9 +79,9 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
 
     @Override
     protected void saveBundledConfig() {
-        Path path = Path.of(skyMines.getDataFolder() + File.separator + "locale" + File.separator + "en_US.yml");
+        Path path = Path.of(plugin.getDataFolder() + File.separator + "locale" + File.separator + "en_US.yml");
         if (!path.toFile().exists()) {
-            skyMines.saveResource("locale" + File.separator + "en_US.yml", false);
+            plugin.saveResource("locale" + File.separator + "en_US.yml", false);
         }
     }
 
@@ -141,7 +138,6 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
 
     @Override
     protected boolean validateConfiguration() {
-        ComponentLogger logger = skyMines.getComponentLogger();
         if(configuration == null) {
             logger.warn(AdventureUtil.deserialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
             return false;

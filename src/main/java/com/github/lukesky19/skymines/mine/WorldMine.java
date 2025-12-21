@@ -23,10 +23,13 @@ import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
+import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.SettingsManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.mine.world.PDCManager;
+import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.util.ItemTypeUtils;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import net.kyori.adventure.bossbar.BossBar;
@@ -65,7 +68,9 @@ import java.util.*;
 public class WorldMine extends AbstractMine {
     // SkyMines
     private final @NotNull SkyMines skyMines;
+    private final @NotNull SettingsManager settingsManager;
     private final @NotNull LocaleManager localeManager;
+    private final @NotNull PlayerDataManager playerDataManager;
     private final @NotNull BlocksManager blocksManager;
     private final @NotNull BossBarManager bossBarManager;
     private final @NotNull PDCManager pdcManager;
@@ -82,8 +87,8 @@ public class WorldMine extends AbstractMine {
 
     /**
      * Default Constructor.
-     * You should use {@link #WorldMine(SkyMines, LocaleManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
-     * @deprecated You should use {@link #WorldMine(SkyMines, LocaleManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
+     * You should use {@link #WorldMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
+     * @deprecated You should use {@link #WorldMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -94,21 +99,27 @@ public class WorldMine extends AbstractMine {
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
+     * @param settingsManager A {@link SettingsManager} instance.
      * @param localeManager A {@link LocaleManager} instance.
+     * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      * @param pdcManager A {@link PDCManager} instance.
      * @param mineConfig The {@link WorldMineConfig} to create the mine with.
      */
     public WorldMine(
-            @NotNull SkyMines skyMines,
+            @NotNull SkyMines skyMines, 
+            @NotNull SettingsManager settingsManager,
             @NotNull LocaleManager localeManager,
+            @NotNull PlayerDataManager playerDataManager,
             @NotNull BlocksManager blocksManager,
-            @NotNull BossBarManager bossBarManager, 
+            @NotNull BossBarManager bossBarManager,
             @NotNull PDCManager pdcManager,
             @NotNull WorldMineConfig mineConfig) {
         this.skyMines = skyMines;
+        this.settingsManager = settingsManager;
         this.localeManager = localeManager;
+        this.playerDataManager = playerDataManager;
         this.blocksManager = blocksManager;
         this.bossBarManager = bossBarManager;
         this.pdcManager = pdcManager;
@@ -235,9 +246,12 @@ public class WorldMine extends AbstractMine {
     public void handleBlockBreak(@NotNull BlockBreakEvent blockBreakEvent) {
         if(mineId == null) return;
 
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ? 
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -259,8 +273,18 @@ public class WorldMine extends AbstractMine {
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    // Cancel the event
                     blockBreakEvent.setCancelled(true);
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    }
+
                     return;
                 }
 
@@ -287,22 +311,48 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
         }
     }
 
@@ -321,9 +371,12 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBlockDropItem(@NotNull BlockDropItemEvent blockDropItemEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -346,8 +399,16 @@ public class WorldMine extends AbstractMine {
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     blockDropItemEvent.setCancelled(true);
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    }
 
                     // Revert the block state
                     BlockState currentBlockState = location.getBlock().getState(false);
@@ -387,8 +448,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -401,8 +470,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -415,8 +492,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -439,9 +524,12 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBucketFilled(@NotNull PlayerBucketFillEvent playerBucketFillEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = playerBucketFillEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -463,29 +551,65 @@ public class WorldMine extends AbstractMine {
                 return;
             }
 
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
@@ -507,12 +631,15 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         // Locale
         Locale locale = localeManager.getConfiguration();
 
         // Player
         Player player = playerBucketEmptyEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -532,14 +659,32 @@ public class WorldMine extends AbstractMine {
         // Check if the mine is configured to allow player placed blocks.
         if(mineConfig.canPlacePlayerBlocks() == null || !mineConfig.canPlacePlayerBlocks()) {
             playerBucketEmptyEvent.setCancelled(true);
-            player.sendMessage(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed());
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is a restricted block
         if(isBlockTypePlacementRestricted(blockType)) {
             playerBucketEmptyEvent.setCancelled(true);
-            player.sendMessage(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed());
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
@@ -548,13 +693,31 @@ public class WorldMine extends AbstractMine {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    }
+
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    }
+
                     return;
                 }
             }
@@ -579,9 +742,12 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handlePlayerInteract(@NotNull PlayerInteractEvent playerInteractEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -619,22 +785,48 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
             playerInteractEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
             playerInteractEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
             playerInteractEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+            }
         }
     }
 
@@ -649,9 +841,12 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handlePlayerHarvestBlockEvent(@NotNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -674,22 +869,48 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
         }
     }
 
@@ -854,12 +1075,16 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent entityChangeBlockEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Entity entity = entityChangeBlockEvent.getEntity();
         if(entity instanceof Player player) {
             if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
             UUID uuid = player.getUniqueId();
+            @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+
             Block block = entityChangeBlockEvent.getBlock();
             Location location = block.getLocation();
             BlockType blockType = block.getType().asBlockType();
@@ -881,22 +1106,48 @@ public class WorldMine extends AbstractMine {
 
             // Check if the block is unlockable, but not unlocked.
             if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                }
+
                 return;
             }
 
             // Check if the block is not unlockable and is not unlocked.
             if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                }
+
                 return;
             }
 
             // Check if the block type is not unlockable and is unlocked.
             if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                }
             }
         }
     }
@@ -1096,12 +1347,16 @@ public class WorldMine extends AbstractMine {
      */
     @Override
     public void handleBlockPlace(@NotNull BlockPlaceEvent blockPlaceEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Locale locale = localeManager.getConfiguration();
         Player player = blockPlaceEvent.getPlayer();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         UUID uuid = player.getUniqueId();
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+
         Block block = blockPlaceEvent.getBlock();
         Location location = block.getLocation();
         BlockType blockType = block.getType().asBlockType();
@@ -1110,14 +1365,32 @@ public class WorldMine extends AbstractMine {
         // Check if the mine is configured to allow player placed blocks.
         if(mineConfig.canPlacePlayerBlocks() == null || !mineConfig.canPlacePlayerBlocks()) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is a restricted block
         if(isBlockTypePlacementRestricted(blockType)) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
@@ -1126,13 +1399,31 @@ public class WorldMine extends AbstractMine {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    }
+
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    }
+
                     return;
                 }
             }

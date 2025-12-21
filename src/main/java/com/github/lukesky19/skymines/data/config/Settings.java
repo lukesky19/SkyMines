@@ -24,6 +24,10 @@ import org.jetbrains.annotations.Nullable;
  * The plugin's settings configuration.
  * @param configVersion The config version of the file.
  * @param locale The locale file name (without .yml) to use.
+ * @param messageCooldownDurationSeconds The duration in seconds message cooldowns should last for.
  */
 @ConfigSerializable
-public record Settings(@Nullable String configVersion, @Nullable String locale) {}
+public record Settings(
+        @Nullable String configVersion,
+        @Nullable String locale,
+        long messageCooldownDurationSeconds) {}

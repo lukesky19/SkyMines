@@ -105,7 +105,7 @@ public class SkyMines extends SkyPlugin {
         HookManager hookManager = new HookManager(this);
 
         // Mine Classes
-        mineManager = new MineManager(this, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, bossBarManager, blocksManager);
+        mineManager = new MineManager(this, settingsManager, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, playerDataManager, bossBarManager, blocksManager);
 
         // GUI Classes
         guiManager = new UUIDGUIManager();
@@ -188,7 +188,7 @@ public class SkyMines extends SkyPlugin {
     public void reload(boolean onEnable) {
         guiManager.closeOpenGUIs(false);
 
-        settingsManager.reload();
+        settingsManager.loadConfiguration();
         localeManager.loadConfiguration();
         guiConfigManager.reload();
         mineConfigManager.reload();

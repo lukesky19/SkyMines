@@ -23,10 +23,12 @@ import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
+import com.github.lukesky19.skymines.manager.config.SettingsManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.mine.world.PDCManager;
+import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.mine.AbstractMine;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
@@ -38,19 +40,21 @@ import org.jetbrains.annotations.NotNull;
  */
 public class MineManager {
     private final @NotNull SkyMines skyMines;
+    private final SettingsManager settingsManager;
     private final @NotNull LocaleManager localeManager;
     private final @NotNull MineConfigManager mineConfigManager;
     private final @NotNull MineDataManager mineDataManager;
     private final @NotNull CooldownManager cooldownManager;
     private final @NotNull MineTimeManager mineTimeManager;
+    private final @NotNull PlayerDataManager playerDataManager;
     private final @NotNull BossBarManager bossBarManager;
     private final @NotNull BlocksManager blocksManager;
     private final @NotNull PDCManager pdcManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #MineManager(SkyMines, LocaleManager, MineConfigManager, MineDataManager, CooldownManager, MineTimeManager, BossBarManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #MineManager(SkyMines, LocaleManager, MineConfigManager, MineDataManager, CooldownManager, MineTimeManager, BossBarManager, BlocksManager)} instead.
+     * You should use {@link #MineManager(SkyMines, SettingsManager, LocaleManager, MineConfigManager, MineDataManager, CooldownManager, MineTimeManager, PlayerDataManager, BossBarManager, BlocksManager)} instead.
+     * @deprecated You should use {@link #MineManager(SkyMines, SettingsManager, LocaleManager, MineConfigManager, MineDataManager, CooldownManager, MineTimeManager, PlayerDataManager, BossBarManager, BlocksManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -61,29 +65,34 @@ public class MineManager {
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
+     * @param settingsManager A {@link SettingsManager} instance.
      * @param localeManager A {@link LocaleManager} instance.
      * @param mineConfigManager A {@link MineConfigManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param cooldownManager A {@link CooldownManager} instance.
      * @param mineTimeManager A {@link MineTimeManager} instance.
+     * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
      */
     public MineManager(
-            @NotNull SkyMines skyMines,
+            @NotNull SkyMines skyMines, SettingsManager settingsManager,
             @NotNull LocaleManager localeManager,
             @NotNull MineConfigManager mineConfigManager,
             @NotNull MineDataManager mineDataManager,
             @NotNull CooldownManager cooldownManager,
             @NotNull MineTimeManager mineTimeManager,
+            @NotNull PlayerDataManager playerDataManager,
             @NotNull BossBarManager bossBarManager,
             @NotNull BlocksManager blocksManager) {
         this.skyMines = skyMines;
+        this.settingsManager = settingsManager;
         this.localeManager = localeManager;
         this.mineConfigManager = mineConfigManager;
         this.mineDataManager = mineDataManager;
         this.cooldownManager = cooldownManager;
         this.mineTimeManager = mineTimeManager;
+        this.playerDataManager = playerDataManager;
         this.bossBarManager = bossBarManager;
         this.blocksManager = blocksManager;
         this.pdcManager = new PDCManager();
@@ -106,7 +115,7 @@ public class MineManager {
      * @param mineConfig The {@link PacketMineConfig} for the mine being created.
      */
     public void createPacketMine(@NotNull String mineId, @NotNull PacketMineConfig mineConfig) {
-        AbstractMine mine = new PacketMine(skyMines, localeManager, cooldownManager, mineTimeManager, bossBarManager, mineConfig);
+        AbstractMine mine = new PacketMine(skyMines, settingsManager, localeManager, playerDataManager, cooldownManager, mineTimeManager, bossBarManager, mineConfig);
 
         if(mine.isSetup()) mineDataManager.addMine(mineId, mine);
     }
@@ -117,7 +126,7 @@ public class MineManager {
      * @param mineConfig The {@link WorldMineConfig} for the mine being created.
      */
     public void createWorldMine(@NotNull String mineId, @NotNull WorldMineConfig mineConfig) {
-        AbstractMine mine = new WorldMine(skyMines, localeManager, blocksManager, bossBarManager, pdcManager, mineConfig);
+        AbstractMine mine = new WorldMine(skyMines, settingsManager, localeManager, playerDataManager, blocksManager, bossBarManager, pdcManager, mineConfig);
 
         if(mine.isSetup()) mineDataManager.addMine(mineId, mine);
     }

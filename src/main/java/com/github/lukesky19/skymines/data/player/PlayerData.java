@@ -237,6 +237,14 @@ public class PlayerData {
     }
 
     /**
+     * Remove all unlocked blocks for the mine id provided.
+     * @param mineId The mine id to remove unlocked blocks for.
+     */
+    public void removeUnlockedBlocks(@NotNull String mineId) {
+        unlockedBlocksByMineId.remove(mineId);
+    }
+
+    /**
      * Get a {@link Map} mapping mine ids to a {@link List} of {@link BlockType}s.
      * @return A {@link Map} mapping mine ids to a {@link List} of {@link BlockType}s.
      */

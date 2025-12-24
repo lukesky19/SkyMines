@@ -85,8 +85,10 @@ public record Locale(
      * @param blockAlreadyLocked The message sent to the player locking a block for another player, but is already locked.
      * @param blockUnlocked The message sent to the player when a block is unlocked.
      * @param blockLocked The message sent to the player when a block is locked.
+     * @param blocksLocked The message sent to the player when all unlocked blocks were locked.
      * @param playerBlockUnlocked The message sent to the player who unlocked a block for another player on success.
      * @param playerBlockLocked The message sent to the player who locked a block for another player on success.
+     * @param playerBlocksLocked The message sent to the player who locked all blocks for another player on success.
      * @param blockBreakNotUnlocked The message sent to the player trying to break a block, but the breaking was cancelled because the block was not unlocked.
      * @param blockBreakNotAllowed The message sent to the player trying to break a block, but the breaking was cancelled.
      * @param blockBreakNotPlayerPlaced The message sent to the player trying to break a block, but the breaking was cancelled because it was not a player-placed block.
@@ -108,8 +110,10 @@ public record Locale(
             String blockAlreadyLocked,
             String blockUnlocked,
             String blockLocked,
+            String blocksLocked,
             String playerBlockUnlocked,
             String playerBlockLocked,
+            String playerBlocksLocked,
             String blockBreakNotUnlocked,
             String blockBreakNotAllowed,
             String blockBreakNotPlayerPlaced,

@@ -261,6 +261,52 @@ public class BlocksCommand {
                 )
         );
 
+        builder.then(Commands.literal("reset")
+                .then(Commands.argument("player", ArgumentTypes.player())
+                        .then(Commands.argument("mine_id", StringArgumentType.string())
+                                .suggests((commandContext, suggestionsBuilder) -> {
+                                    for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
+                                        suggestionsBuilder.suggest(mineId);
+                                    }
+
+                                    return suggestionsBuilder.buildFuture();
+                                })
+
+                                .executes(ctx -> {
+                                    Locale locale = localeManager.getConfiguration();
+
+                                    CommandSender sender = ctx.getSource().getSender();
+
+                                    // Mine id
+                                    String mineId = ctx.getArgument("mine_id", String.class);
+                                    // Target Player
+                                    PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
+                                    Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
+                                    UUID targetPlayerId = targetPlayer.getUniqueId();
+
+                                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                                    if(mine == null) {
+                                        List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
+
+                                        sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                        return 0;
+                                    }
+
+                                    List<TagResolver.Single> placeholders = List.of(
+                                            Placeholder.parsed("mine_id", mineId),
+                                            Placeholder.parsed("player", targetPlayer.getName()));
+
+                                    blocksManager.removeUnlockedBlocks(targetPlayerId, mineId);
+
+                                    sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlocksLocked(), placeholders));
+                                    targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blocksLocked(), placeholders));
+
+                                    return 1;
+                                })
+                        )
+                )
+        );
+
         return builder.build();
     }
 }

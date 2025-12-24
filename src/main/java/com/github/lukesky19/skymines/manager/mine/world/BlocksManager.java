@@ -83,4 +83,14 @@ public class BlocksManager {
         @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
         playerData.removeUnlockedBlock(mineId, blockType);
     }
+
+    /**
+     * Remove all unlocked blocks for the player id and mine id provided.
+     * @param uuid The player's {@link UUID}.
+     * @param mineId The mine id.
+     */
+    public void removeUnlockedBlocks(@NotNull UUID uuid, @NotNull String mineId) {
+        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+        playerData.removeUnlockedBlocks(mineId);
+    }
 }

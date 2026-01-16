@@ -86,7 +86,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
     }
 
     @Override
-    protected @Nullable Locale migrateConfiguration(@NotNull Locale locale) {
+    public @Nullable Locale migrateConfiguration(@NotNull Locale locale) {
         switch(locale.configVersion()) {
             case "3.2.0.0" -> {
                 // Latest version, do nothing
@@ -139,7 +139,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
     }
 
     @Override
-    protected boolean validateConfiguration() {
+    public boolean validateConfiguration(@Nullable Locale configuration) {
         if(configuration == null) {
             logger.warn(AdventureUtil.deserialize("Unable to validate locale as the locale configuration failed to load. The default locale will be used."));
             return false;
@@ -154,7 +154,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         || configuration.noMineWithId() == null
                         || configuration.guiOpenError() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
-                    configuration = null;
+                    this.configuration = null;
                     return false;
                 }
 
@@ -172,7 +172,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         || packetMessages.timeInvalidLessThenOne() == null
                         || packetMessages.timeInvalidLessThenZero() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    configuration = null;
+                    this.configuration = null;
                     return false;
                 }
 
@@ -194,7 +194,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         || worldMineMessages.moneyCurrencyName() == null
                         || worldMineMessages.playerPointsCurrencyName() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    configuration = null;
+                    this.configuration = null;
                     return false;
                 }
 
@@ -209,26 +209,26 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         || timeMessage.seconds() == null
                         || timeMessage.suffix() == null) {
                     logger.warn(AdventureUtil.deserialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
-                    configuration = null;
+                    this.configuration = null;
                     return false;
                 }
             }
 
             case "3.1.0.0", "3.0.0.0" -> {
                 logger.warn(AdventureUtil.deserialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
-                configuration = null;
+                this.configuration = null;
                 return false;
             }
 
             case null -> {
                 logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
-                configuration = null;
+                this.configuration = null;
                 return false;
             }
 
             default -> {
                 logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
-                configuration = null;
+                this.configuration = null;
                 return false;
             }
         }

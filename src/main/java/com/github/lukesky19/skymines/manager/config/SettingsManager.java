@@ -54,7 +54,7 @@ public class SettingsManager extends SimpleConfigManager<Settings> {
      * @return The migrated configuration or null.
      */
     @Override
-    protected @Nullable Settings migrateConfiguration(@NotNull Settings configuration) {
+    public @Nullable Settings migrateConfiguration(@NotNull Settings configuration) {
         switch(configuration.configVersion()) {
             case "3.1.0.0" -> {
                 // Latest version, do nothing.
@@ -81,7 +81,7 @@ public class SettingsManager extends SimpleConfigManager<Settings> {
     }
 
     @Override
-    protected boolean validateConfiguration() {
+    public boolean validateConfiguration(@Nullable Settings settings) {
         return true;
     }
 }

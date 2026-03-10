@@ -40,7 +40,7 @@ import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.manager.task.TaskManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.google.common.collect.ImmutableList;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
@@ -133,6 +133,10 @@ public class SkyMines extends SkyPlugin {
         pm.registerEvents(new ChunkLoadListener(mineDataManager), this);
         pm.registerEvents(new EntityChangeBlockListener(mineDataManager), this);
         pm.registerEvents(new ExplosionListener(this, mineDataManager), this);
+        pm.registerEvents(new HangingBreakListener(mineDataManager), this);
+        pm.registerEvents(new HangingPlaceListener(mineDataManager), this);
+        pm.registerEvents(new HopperMoveItemListener(mineDataManager), this);
+        pm.registerEvents(new ItemFrameChangeListener(mineDataManager), this);
         pm.registerEvents(new UUIDGUIListener(guiManager), this);
         pm.registerEvents(new PlayerHarvestBlockListener(mineDataManager), this);
         pm.registerEvents(new PlayerInteractListener(mineDataManager), this);
@@ -147,7 +151,7 @@ public class SkyMines extends SkyPlugin {
         List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers().stream().filter(player -> player.isOnline() && player.isConnected()).toList());
         onlinePlayers.forEach(player ->
                 playerDataManager.loadPlayerData(player.getUniqueId()).thenAccept(v -> {
-                    AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                    Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                     if(mine != null) {
                         mine.createAndShowBossBar(player, player.getUniqueId());
                     }
@@ -200,7 +204,7 @@ public class SkyMines extends SkyPlugin {
 
             // Show boss bars to players in mines
             for(Player onlinePlayer : this.getServer().getOnlinePlayers()) {
-                AbstractMine mine = mineDataManager.getMineByLocation(onlinePlayer.getLocation());
+                Mine mine = mineDataManager.getMineByLocation(onlinePlayer.getLocation());
                 if(mine == null) continue;
                 if(mine.getMineId() == null) continue;
 
@@ -229,12 +233,12 @@ public class SkyMines extends SkyPlugin {
             String[] splitVersion = version.split("\\.");
             int second = Integer.parseInt(splitVersion[1]);
 
-            if(second >= 4) {
+            if(second >= 5) {
                 return true;
             }
         }
 
-        this.getComponentLogger().error(AdventureUtil.deserialize("SkyLib Version 1.4.0.0 or newer is required to run this plugin."));
+        this.getComponentLogger().error(AdventureUtil.deserialize("SkyLib Version 1.5.0.0 or newer is required to run this plugin."));
         this.getServer().getPluginManager().disablePlugin(this);
         return false;
     }

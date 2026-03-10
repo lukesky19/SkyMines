@@ -18,14 +18,15 @@
 package com.github.lukesky19.skymines.data.config.packet;
 
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
-import org.jetbrains.annotations.NotNull;
+import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * The config for a packet mine.
- * @param configVersion The config version of the file.
+ * @param version The config version.
  * @param mineId The mine id.
  * @param bossBar The boss bar configuration to show while in the mine.
  * @param worldName The world name the mines is in.
@@ -34,12 +35,12 @@ import java.util.List;
  */
 @ConfigSerializable
 public record PacketMineConfig(
-        @Nullable String configVersion,
+        int version,
         @Nullable String mineId,
-        @NotNull BossBarData bossBar,
+        @NonNull BossBarData bossBar,
         @Nullable String worldName,
         @Nullable String parentRegion,
-        @NotNull List<ChildRegionData> childRegions) {
+        @NonNull List<ChildRegionData> childRegions) {
 
     /**
      * Data for an individual child region that a player can mine in.
@@ -49,7 +50,7 @@ public record PacketMineConfig(
     @ConfigSerializable
     public record ChildRegionData(
             @Nullable String region,
-            @NotNull List<BlockData> blocksAllowed) {}
+            @NonNull List<BlockData> blocksAllowed) {}
 
     /**
      * Data for the blocks a player can mine, the replacement material (client-side),
@@ -61,8 +62,8 @@ public record PacketMineConfig(
      */
     @ConfigSerializable
     public record BlockData(
-            @Nullable String block,
-            @Nullable String replacement,
+            @Nullable BlockType block,
+            @Nullable BlockType replacement,
             @Nullable String lootTable,
             int cooldownSeconds) {}
 

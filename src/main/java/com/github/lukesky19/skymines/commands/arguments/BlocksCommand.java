@@ -26,7 +26,7 @@ import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -40,7 +40,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.block.BlockType;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,11 +50,11 @@ import java.util.UUID;
  * This class is used to create the blocks command argument.
  */
 public class BlocksCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull BlocksManager blocksManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull BlocksManager blocksManager;
 
     /**
      * Default Constructor.
@@ -76,11 +76,11 @@ public class BlocksCommand {
      * @param blocksManager A {@link BlocksManager} instance.
      */
     public BlocksCommand(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull BlocksManager blocksManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull LocaleManager localeManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull BlocksManager blocksManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.mineConfigManager = mineConfigManager;
@@ -92,7 +92,7 @@ public class BlocksCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the blocks command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the blocks command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("blocks")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.blocks"));
 
@@ -109,16 +109,13 @@ public class BlocksCommand {
 
                                 .then(Commands.argument("block_type", StringArgumentType.string())
                                         .suggests((commandContext, suggestionsBuilder) -> {
-                                                ComponentLogger logger = skyMines.getComponentLogger();
                                                 String mineId = commandContext.getArgument("mine_id", String.class);
                                                 WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                                                 if(mineConfig == null) return suggestionsBuilder.buildFuture();
 
                                                 mineConfig.unlockableBreakable().forEach(blockData -> {
-                                                    String blockTypeName = blockData.blockType();
-                                                    if(blockTypeName != null) {
-                                                        @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
-                                                        optionalBlockType.ifPresent(blockType -> suggestionsBuilder.suggest(blockType.getKey().getKey()));
+                                                    if(blockData.blockType() != null) {
+                                                        suggestionsBuilder.suggest(blockData.blockType().getKey().toString());
                                                     }
                                                 });
 
@@ -140,7 +137,7 @@ public class BlocksCommand {
 
                                             // Block Type
                                             String blockTypeName = ctx.getArgument("block_type", String.class);
-                                            @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
+                                            Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
@@ -149,7 +146,7 @@ public class BlocksCommand {
                                             }
                                             BlockType blockType = optionalBlockType.get();
 
-                                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                                            Mine mine = mineDataManager.getMineById(mineId);
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -192,16 +189,13 @@ public class BlocksCommand {
 
                                 .then(Commands.argument("block_type", StringArgumentType.string())
                                         .suggests((commandContext, suggestionsBuilder) -> {
-                                            ComponentLogger logger = skyMines.getComponentLogger();
                                             String mineId = commandContext.getArgument("mine_id", String.class);
                                             WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                                             if(mineConfig == null) return suggestionsBuilder.buildFuture();
 
                                             mineConfig.unlockableBreakable().forEach(blockData -> {
-                                                String blockTypeName = blockData.blockType();
-                                                if(blockTypeName != null) {
-                                                    @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
-                                                    optionalBlockType.ifPresent(blockType -> suggestionsBuilder.suggest(blockType.getKey().getKey()));
+                                                if(blockData.blockType() != null) {
+                                                    suggestionsBuilder.suggest(blockData.blockType().getKey().toString());
                                                 }
                                             });
 
@@ -223,7 +217,7 @@ public class BlocksCommand {
 
                                             // Block Type
                                             String blockTypeName = ctx.getArgument("block_type", String.class);
-                                            @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
+                                            Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
@@ -232,7 +226,7 @@ public class BlocksCommand {
                                             }
                                             BlockType blockType = optionalBlockType.get();
 
-                                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                                            Mine mine = mineDataManager.getMineById(mineId);
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -284,7 +278,7 @@ public class BlocksCommand {
                                     Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
                                     UUID targetPlayerId = targetPlayer.getUniqueId();
 
-                                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                                    Mine mine = mineDataManager.getMineById(mineId);
                                     if(mine == null) {
                                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 

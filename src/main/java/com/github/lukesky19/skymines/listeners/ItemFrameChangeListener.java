@@ -19,49 +19,46 @@ package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.mine.Mine;
-import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
-import org.bukkit.Location;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.jspecify.annotations.NonNull;
 
 /**
- * This class listens to when a player loads a chunk and passes that event to the mine they are in (if any).
+ * This class listens to when a player interacts with an item frame inside a mine and passes the event to that mine.
  */
-public class ChunkLoadListener implements Listener {
+public class ItemFrameChangeListener implements Listener {
     private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #ChunkLoadListener(MineDataManager)} instead.
-     * @deprecated You should use {@link #ChunkLoadListener(MineDataManager)} instead.
+     * You should use {@link #ItemFrameChangeListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #ItemFrameChangeListener(MineDataManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
-    public ChunkLoadListener() {
+    public ItemFrameChangeListener() {
         throw new RuntimeException("The use of the default constructor is not allowed.");
     }
 
     /**
      * Constructor
-     * @param mineDataManager A MineDataManager instance.
+     * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public ChunkLoadListener(@NonNull MineDataManager mineDataManager) {
+    public ItemFrameChangeListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
     /**
-     * Listens to when a player loads a chunk and passes the event to the mine they are in (if any).
-     * @param playerChunkLoadEvent A PlayerChunkLoadEvent
+     * Listens to when an item frame is interacted with and passes the event to the mine the item frame is in (if any).
+     * @param playerItemFrameChangeEvent A {@link PlayerItemFrameChangeEvent}
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onChunkLoad(PlayerChunkLoadEvent playerChunkLoadEvent) {
-        Location location = playerChunkLoadEvent.getPlayer().getLocation();
-
-        Mine mine = mineDataManager.getMineByLocation(location);
+    public void onItemFrameChange(PlayerItemFrameChangeEvent playerItemFrameChangeEvent) {
+        Mine mine = mineDataManager.getMineByLocation(playerItemFrameChangeEvent.getItemFrame().getLocation());
         if(mine != null) {
-            mine.handlePlayerChunkLoad(playerChunkLoadEvent);
+            mine.handlePlayerItemFrameChangeEvent(playerItemFrameChangeEvent);
         }
     }
 }

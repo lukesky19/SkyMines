@@ -21,7 +21,7 @@ import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.integration.Hook;
 import com.github.lukesky19.skymines.integration.hooks.EconomyHook;
 import com.github.lukesky19.skymines.integration.hooks.PlayerPointsHook;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,13 +30,13 @@ import java.util.Map;
  * This class manages hooks into different plugins.
  */
 public class HookManager {
-    private final @NotNull Map<Class<?>, Hook> hooks = new HashMap<>();
+    private final @NonNull Map<Class<?>, Hook> hooks = new HashMap<>();
 
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
      */
-    public HookManager(@NotNull SkyMines skyMines) {
+    public HookManager(@NonNull SkyMines skyMines) {
         EconomyHook economyHook = new EconomyHook(skyMines);
         registerHook(EconomyHook.class, economyHook);
 
@@ -50,7 +50,7 @@ public class HookManager {
      * @param hook The class instance.
      * @param <T> Parameter for any class that extends {@link Hook}.
      */
-    public <T extends Hook> void registerHook(@NotNull Class<T> hookClass, @NotNull Hook hook) {
+    public <T extends Hook> void registerHook(@NonNull Class<T> hookClass, @NonNull Hook hook) {
         hooks.put(hookClass, hook);
         hook.initialize();
     }
@@ -61,7 +61,7 @@ public class HookManager {
      * @param <T> Parameter for any class that extends {@link Hook}.
      * @return The class instance.
      */
-    public @NotNull <T extends Hook> T getHook(@NotNull Class<T> hookClass) {
+    public @NonNull <T extends Hook> T getHook(@NonNull Class<T> hookClass) {
         return hookClass.cast(hooks.get(hookClass));
     }
 }

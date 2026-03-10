@@ -19,10 +19,15 @@ package com.github.lukesky19.skymines.manager.config;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.common.abstracts.config.SimpleConfigManager;
+import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
+import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
+import com.github.lukesky19.skylib.libs.configurate.ConfigurationNode;
+import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
+import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Settings;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -35,8 +40,50 @@ public class SettingsManager extends SimpleConfigManager<Settings> {
      * Constructor
      * @param skyMines The Plugin's Instance.
     */
-    public SettingsManager(@NotNull SkyMines skyMines) {
+    public SettingsManager(@NonNull SkyMines skyMines) {
         super(skyMines, Path.of(skyMines.getDataFolder() + File.separator + "settings.yml"), Settings.class);
+    }
+
+    /**
+     * Load the settings configuration.
+     */
+    public void loadConfiguration() {
+        configuration = null;
+
+        if(configurationPath == null) return;
+
+        saveBundledConfig();
+
+        YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(configurationPath);
+        try {
+            ConfigurationNode root = loader.load();
+
+            migrateVersion(root);
+
+            Settings settings = root.get(Settings.class);
+            if(settings == null) {
+                logger.warn(AdventureUtil.deserialize("Failed to load configuration file settings.yml. Class name: " + this.getClass().getName()));
+                return;
+            }
+
+            // Migrate configuration
+            Settings migratedConfiguration = migrateConfiguration(settings);
+            if(migratedConfiguration == null) return;
+
+            if(migratedConfiguration != settings) {
+                saveConfiguration(migratedConfiguration);
+            }
+
+            // Check if the configuration is invalid
+            if(!validateConfiguration(migratedConfiguration)) {
+                logger.warn(AdventureUtil.deserialize("Settings configuration validation failed. Class name: " + this.getClass().getName()));
+                return;
+            }
+
+            this.configuration = migratedConfiguration;
+        } catch (ConfigurateException configurateException) {
+            logger.error(AdventureUtil.deserialize("Failed to load configuration. Error: " + configurateException.getMessage()));
+        }
     }
 
     @Override
@@ -54,23 +101,25 @@ public class SettingsManager extends SimpleConfigManager<Settings> {
      * @return The migrated configuration or null.
      */
     @Override
-    public @Nullable Settings migrateConfiguration(@NotNull Settings configuration) {
-        switch(configuration.configVersion()) {
-            case "3.1.0.0" -> {
+    public @Nullable Settings migrateConfiguration(@NonNull Settings configuration) {
+        switch(configuration.version()) {
+            case 5 -> {
                 // Latest version, do nothing.
                 return configuration;
             }
 
-            case "3.0.0.0" -> {
+            case 4 -> {
                 return new Settings(
-                        "3.1.0.0",
+                        5,
                         configuration.locale(),
-                        10);
+                        configuration.messageCooldownDurationSeconds());
             }
 
-            case null -> {
-                logger.warn(AdventureUtil.deserialize("Unable to migrate settings because the config version is not configured."));
-                return null;
+            case 3 -> {
+                return new Settings(
+                        5,
+                        configuration.locale(),
+                        10);
             }
 
             default -> {
@@ -82,6 +131,31 @@ public class SettingsManager extends SimpleConfigManager<Settings> {
 
     @Override
     public boolean validateConfiguration(@Nullable Settings settings) {
-        return true;
+        return settings != null && settings.locale() != null;
+    }
+
+    /**
+     * Migrate the config version format.
+     * @param root The root {@link ConfigurationNode}.
+     */
+    private void migrateVersion(@NonNull ConfigurationNode root) {
+        ConfigurationNode versionNode = root.node("version");
+        int version = versionNode.getInt();
+
+        if(version == 0) {
+            ConfigurationNode legacyVersionNode = root.node("config-version");
+            @Nullable String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
+            try {
+                switch (legacyVersion) {
+                    case "3.1.0.0" -> versionNode.set(4);
+
+                    case "3.0.0.0" -> versionNode.set(3);
+
+                    case null, default -> logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                }
+            } catch (SerializationException e) {
+                logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+            }
+        }
     }
 }

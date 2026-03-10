@@ -18,7 +18,7 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -44,12 +44,12 @@ public class PlayerTeleportListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onTeleport(PlayerTeleportEvent playerTeleportEvent) {
-        AbstractMine fromMine = mineDataManager.getMineByLocation(playerTeleportEvent.getFrom());
+        Mine fromMine = mineDataManager.getMineByLocation(playerTeleportEvent.getFrom());
         if(fromMine != null) {
             fromMine.handlePlayerTeleportEvent(playerTeleportEvent);
         }
 
-        AbstractMine toMine = mineDataManager.getMineByLocation(playerTeleportEvent.getTo());
+        Mine toMine = mineDataManager.getMineByLocation(playerTeleportEvent.getTo());
         if(toMine != null) {
             toMine.handlePlayerTeleportEvent(playerTeleportEvent);
         }

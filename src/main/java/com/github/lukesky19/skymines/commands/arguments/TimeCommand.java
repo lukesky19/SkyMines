@@ -23,7 +23,7 @@ import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -36,7 +36,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.UUID;
@@ -45,9 +45,9 @@ import java.util.UUID;
  * This class is used to create the time command argument.
  */
 public class TimeCommand {
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull MineTimeManager mineTimeManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull MineTimeManager mineTimeManager;
 
     /**
      * Default Constructor.
@@ -67,9 +67,9 @@ public class TimeCommand {
      * @param mineTimeManager A {@link MineTimeManager} instance.
      */
     public TimeCommand(
-            @NotNull LocaleManager localeManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull MineTimeManager mineTimeManager) {
+            @NonNull LocaleManager localeManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull MineTimeManager mineTimeManager) {
         this.localeManager = localeManager;
         this.mineDataManager = mineDataManager;
         this.mineTimeManager = mineTimeManager;
@@ -79,7 +79,7 @@ public class TimeCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the time command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the time command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("time")
             .requires(ctx ->
                 ctx.getSender().hasPermission("skymines.commands.skymines.time")
@@ -103,7 +103,7 @@ public class TimeCommand {
                     UUID targetPlayerId = targetPlayer.getUniqueId();
                     Locale locale = localeManager.getConfiguration();
 
-                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                    Mine mine = mineDataManager.getMineById(mineId);
                     if(mine == null) {
                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -131,7 +131,7 @@ public class TimeCommand {
                     UUID uuid = player.getUniqueId();
                     String mineId = ctx.getArgument("mine_id", String.class);
 
-                    AbstractMine mine = mineDataManager.getMineById(mineId);
+                    Mine mine = mineDataManager.getMineById(mineId);
                     if(mine == null) {
                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -174,7 +174,7 @@ public class TimeCommand {
                             String timeString = ctx.getArgument("time", String.class);
                             long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
-                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                            Mine mine = mineDataManager.getMineById(mineId);
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -228,7 +228,7 @@ public class TimeCommand {
                             String timeString = ctx.getArgument("time", String.class);
                             long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
-                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                            Mine mine = mineDataManager.getMineById(mineId);
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
@@ -282,7 +282,7 @@ public class TimeCommand {
                             String timeString = ctx.getArgument("time", String.class);
                             long timeSeconds = TimeUtil.stringToMillis(timeString) / 1000;
 
-                            AbstractMine mine = mineDataManager.getMineById(mineId);
+                            Mine mine = mineDataManager.getMineById(mineId);
                             if(mine == null) {
                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 

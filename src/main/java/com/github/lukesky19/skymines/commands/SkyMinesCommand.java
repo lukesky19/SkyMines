@@ -31,21 +31,21 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class handles the creation of the SkyMines command.
  */
 public final class SkyMinesCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull GUIConfigManager guiConfigManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull UUIDGUIManager guiManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull MineTimeManager mineTimeManager;
-    private final @NotNull BlocksManager blocksManager;
-    private final @NotNull HookManager hookManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull GUIConfigManager guiConfigManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull UUIDGUIManager guiManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull MineTimeManager mineTimeManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull HookManager hookManager;
 
     /**
      * Default Constructor.
@@ -71,15 +71,15 @@ public final class SkyMinesCommand {
      * @param hookManager A {@link HookManager} instance.
      */
     public SkyMinesCommand(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull GUIConfigManager guiConfigManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull UUIDGUIManager guiManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull MineTimeManager mineTimeManager,
-            @NotNull BlocksManager blocksManager,
-            @NotNull HookManager hookManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull LocaleManager localeManager,
+            @NonNull GUIConfigManager guiConfigManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull MineTimeManager mineTimeManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -95,7 +95,7 @@ public final class SkyMinesCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the skymines command.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("skymines")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines"));
 

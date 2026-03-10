@@ -19,15 +19,20 @@ package com.github.lukesky19.skymines.manager.config;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.common.abstracts.config.SimpleConfigManager;
+import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
 import com.github.lukesky19.skylib.api.time.Time;
 import com.github.lukesky19.skylib.api.time.TimeUtil;
+import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
+import com.github.lukesky19.skylib.libs.configurate.ConfigurationNode;
+import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
+import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.Settings;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -37,15 +42,15 @@ import java.util.List;
  * This class loads the plugin's locale configuration.
  */
 public class LocaleManager extends SimpleConfigManager<Locale> {
-    private final @NotNull SettingsManager settingsManager;
-    private @NotNull Locale DEFAULT_LOCALE;
+    private final @NonNull SettingsManager settingsManager;
+    private @NonNull Locale DEFAULT_LOCALE;
 
     /**
      * Constructor
      * @param skyMines The SkyMines' Plugin
      * @param settingsManager A SettingsLoader instance.
      */
-    public LocaleManager(@NotNull SkyMines skyMines, @NotNull SettingsManager settingsManager)  {
+    public LocaleManager(@NonNull SkyMines skyMines, @NonNull SettingsManager settingsManager)  {
         super(skyMines, Locale.class);
         this.settingsManager = settingsManager;
 
@@ -53,7 +58,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
     }
 
     @Override
-    public @NotNull Locale getConfiguration() {
+    public @NonNull Locale getConfiguration() {
         if(configuration == null) return DEFAULT_LOCALE;
         return configuration;
     }
@@ -71,10 +76,43 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
         }
 
         String localeString = settings.locale();
-        Path path = Path.of(plugin.getDataFolder() + File.separator + "locale" + File.separator + (localeString + ".yml"));
-        setConfigurationPath(path);
+        configurationPath = Path.of(plugin.getDataFolder() + File.separator + "locale" + File.separator + (localeString + ".yml"));
 
-        super.loadConfiguration();
+        YamlConfigurationLoader yamlConfigurationLoader = ConfigurationUtility.getYamlConfigurationLoader(configurationPath);
+        try {
+            ConfigurationNode root = yamlConfigurationLoader.load();
+
+            migrateVersion(root);
+
+            configuration = root.get(configClass);
+            if(configuration == null) {
+                logger.warn(AdventureUtil.deserialize("Failed to load configuration. Class name: " + this.getClass().getName()));
+                return;
+            }
+            Locale preMigrationConfiguration = configuration;
+
+            // Migrate configuration
+            configuration = migrateConfiguration(configuration);
+            // If migration failed, return
+            if(configuration == null) {
+                logger.warn(AdventureUtil.deserialize("Migrated configuration is invalid. Class name: " + this.getClass().getName()));
+                return;
+            }
+
+            // Check if the configuration is invalid
+            if(!validateConfiguration(configuration)) {
+                logger.warn(AdventureUtil.deserialize("Configuration validation failed. Class name: " + this.getClass().getName()));
+                configuration = null;
+                return;
+            }
+
+            // Save the migrated configuration if different
+            if(configuration != preMigrationConfiguration) {
+                saveConfiguration(configuration);
+            }
+        } catch (ConfigurateException configurateException) {
+            logger.error(AdventureUtil.deserialize("Failed to load configuration. Error: " + configurateException.getMessage()));
+        }
     }
 
     @Override
@@ -86,14 +124,27 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
     }
 
     @Override
-    public @Nullable Locale migrateConfiguration(@NotNull Locale locale) {
-        switch(locale.configVersion()) {
-            case "3.2.0.0" -> {
+    public @Nullable Locale migrateConfiguration(@NonNull Locale locale) {
+        switch(locale.version()) {
+            case 6 -> {
                 // Latest version, do nothing
                 return locale;
             }
 
-            case "3.1.0.0" -> {
+            case 5 -> {
+                return new Locale(
+                        6,
+                        locale.prefix(),
+                        locale.help(),
+                        locale.reload(),
+                        locale.noMineWithId(),
+                        locale.guiOpenError(),
+                        locale.packetMineMessages(),
+                        locale.worldMineMessages(),
+                        locale.timeMessage());
+            }
+
+            case 4 -> {
                 Locale.WorldMineMessages oldWorldMineMessages = locale.worldMineMessages();
                 Locale.WorldMineMessages newWorldMineMessages = new Locale.WorldMineMessages(
                         oldWorldMineMessages.invalidBlockType(),
@@ -120,7 +171,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         "player points");
 
                 return new Locale(
-                        "3.2.0.0",
+                        6,
                         locale.prefix(),
                         locale.help(),
                         locale.reload(),
@@ -131,7 +182,14 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         locale.timeMessage());
             }
 
-            case null, default -> {
+            case 3 -> {
+                logger.warn(AdventureUtil.deserialize("Version 3 of the locale configuration requires manual migration!"));
+                logger.warn(AdventureUtil.deserialize("You should take a backup of your existing locale configuration and regenerate your en_US.yml locale configuration."));
+                logger.warn(AdventureUtil.deserialize("You can then make any changes from there. The default locale configuration will be used in the meantime."));
+                return null;
+            }
+
+            default -> {
                 logger.warn(AdventureUtil.deserialize("Failed to migrate your locale configuration. Please update to the newest version or regenerate your locale file. The default locale will be used."));
                 return null;
             }
@@ -145,92 +203,69 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
             return false;
         }
 
-        switch(configuration.configVersion()) {
-            case "3.2.0.0" -> {
-                // Validate
-                if(configuration.prefix() == null
-                        || configuration.help() == null
-                        || configuration.reload() == null
-                        || configuration.noMineWithId() == null
-                        || configuration.guiOpenError() == null) {
-                    logger.warn(AdventureUtil.deserialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
-                    this.configuration = null;
-                    return false;
-                }
+        if(configuration.prefix() == null
+                || configuration.help() == null
+                || configuration.reload() == null
+                || configuration.noMineWithId() == null
+                || configuration.guiOpenError() == null) {
+            logger.warn(AdventureUtil.deserialize("One of the plugin's locale messages is null. Double-check your configuration. The default locale will be used."));
+            this.configuration = null;
+            return false;
+        }
 
-                Locale.PacketMineMessages packetMessages = configuration.packetMineMessages();
-                if(packetMessages.mineTimeChanged() == null
-                        || packetMessages.mineTimeChangedTo() == null
-                        || packetMessages.mineTime() == null
-                        || packetMessages.noMineTime() == null
-                        || packetMessages.playerMineTime() == null
-                        || packetMessages.playerNoMineTime() == null
-                        || packetMessages.mineAccessNoTime() == null
-                        || packetMessages.canNotBreakBlock() == null
-                        || packetMessages.canNotPlaceBlock() == null
-                        || packetMessages.cooldown() == null
-                        || packetMessages.timeInvalidLessThenOne() == null
-                        || packetMessages.timeInvalidLessThenZero() == null) {
-                    logger.warn(AdventureUtil.deserialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    this.configuration = null;
-                    return false;
-                }
+        Locale.PacketMineMessages packetMessages = configuration.packetMineMessages();
+        if(packetMessages.mineTimeChanged() == null
+                || packetMessages.mineTimeChangedTo() == null
+                || packetMessages.mineTime() == null
+                || packetMessages.noMineTime() == null
+                || packetMessages.playerMineTime() == null
+                || packetMessages.playerNoMineTime() == null
+                || packetMessages.mineAccessNoTime() == null
+                || packetMessages.canNotBreakBlock() == null
+                || packetMessages.canNotPlaceBlock() == null
+                || packetMessages.cooldown() == null
+                || packetMessages.timeInvalidLessThenOne() == null
+                || packetMessages.timeInvalidLessThenZero() == null) {
+            logger.warn(AdventureUtil.deserialize("One of the plugin's packet mine locale messages is null. Double-check your configuration. The default locale will be used."));
+            this.configuration = null;
+            return false;
+        }
 
-                Locale.WorldMineMessages worldMineMessages = configuration.worldMineMessages();
-                if(worldMineMessages.invalidBlockType() == null
-                        || worldMineMessages.blockAlreadyUnlocked() == null
-                        || worldMineMessages.blockAlreadyLocked() == null
-                        || worldMineMessages.blockUnlocked() == null
-                        || worldMineMessages.blockLocked() == null
-                        || worldMineMessages.playerBlockUnlocked() == null
-                        || worldMineMessages.playerBlockLocked() == null
-                        || worldMineMessages.blockBreakNotUnlocked() == null
-                        || worldMineMessages.blockBreakNotAllowed() == null
-                        || worldMineMessages.blockPlaceNotUnlocked() == null
-                        || worldMineMessages.blockInteractionNotUnlocked() == null
-                        || worldMineMessages.blockInteractionNotAllowed() == null
-                        || worldMineMessages.notEnoughCurrency() == null
-                        || worldMineMessages.guiErrorNotInMine() == null
-                        || worldMineMessages.moneyCurrencyName() == null
-                        || worldMineMessages.playerPointsCurrencyName() == null) {
-                    logger.warn(AdventureUtil.deserialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
-                    this.configuration = null;
-                    return false;
-                }
+        Locale.WorldMineMessages worldMineMessages = configuration.worldMineMessages();
+        if(worldMineMessages.invalidBlockType() == null
+                || worldMineMessages.blockAlreadyUnlocked() == null
+                || worldMineMessages.blockAlreadyLocked() == null
+                || worldMineMessages.blockUnlocked() == null
+                || worldMineMessages.blockLocked() == null
+                || worldMineMessages.playerBlockUnlocked() == null
+                || worldMineMessages.playerBlockLocked() == null
+                || worldMineMessages.blockBreakNotUnlocked() == null
+                || worldMineMessages.blockBreakNotAllowed() == null
+                || worldMineMessages.blockPlaceNotUnlocked() == null
+                || worldMineMessages.blockInteractionNotUnlocked() == null
+                || worldMineMessages.blockInteractionNotAllowed() == null
+                || worldMineMessages.notEnoughCurrency() == null
+                || worldMineMessages.guiErrorNotInMine() == null
+                || worldMineMessages.moneyCurrencyName() == null
+                || worldMineMessages.playerPointsCurrencyName() == null) {
+            logger.warn(AdventureUtil.deserialize("One of the plugin's world mine locale messages is null. Double-check your configuration. The default locale will be used."));
+            this.configuration = null;
+            return false;
+        }
 
-                Locale.TimeMessage timeMessage= configuration.timeMessage();
-                if(timeMessage.prefix() == null
-                        || timeMessage.years() == null
-                        || timeMessage.months() == null
-                        || timeMessage.weeks() == null
-                        || timeMessage.days() == null
-                        || timeMessage.hours() == null
-                        || timeMessage.minutes() == null
-                        || timeMessage.seconds() == null
-                        || timeMessage.suffix() == null) {
-                    logger.warn(AdventureUtil.deserialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
-                    this.configuration = null;
-                    return false;
-                }
-            }
-
-            case "3.1.0.0", "3.0.0.0" -> {
-                logger.warn(AdventureUtil.deserialize("You need to update your locale configuration to the newest version or regenerate your locale file. The default locale will be used."));
-                this.configuration = null;
-                return false;
-            }
-
-            case null -> {
-                logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is invalid. The default locale will be used."));
-                this.configuration = null;
-                return false;
-            }
-
-            default -> {
-                logger.warn(AdventureUtil.deserialize("Unable to validate locale as the config version is unknown. The default locale will be used."));
-                this.configuration = null;
-                return false;
-            }
+        Locale.TimeMessage timeMessage= configuration.timeMessage();
+        if(timeMessage.prefix() == null
+                || timeMessage.years() == null
+                || timeMessage.months() == null
+                || timeMessage.weeks() == null
+                || timeMessage.days() == null
+                || timeMessage.hours() == null
+                || timeMessage.minutes() == null
+                || timeMessage.seconds() == null
+                || timeMessage.suffix() == null) {
+            logger.warn(AdventureUtil.deserialize("One of the plugin's time message locale messages is null. Double-check your configuration. The default locale will be used."));
+            this.configuration = null;
+            return false;
         }
 
         return true;
@@ -241,7 +276,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
      * @param timeSeconds The time in seconds.
      * @return A String containing the time message.
      */
-    @NotNull
+    @NonNull
     public String getTimeMessage(long timeSeconds) {
         Locale locale = this.getConfiguration();
         Time timeRecord = TimeUtil.millisToTime(timeSeconds * 1000L);
@@ -266,7 +301,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
      * @param timeRecord The record containing the individual time units to display.
      * @return A populated StringBuilder. May be empty if all time units were 0 and no suffix was configured.
      */
-    private @NotNull StringBuilder getStringBuilder(@NotNull Locale locale, @NotNull Time timeRecord) {
+    private @NonNull StringBuilder getStringBuilder(@NonNull Locale locale, @NonNull Time timeRecord) {
         Locale.TimeMessage timeMessage = locale.timeMessage();
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -340,7 +375,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
      */
     private void createDefaultLocale() {
         DEFAULT_LOCALE = new Locale(
-                "3.1.0.0",
+                5,
                 "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>",
                 List.of(
                         "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>",
@@ -405,5 +440,32 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         "<yellow><minutes></yellow> minute(s)",
                         "<yellow><seconds></yellow> second(s)",
                         "."));
+    }
+
+    /**
+     * Migrate the config version format.
+     * @param root The root {@link ConfigurationNode}.
+     */
+    private void migrateVersion(@NonNull ConfigurationNode root) {
+        ConfigurationNode versionNode = root.node("version");
+        int version = versionNode.getInt();
+
+        if(version == 0) {
+            ConfigurationNode legacyVersionNode = root.node("config-version");
+            @Nullable String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
+            try {
+                switch (legacyVersion) {
+                    case "3.2.0.0" -> versionNode.set(5);
+
+                    case "3.1.0.0" -> versionNode.set(4);
+
+                    case "3.0.0.0" -> versionNode.set(3);
+
+                    case null, default -> logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                }
+            } catch (SerializationException e) {
+                logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+            }
+        }
     }
 }

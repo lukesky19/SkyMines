@@ -25,11 +25,10 @@ import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.api.gui.templates.ChestGUI;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackBuilder;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
 import com.github.lukesky19.skymines.integration.hooks.EconomyHook;
 import com.github.lukesky19.skymines.integration.hooks.PlayerPointsHook;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
@@ -45,8 +44,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -56,23 +55,23 @@ import java.util.concurrent.CompletableFuture;
  */
 public class UnlocksShopGUI extends ChestGUI<UUID> {
     // Plugin Data
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull BlocksManager blocksManager;
-    private final @NotNull HookManager hookManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull HookManager hookManager;
     // Player data
-    private final @NotNull UUID uuid;
+    private final @NonNull UUID uuid;
     // Config Data
-    private final @NotNull String mineId;
-    private final @NotNull WorldMineConfig mineConfig;
-    private final @NotNull WorldMineGUIConfig guiConfig;
+    private final @NonNull String mineId;
+    private final @NonNull WorldMineConfig mineConfig;
+    private final @NonNull WorldMineShopConfig guiConfig;
     // GUI data
     private int pageNum = 0;
     private int currentUnlockKey = 0;
     private int numOfUnlocksAdded = 0;
     private int numOfUnlocksErrored = 0;
-    private final @NotNull Map<Integer, Integer> unlocksAddedPerPage = new HashMap<>();
-    private final @NotNull Map<Integer, Integer> unlocksErroredPerPage = new HashMap<>();
-    private @NotNull Currency currency = Currency.MONEY;
+    private final @NonNull Map<Integer, Integer> unlocksAddedPerPage = new HashMap<>();
+    private final @NonNull Map<Integer, Integer> unlocksErroredPerPage = new HashMap<>();
+    private @NonNull Currency currency = Currency.MONEY;
 
     /**
      * Constructor
@@ -84,18 +83,18 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
      * @param hookManager A {@link HookManager} instance.
      * @param mineId The mine id the gui is for.
      * @param mineConfig The {@link WorldMineConfig} for the mine.
-     * @param guiConfig The {@link WorldMineGUIConfig}.
+     * @param guiConfig The {@link WorldMineShopConfig}.
      */
     public UnlocksShopGUI(
-            @NotNull SkyMines skyMines,
-            @NotNull UUIDGUIManager guiManager,
-            @NotNull Player player,
-            @NotNull LocaleManager localeManager,
-            @NotNull BlocksManager blocksManager,
-            @NotNull HookManager hookManager,
-            @NotNull String mineId,
-            @NotNull WorldMineConfig mineConfig,
-            @NotNull WorldMineGUIConfig guiConfig) {
+            @NonNull SkyMines skyMines,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull Player player,
+            @NonNull LocaleManager localeManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull HookManager hookManager,
+            @NonNull String mineId,
+            @NonNull WorldMineConfig mineConfig,
+            @NonNull WorldMineShopConfig guiConfig) {
         super(skyMines, guiManager, player.getUniqueId(), player);
         this.localeManager = localeManager;
         this.uuid = player.getUniqueId();
@@ -198,7 +197,7 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
      * @param inventoryCloseEvent An {@link InventoryCloseEvent}
      */
     @Override
-    public void handleClose(@NotNull InventoryCloseEvent inventoryCloseEvent) {
+    public void handleClose(@NonNull InventoryCloseEvent inventoryCloseEvent) {
         if(inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.UNLOADED) || inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.OPEN_NEW)) return;
 
         guiManager.removeOpenGUI(uuid);
@@ -209,28 +208,28 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleBottomDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleBottomDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleGlobalDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleGlobalDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleBottomClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleBottomClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleGlobalClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleGlobalClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * Create and add the filler buttons.
@@ -242,7 +241,7 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -276,13 +275,6 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
                 continue;
             }
 
-            Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, unlockBlockData.blockType());
-            if(optionalBlockType.isEmpty()) {
-                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a block type of name " + unlockBlockData.blockType() + " is invalid for unlock key: " + currentUnlockKey));
-                handleUnlockError();
-                continue;
-            }
-
             @Nullable Double money = unlockBlockData.priceData().money();
             @Nullable Integer points = unlockBlockData.priceData().playerPoints();
             if((money == null || money <= -1) && (points == null || points <= -1)) {
@@ -302,13 +294,13 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
                 lorePlaceholders.add(Placeholder.parsed("currency", locale.worldMineMessages().playerPointsCurrencyName()));
             }
 
-            BlockType blockType = optionalBlockType.get();
+            BlockType blockType = unlockBlockData.blockType();
             ItemStackConfig itemStackConfig = blocksManager.isBlockTypeUnlocked(uuid, mineId, blockType)
                     ? unlockBlockData.displayItemUnlocked()
                     : unlockBlockData.displayItemLocked();
 
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, lorePlaceholders);
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, lorePlaceholders);
 
             Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresentOrElse(itemStack -> {
@@ -365,7 +357,9 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
                         playerPointsHook.removeFromBalance(player, points);
                     }
 
-                    List<TagResolver.Single> successMessagePlaceholders = List.of(Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)), Placeholder.parsed("mine_id", mineId));
+                    List<TagResolver.Single> successMessagePlaceholders = List.of(
+                            Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)),
+                            Placeholder.parsed("mine_id", mineId));
 
                     blocksManager.addUnlockedBlock(uuid, mineId, blockType);
                     player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().blockUnlocked(), successMessagePlaceholders));
@@ -397,7 +391,7 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -438,7 +432,7 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -472,7 +466,7 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -507,7 +501,6 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
         itemStackBuilder.fromItemStackConfig(
                 itemConfig,
                 player,
-                null,
                 List.of(Placeholder.parsed("currency", currency == Currency.MONEY ?
                         locale.worldMineMessages().moneyCurrencyName() :
                         locale.worldMineMessages().playerPointsCurrencyName())));
@@ -543,8 +536,8 @@ public class UnlocksShopGUI extends ChestGUI<UUID> {
 
             ItemStackConfig itemStackConfig = buttonConfig.displayItem();
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, List.of());
-            Optional<@NotNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, List.of());
+            Optional<@NonNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresent(itemStack -> {
                 GUIButton.Builder builder = new GUIButton.Builder();
 

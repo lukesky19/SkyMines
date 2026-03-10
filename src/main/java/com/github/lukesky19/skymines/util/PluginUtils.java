@@ -18,7 +18,7 @@
 package com.github.lukesky19.skymines.util;
 
 import org.bukkit.Location;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class contains methods used throughout the plugin.
@@ -39,7 +39,7 @@ public class PluginUtils {
      * @param location The {@link Location} to clean.
      * @return A {@link Location} without the yaw and pitch.
      */
-    public static @NotNull Location getCleanLocation(@NotNull Location location) {
+    public static @NonNull Location getCleanLocation(@NonNull Location location) {
         return new Location(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 }

@@ -22,32 +22,32 @@ import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMinePreviewConfig;
 import com.github.lukesky19.skymines.gui.FreePreviewGUI;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class is used to create the preview command argument.
  */
 public class PreviewCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull GUIConfigManager guiConfigManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull UUIDGUIManager guiManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull GUIConfigManager guiConfigManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull UUIDGUIManager guiManager;
 
     /**
      * Default Constructor.
@@ -70,12 +70,12 @@ public class PreviewCommand {
      * @param guiManager A {@link UUIDGUIManager} instance.
      */
     public PreviewCommand(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull GUIConfigManager guiConfigManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull UUIDGUIManager guiManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull LocaleManager localeManager,
+            @NonNull GUIConfigManager guiConfigManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull UUIDGUIManager guiManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -88,14 +88,14 @@ public class PreviewCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the preview command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the preview command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("preview")
             .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.preview") && ctx.getSender() instanceof Player)
             .executes(ctx -> {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
                 Locale locale = localeManager.getConfiguration();
-                @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getMinePreviewConfig();
+                @Nullable WorldMinePreviewConfig guiConfig = guiConfigManager.getMinePreviewConfig();
 
                 if(guiConfig == null) {
                     logger.warn(AdventureUtil.deserialize("The gui config for the world mine preview gui is invalid."));
@@ -103,7 +103,7 @@ public class PreviewCommand {
                     return 0;
                 }
 
-                AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                 if(mine == null) {
                     player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
                     return 0;

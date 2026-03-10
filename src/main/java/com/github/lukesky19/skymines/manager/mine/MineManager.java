@@ -29,27 +29,27 @@ import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.mine.world.PDCManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class manages the creation of mines from their config files from {@link MineConfigManager}.
- * The actual {@link AbstractMine}s are stored in {@link MineDataManager}.
+ * The actual {@link Mine}s are stored in {@link MineDataManager}.
  */
 public class MineManager {
-    private final @NotNull SkyMines skyMines;
+    private final @NonNull SkyMines skyMines;
     private final SettingsManager settingsManager;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull CooldownManager cooldownManager;
-    private final @NotNull MineTimeManager mineTimeManager;
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull BossBarManager bossBarManager;
-    private final @NotNull BlocksManager blocksManager;
-    private final @NotNull PDCManager pdcManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull CooldownManager cooldownManager;
+    private final @NonNull MineTimeManager mineTimeManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull BossBarManager bossBarManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull PDCManager pdcManager;
 
     /**
      * Default Constructor.
@@ -76,15 +76,15 @@ public class MineManager {
      * @param blocksManager A {@link BlocksManager} instance.
      */
     public MineManager(
-            @NotNull SkyMines skyMines, SettingsManager settingsManager,
-            @NotNull LocaleManager localeManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull CooldownManager cooldownManager,
-            @NotNull MineTimeManager mineTimeManager,
-            @NotNull PlayerDataManager playerDataManager,
-            @NotNull BossBarManager bossBarManager,
-            @NotNull BlocksManager blocksManager) {
+            @NonNull SkyMines skyMines, SettingsManager settingsManager,
+            @NonNull LocaleManager localeManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull CooldownManager cooldownManager,
+            @NonNull MineTimeManager mineTimeManager,
+            @NonNull PlayerDataManager playerDataManager,
+            @NonNull BossBarManager bossBarManager,
+            @NonNull BlocksManager blocksManager) {
         this.skyMines = skyMines;
         this.settingsManager = settingsManager;
         this.localeManager = localeManager;
@@ -114,8 +114,8 @@ public class MineManager {
      * @param mineId The id of the mine being created.
      * @param mineConfig The {@link PacketMineConfig} for the mine being created.
      */
-    public void createPacketMine(@NotNull String mineId, @NotNull PacketMineConfig mineConfig) {
-        AbstractMine mine = new PacketMine(skyMines, settingsManager, localeManager, playerDataManager, cooldownManager, mineTimeManager, bossBarManager, mineConfig);
+    public void createPacketMine(@NonNull String mineId, @NonNull PacketMineConfig mineConfig) {
+        Mine mine = new PacketMine(skyMines, settingsManager, localeManager, playerDataManager, cooldownManager, mineTimeManager, bossBarManager, mineConfig);
 
         if(mine.isSetup()) mineDataManager.addMine(mineId, mine);
     }
@@ -125,8 +125,8 @@ public class MineManager {
      * @param mineId The id of the mine being created.
      * @param mineConfig The {@link WorldMineConfig} for the mine being created.
      */
-    public void createWorldMine(@NotNull String mineId, @NotNull WorldMineConfig mineConfig) {
-        AbstractMine mine = new WorldMine(skyMines, settingsManager, localeManager, playerDataManager, blocksManager, bossBarManager, pdcManager, mineConfig);
+    public void createWorldMine(@NonNull String mineId, @NonNull WorldMineConfig mineConfig) {
+        Mine mine = new WorldMine(skyMines, settingsManager, localeManager, playerDataManager, blocksManager, bossBarManager, pdcManager, mineConfig);
 
         if(mine.isSetup()) mineDataManager.addMine(mineId, mine);
     }

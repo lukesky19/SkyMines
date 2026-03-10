@@ -20,13 +20,13 @@ package com.github.lukesky19.skymines.data.config;
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * The plugin's locale configuration
- * @param configVersion The config version of the file.
+ * @param version The config version.
  * @param prefix The plugin's prefix.
  * @param help The plugin's help message
  * @param reload The plugin's reload message.
@@ -38,14 +38,14 @@ import java.util.List;
  */
 @ConfigSerializable
 public record Locale(
-        String configVersion,
+        int version,
         String prefix,
         List<String> help,
         String reload,
         String noMineWithId,
         String guiOpenError,
-        @NotNull PacketMineMessages packetMineMessages,
-        @NotNull WorldMineMessages worldMineMessages,
+        @NonNull PacketMineMessages packetMineMessages,
+        @NonNull WorldMineMessages worldMineMessages,
         TimeMessage timeMessage) {
 
     /**

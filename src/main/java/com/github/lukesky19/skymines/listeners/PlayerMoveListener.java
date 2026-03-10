@@ -18,19 +18,19 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class listens to when a player moves from one location to another and passes the event to each mine they moved from and to.
  */
 public class PlayerMoveListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -47,7 +47,7 @@ public class PlayerMoveListener implements Listener {
      * Constructor
      * @param mineDataManager A MineDataManager instance.
      */
-    public PlayerMoveListener(@NotNull MineDataManager mineDataManager) {
+    public PlayerMoveListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -63,12 +63,12 @@ public class PlayerMoveListener implements Listener {
         Location blockFrom = new Location(from.getWorld(), from.getBlockX(), from.getBlockY(), from.getBlockZ());
         Location blockTo = new Location(to.getWorld(), to.getBlockX(), to.getBlockY(), to.getBlockZ());
 
-        AbstractMine fromMine = mineDataManager.getMineByLocation(blockFrom);
+        Mine fromMine = mineDataManager.getMineByLocation(blockFrom);
         if(fromMine != null) {
             fromMine.handlePlayerMoveEvent(playerMoveEvent);
         }
 
-        AbstractMine toMine = mineDataManager.getMineByLocation(blockTo);
+        Mine toMine = mineDataManager.getMineByLocation(blockTo);
         if(toMine != null) {
             toMine.handlePlayerMoveEvent(playerMoveEvent);
         }

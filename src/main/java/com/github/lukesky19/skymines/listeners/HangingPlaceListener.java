@@ -19,49 +19,46 @@ package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.mine.Mine;
-import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
-import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.jspecify.annotations.NonNull;
 
 /**
- * This class listens to when a player loads a chunk and passes that event to the mine they are in (if any).
+ * This class listens to when a player places a hanging entity and if that location is inside a mine, the event is passed to that mine.
  */
-public class ChunkLoadListener implements Listener {
+public class HangingPlaceListener implements Listener {
     private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #ChunkLoadListener(MineDataManager)} instead.
-     * @deprecated You should use {@link #ChunkLoadListener(MineDataManager)} instead.
+     * You should use {@link #HangingPlaceListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #HangingPlaceListener(MineDataManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
-    public ChunkLoadListener() {
+    public HangingPlaceListener() {
         throw new RuntimeException("The use of the default constructor is not allowed.");
     }
 
     /**
      * Constructor
-     * @param mineDataManager A MineDataManager instance.
+     * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public ChunkLoadListener(@NonNull MineDataManager mineDataManager) {
+    public HangingPlaceListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
     /**
-     * Listens to when a player loads a chunk and passes the event to the mine they are in (if any).
-     * @param playerChunkLoadEvent A PlayerChunkLoadEvent
+     * Listens to when a hanging entity is placed and passes the event to the mine the entity was broken in (if any).
+     * @param hangingPlaceEvent A {@link HangingPlaceEvent}
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onChunkLoad(PlayerChunkLoadEvent playerChunkLoadEvent) {
-        Location location = playerChunkLoadEvent.getPlayer().getLocation();
-
-        Mine mine = mineDataManager.getMineByLocation(location);
+    public void onHangingPlace(HangingPlaceEvent hangingPlaceEvent) {
+        Mine mine = mineDataManager.getMineByLocation(hangingPlaceEvent.getEntity().getLocation());
         if(mine != null) {
-            mine.handlePlayerChunkLoad(playerChunkLoadEvent);
+            mine.handleHangingPlace(hangingPlaceEvent);
         }
     }
 }

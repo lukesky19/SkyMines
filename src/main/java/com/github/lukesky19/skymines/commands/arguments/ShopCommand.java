@@ -22,7 +22,7 @@ import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
 import com.github.lukesky19.skymines.gui.UnlocksShopGUI;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
@@ -30,28 +30,28 @@ import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class is used to create the shop command argument.
  */
 public class ShopCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull GUIConfigManager guiConfigManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull UUIDGUIManager guiManager;
-    private final @NotNull BlocksManager blocksManager;
-    private final @NotNull HookManager hookManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull GUIConfigManager guiConfigManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull UUIDGUIManager guiManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull HookManager hookManager;
 
     /**
      * Default Constructor.
@@ -76,14 +76,14 @@ public class ShopCommand {
      * @param hookManager A {@link HookManager} instance.
      */
     public ShopCommand(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull GUIConfigManager guiConfigManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull UUIDGUIManager guiManager,
-            @NotNull BlocksManager blocksManager,
-            @NotNull HookManager hookManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull LocaleManager localeManager,
+            @NonNull GUIConfigManager guiConfigManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -98,14 +98,14 @@ public class ShopCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the shop command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the shop command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("shop")
             .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.shop") && ctx.getSender() instanceof Player)
             .executes(ctx -> {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
                 Locale locale = localeManager.getConfiguration();
-                @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
+                @Nullable WorldMineShopConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
 
                 if(guiConfig == null) {
                     logger.warn(AdventureUtil.deserialize("The gui config for the world mine shop is invalid."));
@@ -113,7 +113,7 @@ public class ShopCommand {
                     return 0;
                 }
 
-                AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                 if(mine == null) {
                     player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
                     return 0;

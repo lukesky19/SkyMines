@@ -22,21 +22,21 @@ import com.github.lukesky19.skymines.integration.Hook;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class manages interfacing with Vault.
  */
 public class EconomyHook implements Hook {
-    private final @NotNull SkyMines skyMines;
+    private final @NonNull SkyMines skyMines;
     private @Nullable Economy economy;
 
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
      */
-    public EconomyHook(@NotNull SkyMines skyMines) {
+    public EconomyHook(@NonNull SkyMines skyMines) {
         this.skyMines = skyMines;
     }
 
@@ -69,7 +69,7 @@ public class EconomyHook implements Hook {
      * @param player The {@link Player}.
      * @param amount The amount to remove.
      */
-    public void removeFromBalance(@NotNull Player player, double amount) {
+    public void removeFromBalance(@NonNull Player player, double amount) {
         if(economy == null) return;
 
         double balance = economy.getBalance(player);
@@ -86,7 +86,7 @@ public class EconomyHook implements Hook {
      * @param player The {@link Player} to get the economy for.
      * @return The player's balance or 0 if not hooked.
      */
-    public double getBalance(@NotNull Player player) {
+    public double getBalance(@NonNull Player player) {
         if(economy == null) return 0;
 
         return economy.getBalance(player);

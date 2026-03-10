@@ -25,14 +25,14 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class is used to create the reload command argument.
  */
 public class ReloadCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
 
     /**
      * Default Constructor.
@@ -50,7 +50,7 @@ public class ReloadCommand {
      * @param skyMines A {@link SkyMines} instance.
      * @param localeManager A {@link LocaleManager} instance.
      */
-    public ReloadCommand(@NotNull SkyMines skyMines, @NotNull LocaleManager localeManager) {
+    public ReloadCommand(@NonNull SkyMines skyMines, @NonNull LocaleManager localeManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
     }
@@ -59,7 +59,7 @@ public class ReloadCommand {
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the reload command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the reload command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("reload")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.reload"))
                 .executes(ctx -> {

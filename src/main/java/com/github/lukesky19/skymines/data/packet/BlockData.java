@@ -18,13 +18,13 @@
 package com.github.lukesky19.skymines.data.packet;
 
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class contains the data for a block that is on cooldown.
  */
 public class BlockData {
-    private final @NotNull BlockType replacementType;
+    private final @NonNull BlockType replacementType;
     private long cooldownSeconds;
 
     /**
@@ -32,7 +32,7 @@ public class BlockData {
      * @param replacementType The material that replaced it client-side.
      * @param cooldownSeconds The starting cooldown for this block.
      */
-    public BlockData(@NotNull BlockType replacementType, long cooldownSeconds) {
+    public BlockData(@NonNull BlockType replacementType, long cooldownSeconds) {
         this.replacementType = replacementType;
         this.cooldownSeconds = cooldownSeconds;
     }
@@ -41,7 +41,7 @@ public class BlockData {
      * The {@link BlockType} to display to the client when the block is on cooldown.
      * @return A {@link BlockType}.
      */
-    public @NotNull BlockType getReplacementType() {
+    public @NonNull BlockType getReplacementType() {
         return replacementType;
     }
 

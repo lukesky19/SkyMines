@@ -24,20 +24,18 @@ import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.api.gui.templates.ChestGUI;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackBuilder;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMinePreviewConfig;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -47,20 +45,20 @@ import java.util.concurrent.CompletableFuture;
  */
 public class FreePreviewGUI extends ChestGUI<UUID> {
     // Config
-    private final @NotNull String mineId;
-    private final @NotNull WorldMineConfig mineConfig;
-    private final @NotNull WorldMineGUIConfig guiConfig;
+    private final @NonNull String mineId;
+    private final @NonNull WorldMineConfig mineConfig;
+    private final @NonNull WorldMinePreviewConfig guiConfig;
 
     // Player
-    private final @NotNull UUID uuid;
+    private final @NonNull UUID uuid;
 
     // GUI data
     private int pageNum = 0;
     private int currentPreviewKey = 0;
     private int numOfPreviewsAdded = 0;
     private int numOfPreviewsErrored = 0;
-    private final @NotNull Map<Integer, Integer> previewsAddedPerPage = new HashMap<>();
-    private final @NotNull Map<Integer, Integer> previewsErroredPerPage = new HashMap<>();
+    private final @NonNull Map<Integer, Integer> previewsAddedPerPage = new HashMap<>();
+    private final @NonNull Map<Integer, Integer> previewsErroredPerPage = new HashMap<>();
 
     /**
      * Constructor
@@ -69,15 +67,15 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
      * @param player The {@link Player} this GUI is being created for.
      * @param mineId The mine id the gui is for.
      * @param mineConfig The {@link WorldMineConfig} for the mine.
-     * @param guiConfig The {@link WorldMineGUIConfig}.
+     * @param guiConfig The {@link WorldMinePreviewConfig}.
      */
     public FreePreviewGUI(
-            @NotNull SkyMines skyMines,
-            @NotNull UUIDGUIManager guiManager,
-            @NotNull Player player,
-            @NotNull String mineId,
-            @NotNull WorldMineConfig mineConfig,
-            @NotNull WorldMineGUIConfig guiConfig) {
+            @NonNull SkyMines skyMines,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull Player player,
+            @NonNull String mineId,
+            @NonNull WorldMineConfig mineConfig,
+            @NonNull WorldMinePreviewConfig guiConfig) {
         super(skyMines, guiManager, player.getUniqueId(), player);
         this.uuid = player.getUniqueId();
         this.mineId = mineId;
@@ -175,7 +173,7 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
      * @param inventoryCloseEvent An {@link InventoryCloseEvent}
      */
     @Override
-    public void handleClose(@NotNull InventoryCloseEvent inventoryCloseEvent) {
+    public void handleClose(@NonNull InventoryCloseEvent inventoryCloseEvent) {
         if(inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.UNLOADED) || inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.OPEN_NEW)) return;
 
         guiManager.removeOpenGUI(uuid);
@@ -186,28 +184,28 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleBottomDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleBottomDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleGlobalDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleGlobalDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleBottomClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleBottomClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleGlobalClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleGlobalClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * Create and add the filler buttons.
@@ -219,7 +217,7 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -252,15 +250,8 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
                 continue;
             }
 
-            Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, freeBlockData.blockType());
-            if(optionalBlockType.isEmpty()) {
-                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a block type of name " + freeBlockData.blockType() + " is invalid for preview key: " + currentPreviewKey));
-                handlePreviewError();
-                continue;
-            }
-
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(freeBlockData.displayItem(), player, null, List.of());
+            itemStackBuilder.fromItemStackConfig(freeBlockData.displayItem(), player, List.of());
 
             Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresentOrElse(itemStack -> {
@@ -291,7 +282,7 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -332,7 +323,7 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -366,7 +357,7 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -393,8 +384,8 @@ public class FreePreviewGUI extends ChestGUI<UUID> {
 
             ItemStackConfig itemStackConfig = buttonConfig.displayItem();
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, List.of());
-            Optional<@NotNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, List.of());
+            Optional<@NonNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresent(itemStack -> {
                 GUIButton.Builder builder = new GUIButton.Builder();
 

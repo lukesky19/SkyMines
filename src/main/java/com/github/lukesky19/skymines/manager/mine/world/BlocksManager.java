@@ -20,7 +20,7 @@ package com.github.lukesky19.skymines.manager.mine.world;
 import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -28,7 +28,7 @@ import java.util.UUID;
  * This class manages the blocks players have unlocked for mines.
  */
 public class BlocksManager {
-    private final @NotNull PlayerDataManager playerDataManager;
+    private final @NonNull PlayerDataManager playerDataManager;
 
     /**
      * Default Constructor.
@@ -45,7 +45,7 @@ public class BlocksManager {
      * Constructor
      * @param playerDataManager A {@link PlayerDataManager} instance.
      */
-    public BlocksManager(@NotNull PlayerDataManager playerDataManager) {
+    public BlocksManager(@NonNull PlayerDataManager playerDataManager) {
         this.playerDataManager = playerDataManager;
     }
 
@@ -56,8 +56,8 @@ public class BlocksManager {
      * @param blockType The {@link BlockType} to check.
      * @return true if the player has unlocked access to the block, otherwise false. Will also return false if no data is stored for said mine id.
      */
-    public boolean isBlockTypeUnlocked(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public boolean isBlockTypeUnlocked(@NonNull UUID uuid, @NonNull String mineId, @NonNull BlockType blockType) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         return playerData.isBlockTypeUnlocked(mineId, blockType);
     }
@@ -68,8 +68,8 @@ public class BlocksManager {
      * @param mineId THe mine id to unlock the block for.
      * @param blockType The {@link BlockType}.
      */
-    public void addUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void addUnlockedBlock(@NonNull UUID uuid, @NonNull String mineId, @NonNull BlockType blockType) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
         playerData.addUnlockedBlock(mineId, blockType);
     }
 
@@ -79,8 +79,8 @@ public class BlocksManager {
      * @param mineId The mine id to lock the block for.
      * @param blockType The {@link BlockType}.
      */
-    public void removeUnlockedBlock(@NotNull UUID uuid, @NotNull String mineId, @NotNull BlockType blockType) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void removeUnlockedBlock(@NonNull UUID uuid, @NonNull String mineId, @NonNull BlockType blockType) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
         playerData.removeUnlockedBlock(mineId, blockType);
     }
 
@@ -89,8 +89,8 @@ public class BlocksManager {
      * @param uuid The player's {@link UUID}.
      * @param mineId The mine id.
      */
-    public void removeUnlockedBlocks(@NotNull UUID uuid, @NotNull String mineId) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void removeUnlockedBlocks(@NonNull UUID uuid, @NonNull String mineId) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
         playerData.removeUnlockedBlocks(mineId);
     }
 }

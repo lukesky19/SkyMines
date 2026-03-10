@@ -20,11 +20,11 @@ package com.github.lukesky19.skymines.manager.bossbar;
 import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -32,8 +32,8 @@ import java.util.UUID;
  * This class manages the boss bar for players.
  */
 public class BossBarManager {
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -51,7 +51,7 @@ public class BossBarManager {
      * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param mineDataManager A {@link PlayerDataManager} instance.
      */
-    public BossBarManager(@NotNull PlayerDataManager playerDataManager, @NotNull MineDataManager mineDataManager) {
+    public BossBarManager(@NonNull PlayerDataManager playerDataManager, @NonNull MineDataManager mineDataManager) {
         this.playerDataManager = playerDataManager;
         this.mineDataManager = mineDataManager;
     }
@@ -62,8 +62,8 @@ public class BossBarManager {
      * @param player The {@link Player} to show the boss bar.
      * @param uuid The {@link UUID} of the player.
      */
-    public void createAndShowBossBar(@NotNull String mineId, @NotNull Player player, @NotNull UUID uuid) {
-        AbstractMine mine = mineDataManager.getMineById(mineId);
+    public void createAndShowBossBar(@NonNull String mineId, @NonNull Player player, @NonNull UUID uuid) {
+        Mine mine = mineDataManager.getMineById(mineId);
         if(mine != null) {
             mine.createAndShowBossBar(player, uuid);
         }
@@ -74,8 +74,8 @@ public class BossBarManager {
      * @param mineId The mine id of the mine.
      * @param uuid The {@link UUID} of the player.
      */
-    public void updateBossBar(@NotNull String mineId, @NotNull UUID uuid) {
-        AbstractMine mine = mineDataManager.getMineById(mineId);
+    public void updateBossBar(@NonNull String mineId, @NonNull UUID uuid) {
+        Mine mine = mineDataManager.getMineById(mineId);
         if(mine != null) {
             mine.updateBossBar(uuid);
         }
@@ -87,8 +87,8 @@ public class BossBarManager {
      * @param uuid The {@link UUID} of the player.
      * @param bossBar The {@link BossBar} to show.
      */
-    public void setBossBar(@NotNull Player player, @NotNull UUID uuid, @NotNull BossBar bossBar) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void setBossBar(@NonNull Player player, @NonNull UUID uuid, @NonNull BossBar bossBar) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         // Remove the current boss bar shown (if any)
         removeBossBar(player, uuid);
@@ -103,8 +103,8 @@ public class BossBarManager {
      * @param uuid The {@link UUID} of the player.
      * @return The {@link BossBar} currently shown to the player or null.
      */
-    public @Nullable BossBar getBossBar(@NotNull UUID uuid) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public @Nullable BossBar getBossBar(@NonNull UUID uuid) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         return playerData.getBossBar();
     }
@@ -114,8 +114,8 @@ public class BossBarManager {
      * @param player The {@link Player} to remove the boss bar from.
      * @param uuid The {@link UUID} of the player.
      */
-    public void removeBossBar(@NotNull Player player, @NotNull UUID uuid) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void removeBossBar(@NonNull Player player, @NonNull UUID uuid) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         BossBar bossBar = getBossBar(uuid);
         if(bossBar != null) {

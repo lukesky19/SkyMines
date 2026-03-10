@@ -20,13 +20,13 @@ package com.github.lukesky19.skymines.listeners;
 import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -34,9 +34,9 @@ import java.util.UUID;
  * This class listens to when a player connects to the server, loads their player data, and shows the mine's boss bar if they are inside a mine.
  */
 public class PlayerJoinListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull DatabaseManager databaseManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull DatabaseManager databaseManager;
 
     /**
      * Default Constructor.
@@ -57,9 +57,9 @@ public class PlayerJoinListener implements Listener {
      * @param databaseManager A {@link DatabaseManager} instance.
      */
     public PlayerJoinListener(
-            @NotNull MineDataManager mineDataManager,
-            @NotNull PlayerDataManager playerDataManager,
-            @NotNull DatabaseManager databaseManager) {
+            @NonNull MineDataManager mineDataManager,
+            @NonNull PlayerDataManager playerDataManager,
+            @NonNull DatabaseManager databaseManager) {
         this.mineDataManager = mineDataManager;
         this.playerDataManager = playerDataManager;
         this.databaseManager = databaseManager;
@@ -77,7 +77,7 @@ public class PlayerJoinListener implements Listener {
         databaseManager.getPlayerIdsTable().insertPlayerId(uuid);
 
         playerDataManager.loadPlayerData(uuid).thenAccept(v -> {
-            AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+            Mine mine = mineDataManager.getMineByLocation(player.getLocation());
             if(mine != null) {
                 mine.createAndShowBossBar(player, uuid);
             }

@@ -22,23 +22,24 @@ import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockFertilizeEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.jspecify.annotations.NonNull;
 
 /**
- * This class listens to when a structure is grown and passes the event to a mine (if any).
+ * This class listens to when a player breaks a hanging entity and if that location is inside a mine, the event is passed to that mine.
  */
-public class BlockFertilizeListener implements Listener {
+public class HangingBreakListener implements Listener {
     private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #BlockFertilizeListener(MineDataManager)} instead.
-     * @deprecated You should use {@link #BlockFertilizeListener(MineDataManager)} instead.
+     * You should use {@link #HangingBreakListener(MineDataManager)} instead.
+     * @deprecated You should use {@link #HangingBreakListener(MineDataManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
-    public BlockFertilizeListener() {
+    public HangingBreakListener() {
         throw new RuntimeException("The use of the default constructor is not allowed.");
     }
 
@@ -46,19 +47,31 @@ public class BlockFertilizeListener implements Listener {
      * Constructor
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public BlockFertilizeListener(@NonNull MineDataManager mineDataManager) {
+    public HangingBreakListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
     /**
-     * Listens for when a block is fertilized and if that location is inside a mine, pass the event to the mine.
-     * @param blockFertilizeEvent A {@link BlockFertilizeEvent}
+     * Listens to when a hanging entity is broken and passes the event to the mine the entity was broken in (if any).
+     * @param hangingBreakEvent A {@link HangingBreakEvent}
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onBlockFromTo(BlockFertilizeEvent blockFertilizeEvent) {
-        Mine mine = mineDataManager.getMineByLocation(blockFertilizeEvent.getBlock().getLocation());
+    public void onHangingBreak(HangingBreakEvent hangingBreakEvent) {
+        Mine mine = mineDataManager.getMineByLocation(hangingBreakEvent.getEntity().getLocation());
         if(mine != null) {
-            mine.handleBlockFertilizeEvent(blockFertilizeEvent);
+            mine.handleHangingBreakEvent(hangingBreakEvent);
+        }
+    }
+
+    /**
+     * Listens to when a hanging entity is broken and passes the event to the mine the entity was broken in (if any).
+     * @param hangingBreakByEntityEvent A {@link HangingBreakByEntityEvent}
+     */
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onHangingBreak(HangingBreakByEntityEvent hangingBreakByEntityEvent) {
+        Mine mine = mineDataManager.getMineByLocation(hangingBreakByEntityEvent.getEntity().getLocation());
+        if(mine != null) {
+            mine.handleHangingBreakByEntityEvent(hangingBreakByEntityEvent);
         }
     }
 }

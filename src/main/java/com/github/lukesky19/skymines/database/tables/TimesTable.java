@@ -22,7 +22,7 @@ import com.github.lukesky19.skylib.api.database.parameter.impl.LongParameter;
 import com.github.lukesky19.skylib.api.database.parameter.impl.StringParameter;
 import com.github.lukesky19.skylib.api.database.parameter.impl.UUIDParameter;
 import com.github.lukesky19.skymines.database.QueueManager;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * This class is used to create and interface with the times table in the database.
  */
 public class TimesTable {
-    private final @NotNull QueueManager queueManager;
-    private final @NotNull String tableName = "skymines_times";
+    private final @NonNull QueueManager queueManager;
+    private final @NonNull String tableName = "skymines_times";
 
     /**
      * Default Constructor.
@@ -49,7 +49,7 @@ public class TimesTable {
      * Constructor
      * @param queueManager A {@link QueueManager} instance.
      */
-    public TimesTable(@NotNull QueueManager queueManager) {
+    public TimesTable(@NonNull QueueManager queueManager) {
         this.queueManager = queueManager;
     }
 
@@ -57,11 +57,11 @@ public class TimesTable {
      * Creates the table in the database if it doesn't exist and any indexes that don't exist.
      * @return A {@link CompletableFuture} of type {@link Void} when complete.
      */
-    public @NotNull CompletableFuture<Void> createTable() {
+    public @NonNull CompletableFuture<Void> createTable() {
         String tableCreationSql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "mine_id TEXT NOT NULL, " + // Unique
-                "player_id LONG NOT NULL DEFAULT 0, " + // Unique
+                "player_id TEXT NOT NULL DEFAULT 0, " + // Unique
                 "time LONG NOT NULL DEFAULT 0, " +
                 "last_updated LONG NOT NULL DEFAULT 0, " +
                 "FOREIGN KEY (mine_id) REFERENCES skymines_mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
@@ -78,7 +78,7 @@ public class TimesTable {
      * @param uuid The {@link UUID} of the player.
      * @return A {@link Map} mapping mine ids to mine time as a {@link Long}.
      */
-    public @NotNull CompletableFuture<@NotNull Map<String, Long>> loadMineTimes(@NotNull UUID uuid) {
+    public @NonNull CompletableFuture<@NonNull Map<String, Long>> loadMineTimes(@NonNull UUID uuid) {
         String selectSql = "SELECT mine_id, time FROM " + tableName + " WHERE player_id = ?";
         UUIDParameter uuidParameter = new UUIDParameter(uuid);
 
@@ -107,7 +107,7 @@ public class TimesTable {
      * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
      * The list will contain false if an operation failed.
      */
-    public @NotNull CompletableFuture<List<Boolean>> saveMineTimes(@NotNull UUID uuid, @NotNull Map<String, Long> data) {
+    public @NonNull CompletableFuture<List<Boolean>> saveMineTimes(@NonNull UUID uuid, @NonNull Map<String, Long> data) {
         List<List<Parameter<?>>> listOfParameterLists = new ArrayList<>();
         String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, time, last_updated) " +
                 "VALUES (?, ?, ?, ?) " +
@@ -147,7 +147,7 @@ public class TimesTable {
      * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
      * The list will contain false if an operation failed.
      */
-    public @NotNull CompletableFuture<@NotNull List<@NotNull Boolean>> saveMineTimes(@NotNull Map<@NotNull String, Map<@NotNull UUID, @NotNull Long>> data) {
+    public @NonNull CompletableFuture<@NonNull List<@NonNull Boolean>> saveMineTimes(@NonNull Map<@NonNull String, Map<@NonNull UUID, @NonNull Long>> data) {
         List<List<Parameter<?>>> listOfParameterLists = new ArrayList<>();
         String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, time, last_updated) " +
                 "VALUES (?, ?, ?, ?) " +
@@ -190,7 +190,7 @@ public class TimesTable {
      * @deprecated This method is planned for removal in version 3.2.0.0.
      */
     @Deprecated(since = "3.1.0.0", forRemoval = true)
-    public @NotNull CompletableFuture<Boolean> isLegacyFormat() {
+    public @NonNull CompletableFuture<Boolean> isLegacyFormat() {
         String pragmaQuery = "PRAGMA table_info(" + tableName + ")";
 
         return queueManager.queueReadTransaction(pragmaQuery, resultSet -> {
@@ -217,7 +217,7 @@ public class TimesTable {
      * @deprecated This method is planned for removal in version 3.2.0.0.
      */
     @Deprecated(since = "3.1.0.0", forRemoval = true)
-    public @NotNull CompletableFuture<Map<String, Map<UUID, Integer>>> getLegacyData() {
+    public @NonNull CompletableFuture<Map<String, Map<UUID, Integer>>> getLegacyData() {
         String selectSql = "SELECT * FROM skymines_times";
 
         return queueManager.queueReadTransaction(selectSql, resultSet -> {
@@ -249,7 +249,7 @@ public class TimesTable {
      * @return A {@link CompletableFuture} of type {@link Boolean} when complete.
      */
     @Deprecated(since = "3.1.0.0", forRemoval = true)
-    public @NotNull CompletableFuture<Boolean> dropTable() {
+    public @NonNull CompletableFuture<Boolean> dropTable() {
         String dropTableSql = "DROP TABLE " + tableName;
 
         return queueManager.queueWriteTransaction(dropTableSql)

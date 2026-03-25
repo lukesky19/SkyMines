@@ -17,12 +17,12 @@
 */
 package com.github.lukesky19.skymines.manager.mine;
 
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
 import org.bukkit.Location;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.Objects;
  * This class stores mines that have been created by their mine id.
  */
 public class MineDataManager {
-    private final @NotNull Map<String, AbstractMine> minesMap = new HashMap<>();
+    private final @NonNull Map<String, Mine> minesMap = new HashMap<>();
 
     /**
      * Default Constructor.
@@ -41,11 +41,11 @@ public class MineDataManager {
     public MineDataManager() {}
 
     /**
-     * Add a mine to the {@link Map} of mine ids to {@link AbstractMine}s.
+     * Add a mine to the {@link Map} of mine ids to {@link Mine}s.
      * @param mineId The mine id.
-     * @param mine The {@link AbstractMine}.
+     * @param mine The {@link Mine}.
      */
-    public void addMine(@NotNull String mineId, @NotNull AbstractMine mine) {
+    public void addMine(@NonNull String mineId, @NonNull Mine mine) {
         minesMap.put(mineId, mine);
     }
 
@@ -53,7 +53,7 @@ public class MineDataManager {
      * Get a list of all loaded mine ids.
      * @return A {@link List} containing {@link String}s for mine ids.
      */
-    @NotNull
+    @NonNull
     public List<String> getMineIds() {
         return minesMap.keySet().stream().toList();
     }
@@ -62,10 +62,10 @@ public class MineDataManager {
      * Get a list of all loaded mine ids that have a time limit associated with them.
      * @return A {@link List} containing {@link String}s for mine ids.
      */
-    public @NotNull List<String> getMineIdsWithTime() {
+    public @NonNull List<String> getMineIdsWithTime() {
         return minesMap.entrySet().stream().map((entry) -> {
             String mineId = entry.getKey();
-            AbstractMine mine = entry.getValue();
+            Mine mine = entry.getValue();
 
             if(mine instanceof PacketMine) {
                 return mineId;
@@ -79,10 +79,10 @@ public class MineDataManager {
      * Get a list of all loaded mine ids that feature unlocking blocks.
      * @return A {@link List} containing {@link String}s for mine ids.
      */
-    public @NotNull List<String> getMineIdsWithBlockUnlocks() {
+    public @NonNull List<String> getMineIdsWithBlockUnlocks() {
         return minesMap.entrySet().stream().map((entry) -> {
             String mineId = entry.getKey();
-            AbstractMine mine = entry.getValue();
+            Mine mine = entry.getValue();
 
             if(mine instanceof WorldMine) {
                 return mineId;
@@ -93,10 +93,10 @@ public class MineDataManager {
     }
 
     /**
-     * Get a {@link Map} mapping mine ids to {@link AbstractMine}s.
-     * @return A {@link Map} mapping mine ids to {@link AbstractMine}s.
+     * Get a {@link Map} mapping mine ids to {@link Mine}s.
+     * @return A {@link Map} mapping mine ids to {@link Mine}s.
      */
-    public @NotNull Map<String, AbstractMine> getMinesMap() {
+    public @NonNull Map<String, Mine> getMinesMap() {
         return minesMap;
     }
 
@@ -105,8 +105,8 @@ public class MineDataManager {
      * @param location A Bukkit Location
      * @return A mine if the location is inside one, or null.
      */
-    public @Nullable AbstractMine getMineByLocation(@NotNull Location location) {
-        for(AbstractMine mine : minesMap.values()) {
+    public @Nullable Mine getMineByLocation(@NonNull Location location) {
+        for(Mine mine : minesMap.values()) {
             if(mine.isLocationInMine(location)) {
                 return mine;
             }
@@ -121,7 +121,7 @@ public class MineDataManager {
      * @return A mine if the id matches one of the active mines, or null.
      */
     @Nullable
-    public AbstractMine getMineById(String id) {
+    public Mine getMineById(String id) {
         return minesMap.get(id);
     }
 
@@ -130,7 +130,7 @@ public class MineDataManager {
      * @param onDisable Is the plugin being disabled?
      */
     public void clearMines(boolean onDisable) {
-        for(AbstractMine mine : minesMap.values()) {
+        for(Mine mine : minesMap.values()) {
             mine.cleanUp(onDisable);
         }
 

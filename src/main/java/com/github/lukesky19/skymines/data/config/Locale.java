@@ -20,13 +20,13 @@ package com.github.lukesky19.skymines.data.config;
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * The plugin's locale configuration
- * @param configVersion The config version of the file.
+ * @param version The config version.
  * @param prefix The plugin's prefix.
  * @param help The plugin's help message
  * @param reload The plugin's reload message.
@@ -38,14 +38,14 @@ import java.util.List;
  */
 @ConfigSerializable
 public record Locale(
-        String configVersion,
+        int version,
         String prefix,
         List<String> help,
         String reload,
         String noMineWithId,
         String guiOpenError,
-        @NotNull PacketMineMessages packetMineMessages,
-        @NotNull WorldMineMessages worldMineMessages,
+        @NonNull PacketMineMessages packetMineMessages,
+        @NonNull WorldMineMessages worldMineMessages,
         TimeMessage timeMessage) {
 
     /**
@@ -76,8 +76,7 @@ public record Locale(
             String canNotPlaceBlock,
             String cooldown,
             String timeInvalidLessThenOne,
-            String timeInvalidLessThenZero
-    ) {}
+            String timeInvalidLessThenZero) {}
 
     /**
      * This record contains messages related to world mines.
@@ -86,8 +85,10 @@ public record Locale(
      * @param blockAlreadyLocked The message sent to the player locking a block for another player, but is already locked.
      * @param blockUnlocked The message sent to the player when a block is unlocked.
      * @param blockLocked The message sent to the player when a block is locked.
+     * @param blocksLocked The message sent to the player when all unlocked blocks were locked.
      * @param playerBlockUnlocked The message sent to the player who unlocked a block for another player on success.
      * @param playerBlockLocked The message sent to the player who locked a block for another player on success.
+     * @param playerBlocksLocked The message sent to the player who locked all blocks for another player on success.
      * @param blockBreakNotUnlocked The message sent to the player trying to break a block, but the breaking was cancelled because the block was not unlocked.
      * @param blockBreakNotAllowed The message sent to the player trying to break a block, but the breaking was cancelled.
      * @param blockBreakNotPlayerPlaced The message sent to the player trying to break a block, but the breaking was cancelled because it was not a player-placed block.
@@ -96,8 +97,11 @@ public record Locale(
      * @param blockPlaceNotAllowed The message sent to the player trying to place a block, but the placement was cancelled.
      * @param blockInteractionNotUnlocked The message sent to the player when attempting a block interaction, but the block is not unlocked.
      * @param blockInteractionNotAllowed The message sent to the player when attempting a block interaction, but is not allowed for said block.
-     * @param notEnoughMoney The message sent to the player when trying to unlock a block through purchase, but lacks the funds to do so.
+     * @param notEnoughCurrency The message sent to the player when trying to unlock a block through purchase, but lacks the funds to do so.
+     * @param blockNotPurchasable The message sent to the player when a block is not purchasable for a particular currency.
      * @param guiErrorNotInMine The message sent to the player attempting to open a shop GUI while not inside a mine.
+     * @param moneyCurrencyName The currency name for the money currency.
+     * @param playerPointsCurrencyName The currency name for player points.
      */
     @ConfigSerializable
     public record WorldMineMessages(
@@ -106,8 +110,10 @@ public record Locale(
             String blockAlreadyLocked,
             String blockUnlocked,
             String blockLocked,
+            String blocksLocked,
             String playerBlockUnlocked,
             String playerBlockLocked,
+            String playerBlocksLocked,
             String blockBreakNotUnlocked,
             String blockBreakNotAllowed,
             String blockBreakNotPlayerPlaced,
@@ -116,9 +122,11 @@ public record Locale(
             String blockPlaceNotAllowed,
             String blockInteractionNotUnlocked,
             String blockInteractionNotAllowed,
-            String notEnoughMoney,
-            String guiErrorNotInMine
-    ) {}
+            String notEnoughCurrency,
+            String blockNotPurchasable,
+            String guiErrorNotInMine,
+            String moneyCurrencyName,
+            String playerPointsCurrencyName) {}
 
     /**
      * This record contains the configuration to create a formatted timestamp message.

@@ -19,7 +19,7 @@ package com.github.lukesky19.skymines.database.tables;
 
 import com.github.lukesky19.skylib.api.database.parameter.impl.UUIDParameter;
 import com.github.lukesky19.skymines.database.QueueManager;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,8 +29,8 @@ import java.util.concurrent.CompletableFuture;
  * This class is used to create and interface with the player ids table in the database.
  */
 public class PlayerIdsTable {
-    private final @NotNull QueueManager queueManager;
-    private final @NotNull String tableName = "skymines_player_ids";
+    private final @NonNull QueueManager queueManager;
+    private final @NonNull String tableName = "skymines_player_ids";
 
     /**
      * Default Constructor.
@@ -46,7 +46,7 @@ public class PlayerIdsTable {
      * Constructor
      * @param queueManager A {@link QueueManager} instance.
      */
-    public PlayerIdsTable(@NotNull QueueManager queueManager) {
+    public PlayerIdsTable(@NonNull QueueManager queueManager) {
         this.queueManager = queueManager;
     }
 
@@ -65,7 +65,7 @@ public class PlayerIdsTable {
      * @param uuid The {@link UUID} of the player.
      * @return A {@link CompletableFuture} of type {@link Boolean} where true is successful, otherwise false. If the player id already exists it will also return false.
      */
-    public @NotNull CompletableFuture<Boolean> insertPlayerId(@NotNull UUID uuid) {
+    public @NonNull CompletableFuture<Boolean> insertPlayerId(@NonNull UUID uuid) {
         String insertMineIdSql = "INSERT INTO " + tableName + " (player_id) VALUES (?) ON CONFLICT (player_id) DO NOTHING";
 
         UUIDParameter playerIdParameter = new UUIDParameter(uuid);

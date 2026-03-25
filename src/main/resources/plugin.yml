@@ -7,9 +7,10 @@ load: POSTWORLD
 depend:
   - SkyLib
   - WorldGuard
-  - Vault
 softdepend:
   - Multiverse-Core
+  - Vault
+  - PlayerPoints
 
 permissions:
   skymines.commands.skymines:
@@ -29,3 +30,5 @@ permissions:
     description: The permission to remove time to a mine for a player.
   skymines.commands.skymines.set:
     description: The permission to set the time to a mine for a player.
+  skymines.commands.skymines.blocks:
+      description: The permission to modify the blocks a player can access in a mine.

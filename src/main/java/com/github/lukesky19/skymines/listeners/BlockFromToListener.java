@@ -18,18 +18,18 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFromToEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listens for when a block moves from one location to another (i.e., water and lava).
  */
 public class BlockFromToListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -46,7 +46,7 @@ public class BlockFromToListener implements Listener {
      * Constructor
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public BlockFromToListener(@NotNull MineDataManager mineDataManager) {
+    public BlockFromToListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -56,7 +56,7 @@ public class BlockFromToListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockFromTo(BlockFromToEvent blockFromToEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(blockFromToEvent.getBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(blockFromToEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleBlockFromToEvent(blockFromToEvent);
         }

@@ -22,8 +22,8 @@ import com.github.lukesky19.skymines.util.PluginUtils;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Location;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,14 +35,17 @@ import java.util.Map;
  */
 public class PlayerData {
     // Packet Mines
-    private final @NotNull Map<Location, BlockData> blockDataByLocation = new HashMap<>();
-    private @NotNull Map<String, Long> mineTimeByMineId = new HashMap<>();
+    private final @NonNull Map<Location, BlockData> blockDataByLocation = new HashMap<>();
+    private @NonNull Map<String, Long> mineTimeByMineId = new HashMap<>();
 
     // World Mines
-    private @NotNull Map<String, List<BlockType>> unlockedBlocksByMineId = new HashMap<>();
+    private @NonNull Map<String, List<BlockType>> unlockedBlocksByMineId = new HashMap<>();
 
-    // Other
+    // BossBar
     private @Nullable BossBar bossBar;
+
+    // Message Cooldown
+    private @Nullable Long messageCooldown;
 
     /**
      * Default Constructor
@@ -54,7 +57,7 @@ public class PlayerData {
      * @param mineTimeByMineId A {@link Map} mapping mine ids to mine time as a {@link Long}.
      * @param unlockedBlocksByMineId A {@link Map} mapping mine ids to a {@link List} of {@link BlockType}s.
      */
-    public PlayerData(@NotNull Map<String, Long> mineTimeByMineId, @NotNull Map<String, List<BlockType>> unlockedBlocksByMineId) {
+    public PlayerData(@NonNull Map<String, Long> mineTimeByMineId, @NonNull Map<String, List<BlockType>> unlockedBlocksByMineId) {
         this.mineTimeByMineId = mineTimeByMineId;
         this.unlockedBlocksByMineId = unlockedBlocksByMineId;
     }
@@ -64,7 +67,7 @@ public class PlayerData {
      * @param mineId The mine id to check time for.
      * @return true if the player has time for the provided mine id, otherwise false.
      */
-    public boolean hasMineTime(@NotNull String mineId) {
+    public boolean hasMineTime(@NonNull String mineId) {
         return mineTimeByMineId.containsKey(mineId);
     }
 
@@ -73,7 +76,7 @@ public class PlayerData {
      * @param mineId The mine id to get time for.
      * @return The player's time to access the mine. If they have no time this returns 0.
      */
-    public long getMineTime(@NotNull String mineId) {
+    public long getMineTime(@NonNull String mineId) {
         return mineTimeByMineId.getOrDefault(mineId, 0L);
     }
 
@@ -83,7 +86,7 @@ public class PlayerData {
      * @param mineId The mine id to increment mine time for.
      * @param timeSeconds The time in seconds to add.
      */
-    public void incrementMineTime(@NotNull String mineId, long timeSeconds) {
+    public void incrementMineTime(@NonNull String mineId, long timeSeconds) {
         if(mineTimeByMineId.containsKey(mineId)) {
             mineTimeByMineId.put(mineId, (mineTimeByMineId.get(mineId) + timeSeconds));
         } else {
@@ -98,7 +101,7 @@ public class PlayerData {
      * @param mineId The mine id to increment mine time for.
      * @param timeSeconds The time in seconds to add.
      */
-    public void decrementMineTime(@NotNull String mineId, long timeSeconds) {
+    public void decrementMineTime(@NonNull String mineId, long timeSeconds) {
         if(!mineTimeByMineId.containsKey(mineId)) return;
 
         // Calculate the updated time
@@ -119,7 +122,7 @@ public class PlayerData {
      * @param mineId The id of the mine.
      * @param timeSeconds The time in seconds.
      */
-    public void setMineTime(@NotNull String mineId, long timeSeconds) {
+    public void setMineTime(@NonNull String mineId, long timeSeconds) {
         if(!mineTimeByMineId.containsKey(mineId)) return;
 
         mineTimeByMineId.put(mineId, timeSeconds);
@@ -129,7 +132,7 @@ public class PlayerData {
      * Get a {@link Map} mapping mine ids to mine time.
      * @return A {@link Map} mapping mine ids to mine time.
      */
-    public @NotNull Map<String, Long> getMineTimesByMineIdMap() {
+    public @NonNull Map<String, Long> getMineTimesByMineIdMap() {
         return mineTimeByMineId;
     }
 
@@ -138,7 +141,7 @@ public class PlayerData {
      * @param location The {@link Location} to check ran through {@link PluginUtils#getCleanLocation(Location)}.
      * @return true if on cooldown, otherwise false.
      */
-    public boolean isLocationOnCooldown(@NotNull Location location) {
+    public boolean isLocationOnCooldown(@NonNull Location location) {
         Location cleanLocation = PluginUtils.getCleanLocation(location);
         if(!blockDataByLocation.containsKey(cleanLocation)) return false;
 
@@ -150,7 +153,7 @@ public class PlayerData {
      * @param location A {@link Location} ran through {@link PluginUtils#getCleanLocation(Location)}.
      * @return The cooldown in seconds as a {@link Long} or null if no cooldown.
      */
-    public @Nullable Long getLocationCooldownSeconds(@NotNull Location location) {
+    public @Nullable Long getLocationCooldownSeconds(@NonNull Location location) {
         @Nullable BlockData blockData = blockDataByLocation.get(location);
         if(blockData == null) return null;
 
@@ -161,7 +164,7 @@ public class PlayerData {
      * Get a {@link Map} mapping {@link Location}s to {@link BlockData} for locations that are on cooldown.
      * @return A {@link Map} mapping {@link Location}s to {@link BlockData}
      */
-    public @NotNull Map<Location, BlockData> getBlockDataOnCooldown() {
+    public @NonNull Map<Location, BlockData> getBlockDataOnCooldown() {
         return blockDataByLocation;
     }
 
@@ -171,7 +174,7 @@ public class PlayerData {
      * @param replacementType The {@link BlockType} that is displayed to the client while on cooldown.
      * @param cooldownSeconds The cooldown in seconds.
      */
-    public void addLocationCooldown(@NotNull Location location, @NotNull BlockType replacementType, long cooldownSeconds) {
+    public void addLocationCooldown(@NonNull Location location, @NonNull BlockType replacementType, long cooldownSeconds) {
         BlockData blockData = new BlockData(replacementType, cooldownSeconds);
 
         blockDataByLocation.put(location, blockData);
@@ -182,7 +185,7 @@ public class PlayerData {
      * @param location A {@link Location} ran through {@link PluginUtils#getCleanLocation(Location)}.
      * @param timeSeconds The time in seconds to remove.
      */
-    public void decrementLocationCooldown(@NotNull Location location, long timeSeconds) {
+    public void decrementLocationCooldown(@NonNull Location location, long timeSeconds) {
         if(!blockDataByLocation.containsKey(location)) return;
         BlockData blockData = blockDataByLocation.get(location);
 
@@ -202,7 +205,7 @@ public class PlayerData {
      * @param blockType The {@link BlockType} to check.
      * @return true if the player has unlocked access to the block, otherwise false. Will also return false if no data is stored for said mine id.
      */
-    public boolean isBlockTypeUnlocked(@NotNull String mineId, @NotNull BlockType blockType) {
+    public boolean isBlockTypeUnlocked(@NonNull String mineId, @NonNull BlockType blockType) {
         @Nullable List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
         if(unlockedBlocks == null) return false;
 
@@ -214,9 +217,8 @@ public class PlayerData {
      * @param mineId THe mine id to unlock the block for.
      * @param blockType The {@link BlockType}.
      */
-    public void addUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
-        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.getOrDefault(mineId, new ArrayList<>());
-
+    public void addUnlockedBlock(@NonNull String mineId, @NonNull BlockType blockType) {
+        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.computeIfAbsent(mineId, id -> new ArrayList<>());
         unlockedBlocks.add(blockType);
         unlockedBlocksByMineId.put(mineId, unlockedBlocks);
     }
@@ -226,7 +228,7 @@ public class PlayerData {
      * @param mineId THe mine id to lock the block for.
      * @param blockType The {@link BlockType}.
      */
-    public void removeUnlockedBlock(@NotNull String mineId, @NotNull BlockType blockType) {
+    public void removeUnlockedBlock(@NonNull String mineId, @NonNull BlockType blockType) {
         @Nullable List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
         if(unlockedBlocks == null) return;
 
@@ -235,10 +237,18 @@ public class PlayerData {
     }
 
     /**
+     * Remove all unlocked blocks for the mine id provided.
+     * @param mineId The mine id to remove unlocked blocks for.
+     */
+    public void removeUnlockedBlocks(@NonNull String mineId) {
+        unlockedBlocksByMineId.remove(mineId);
+    }
+
+    /**
      * Get a {@link Map} mapping mine ids to a {@link List} of {@link BlockType}s.
      * @return A {@link Map} mapping mine ids to a {@link List} of {@link BlockType}s.
      */
-    public @NotNull Map<String, List<BlockType>> getUnlockedBlocksByMineIdMap() {
+    public @NonNull Map<String, List<BlockType>> getUnlockedBlocksByMineIdMap() {
         return unlockedBlocksByMineId;
     }
 
@@ -256,5 +266,31 @@ public class PlayerData {
      */
     public @Nullable BossBar getBossBar() {
         return this.bossBar;
+    }
+
+    /**
+     * Get the next time the player should be sent a message.
+     * @return A {@link Long} to compare against {@link System#currentTimeMillis()} or null.
+     */
+    public @Nullable Long getMessageCooldown() {
+        return messageCooldown;
+    }
+
+    /**
+     * Set the next time the player should be sent a message.
+     * @param messageCooldown A {@link Long} or null.
+     */
+    public void setMessageCooldown(@Nullable Long messageCooldown) {
+        this.messageCooldown = messageCooldown;
+    }
+
+    /**
+     * Based on the current player's message cooldown, should the player be sent a message?
+     * @return true if a message should be sent, or false if on cooldown.
+     */
+    public boolean shouldSendMessage() {
+        if(messageCooldown == null) return true;
+
+        return System.currentTimeMillis() >= messageCooldown;
     }
 }

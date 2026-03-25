@@ -18,19 +18,19 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockDropItemEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class listens to when a block has already been broken and the items have been calculated and dropped.
  * If the event location occurs within a mine, the event is passed to that mine.
  */
 public class BlockDropListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -47,7 +47,7 @@ public class BlockDropListener implements Listener {
      * Constructor
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public BlockDropListener(@NotNull MineDataManager mineDataManager) {
+    public BlockDropListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -57,7 +57,7 @@ public class BlockDropListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockDrop(BlockDropItemEvent blockDropItemEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(blockDropItemEvent.getBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(blockDropItemEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleBlockDropItem(blockDropItemEvent);
         }

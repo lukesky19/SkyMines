@@ -18,19 +18,19 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class listens to when a player places a bucket's contents or fills a bucket and if that location is inside a mine, the event is passed to that mine.
  */
 public class BucketListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -47,7 +47,7 @@ public class BucketListener implements Listener {
      * Constructor
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public BucketListener(@NotNull MineDataManager mineDataManager) {
+    public BucketListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -57,7 +57,7 @@ public class BucketListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBucketScoop(PlayerBucketFillEvent playerBucketFillEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(playerBucketFillEvent.getBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(playerBucketFillEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleBucketFilled(playerBucketFillEvent);
         }
@@ -69,7 +69,7 @@ public class BucketListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBucketEmptied(PlayerBucketEmptyEvent playerBucketEmptyEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(playerBucketEmptyEvent.getBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(playerBucketEmptyEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleBucketEmptied(playerBucketEmptyEvent);
         }

@@ -23,12 +23,12 @@ import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -36,11 +36,11 @@ import java.util.*;
  * Manages {@link BukkitTask}s for the plugin.
  */
 public class TaskManager {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull MineTimeManager mineTimeManager;
-    private final @NotNull CooldownManager cooldownManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull MineTimeManager mineTimeManager;
+    private final @NonNull CooldownManager cooldownManager;
     /**
      * This task manages mine time and the reversion of blocks after the cooldown ends.
      */
@@ -70,11 +70,11 @@ public class TaskManager {
      * @param cooldownManager A {@link CooldownManager} instance.
      */
     public TaskManager(
-            @NotNull SkyMines skyMines,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull PlayerDataManager playerDataManager,
-            @NotNull MineTimeManager mineTimeManager,
-            @NotNull CooldownManager cooldownManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull PlayerDataManager playerDataManager,
+            @NonNull MineTimeManager mineTimeManager,
+            @NonNull CooldownManager cooldownManager) {
         this.skyMines = skyMines;
         this.mineDataManager = mineDataManager;
         this.playerDataManager = playerDataManager;
@@ -87,11 +87,11 @@ public class TaskManager {
      */
     public void startMineTask() {
         mineTask = skyMines.getServer().getScheduler().runTaskTimer(skyMines, () -> {
-            Map<String, AbstractMine> minesMap = new HashMap<>(mineDataManager.getMinesMap());
+            Map<String, Mine> minesMap = new HashMap<>(mineDataManager.getMinesMap());
 
-            for(Map.Entry<String, AbstractMine> mineEntry : minesMap.entrySet()) {
+            for(Map.Entry<String, Mine> mineEntry : minesMap.entrySet()) {
                 String mineId = mineEntry.getKey();
-                AbstractMine mine = mineEntry.getValue();
+                Mine mine = mineEntry.getValue();
                 Map<UUID, PlayerData> playerDataMap = new HashMap<>(playerDataManager.getPlayerDataMap());
 
                 for(Map.Entry<UUID, PlayerData> playerDataEntry : playerDataMap.entrySet()) {

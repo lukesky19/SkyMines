@@ -19,8 +19,8 @@ package com.github.lukesky19.skymines.util;
 
 import org.bukkit.block.BlockType;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ import java.util.Map;
  * This class has utilities related to {@link ItemType}s.
  */
 public class ItemTypeUtils {
-    private static final @NotNull Map<ItemType, BlockType> bucketMapping = Map.of(
+    private static final @NonNull Map<ItemType, BlockType> bucketMapping = Map.of(
             ItemType.AXOLOTL_BUCKET, BlockType.WATER,
             ItemType.COD_BUCKET, BlockType.WATER,
             ItemType.PUFFERFISH_BUCKET, BlockType.WATER,
@@ -55,7 +55,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to get the {@link BlockType} for.
      * @return The appropriate {@link BlockType} or null.
      */
-    public static @Nullable BlockType mapBucketItemTypeToBlockType(@NotNull ItemType itemType) {
+    public static @Nullable BlockType mapBucketItemTypeToBlockType(@NonNull ItemType itemType) {
         return bucketMapping.get(itemType);
     }
 
@@ -64,7 +64,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a hoe, otherwise false.
      */
-    public static boolean isItemTypeHoe(@NotNull ItemType itemType) {
+    public static boolean isItemTypeHoe(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.WOODEN_HOE)
                 || itemType.equals(ItemType.STONE_HOE)
                 || itemType.equals(ItemType.IRON_HOE)
@@ -78,7 +78,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a shovel, otherwise false.
      */
-    public static boolean isItemTypeShovel(@NotNull ItemType itemType) {
+    public static boolean isItemTypeShovel(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.WOODEN_SHOVEL)
                 || itemType.equals(ItemType.STONE_SHOVEL)
                 || itemType.equals(ItemType.IRON_SHOVEL)
@@ -92,7 +92,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if bone meal, otherwise false.
      */
-    public static boolean isItemTypeBoneMeal(@NotNull ItemType itemType) {
+    public static boolean isItemTypeBoneMeal(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.BONE_MEAL);
     }
 
@@ -101,7 +101,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if shears, otherwise false.
      */
-    public static boolean isItemTypeShears(@NotNull ItemType itemType) {
+    public static boolean isItemTypeShears(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.SHEARS);
     }
 
@@ -110,7 +110,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a trial key or ominous trial key, otherwise false.
      */
-    public static boolean isItemTypeKey(@NotNull ItemType itemType) {
+    public static boolean isItemTypeKey(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.TRIAL_KEY) || itemType.equals(ItemType.OMINOUS_TRIAL_KEY);
     }
 
@@ -119,7 +119,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a glass bottle, otherwise false.
      */
-    public static boolean isItemTypeGlassBottle(@NotNull ItemType itemType) {
+    public static boolean isItemTypeGlassBottle(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.GLASS_BOTTLE);
     }
 
@@ -128,7 +128,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a glowstone block or false.
      */
-    public static boolean isItemTypeGlowstone(@NotNull ItemType itemType) {
+    public static boolean isItemTypeGlowstone(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.GLOWSTONE);
     }
 
@@ -137,7 +137,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a flint and steel, otherwise false.
      */
-    public static boolean isItemTypeFlintAndSteel(@NotNull ItemType itemType) {
+    public static boolean isItemTypeFlintAndSteel(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.FLINT_AND_STEEL);
     }
 
@@ -146,7 +146,7 @@ public class ItemTypeUtils {
      * @param itemType The {@link ItemType} to check.
      * @return true if a fire charge, otherwise false.
      */
-    public static boolean isItemTypeFireCharge(@NotNull ItemType itemType) {
+    public static boolean isItemTypeFireCharge(@NonNull ItemType itemType) {
         return itemType.equals(ItemType.FIRE_CHARGE);
     }
 }

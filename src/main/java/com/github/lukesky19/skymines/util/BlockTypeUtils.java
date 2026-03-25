@@ -18,7 +18,7 @@
 package com.github.lukesky19.skymines.util;
 
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class has utilities related to {@link BlockType}s.
@@ -39,7 +39,7 @@ public class BlockTypeUtils {
      * @param blockType The {@link BlockType} to check.
      * @return true if a bed, otherwise false.
      */
-    public static boolean isBlockTypeBed(@NotNull BlockType blockType) {
+    public static boolean isBlockTypeBed(@NonNull BlockType blockType) {
         return blockType.equals(BlockType.BLACK_BED)
                 || blockType.equals(BlockType.BLUE_BED)
                 || blockType.equals(BlockType.BROWN_BED)
@@ -63,7 +63,7 @@ public class BlockTypeUtils {
      * @param blockType The {@link BlockType} to check.
      * @return true if a respawn anchor, otherwise false.
      */
-    public static boolean isBlockTypeRespawnAnchor(@NotNull BlockType blockType) {
+    public static boolean isBlockTypeRespawnAnchor(@NonNull BlockType blockType) {
         return blockType.equals(BlockType.BLACK_BED)
                 || blockType.equals(BlockType.BLUE_BED)
                 || blockType.equals(BlockType.BROWN_BED)

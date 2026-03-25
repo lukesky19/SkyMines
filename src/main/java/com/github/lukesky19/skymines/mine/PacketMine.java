@@ -19,21 +19,24 @@ package com.github.lukesky19.skymines.mine;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.player.PlayerUtil;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
 import com.github.lukesky19.skymines.data.packet.BlockData;
 import com.github.lukesky19.skymines.data.packet.PacketBlock;
+import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.SettingsManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
 import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
+import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -47,12 +50,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.hanging.HangingPlaceEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootTable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -62,32 +69,34 @@ import java.util.*;
  * This allows the existence of a per-player mine system.
  */
 @SuppressWarnings("deprecation")
-public class PacketMine extends AbstractMine {
+public class PacketMine implements Mine {
     // SkyMines
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull CooldownManager cooldownManager;
-    private final @NotNull MineTimeManager mineTimeManager;
-    private final @NotNull BossBarManager bossBarManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull SettingsManager settingsManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull CooldownManager cooldownManager;
+    private final @NonNull MineTimeManager mineTimeManager;
+    private final @NonNull BossBarManager bossBarManager;
 
     // WorldGuard
     private @Nullable RegionManager regionManager;
 
     // Mine Data
     private boolean status = true;
-    private final @NotNull PacketMineConfig mineConfig;
+    private final @NonNull PacketMineConfig mineConfig;
     private @Nullable String mineId;
     private @Nullable World mineWorld;
     private @Nullable ProtectedRegion mineRegion;
     /**
      * Contains the data for a {@link ProtectedRegion} and the {@link List} of {@link PacketBlock}s that contains the data to identify if a block can be mined and the data required to replace the block.
      */
-    private final @NotNull Map<ProtectedRegion, List<PacketBlock>> blockDataByRegion = new HashMap<>();
+    private final @NonNull Map<ProtectedRegion, List<PacketBlock>> blockDataByRegion = new HashMap<>();
 
     /**
      * Default Constructor.
-     * You should use {@link #PacketMine(SkyMines, LocaleManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
-     * @deprecated You should use {@link #PacketMine(SkyMines, LocaleManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
+     * You should use {@link #PacketMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
+     * @deprecated You should use {@link #PacketMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, CooldownManager, MineTimeManager, BossBarManager, PacketMineConfig)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -98,21 +107,27 @@ public class PacketMine extends AbstractMine {
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
+     * @param settingsManager A {@link SettingsManager} instance.
      * @param localeManager A {@link LocaleManager} instance.
+     * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param cooldownManager A {@link CooldownManager} instance.
      * @param mineTimeManager A {@link MineTimeManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      * @param mineConfig The {@link PacketMineConfig} to create the mine with.
      */
     public PacketMine(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull CooldownManager cooldownManager,
-            @NotNull MineTimeManager mineTimeManager,
-            @NotNull BossBarManager bossBarManager,
-            @NotNull PacketMineConfig mineConfig) {
+            @NonNull SkyMines skyMines,
+            @NonNull SettingsManager settingsManager,
+            @NonNull LocaleManager localeManager,
+            @NonNull PlayerDataManager playerDataManager,
+            @NonNull CooldownManager cooldownManager,
+            @NonNull MineTimeManager mineTimeManager,
+            @NonNull BossBarManager bossBarManager,
+            @NonNull PacketMineConfig mineConfig) {
         this.skyMines = skyMines;
+        this.settingsManager = settingsManager;
         this.localeManager = localeManager;
+        this.playerDataManager = playerDataManager;
         this.cooldownManager = cooldownManager;
         this.mineTimeManager = mineTimeManager;
         this.bossBarManager = bossBarManager;
@@ -123,20 +138,20 @@ public class PacketMine extends AbstractMine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.serialize("Unable to create mine due to a null mine id."));
+            logger.error(AdventureUtil.deserialize("Unable to create mine due to a null mine id."));
             status = false;
             return;
         }
 
         if(mineConfig.worldName() == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to a world name not being configured.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to a world name not being configured.</red>"));
             status = false;
             return;
         }
 
         World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
         if(mineWorld == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
             status = false;
             return;
         }
@@ -144,7 +159,7 @@ public class PacketMine extends AbstractMine {
 
         RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(mineWorld));
         if(regionManager == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create mine due to an invalid region manager. Is the world of name " + mineConfig.worldName() + " valid?</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to an invalid region manager. Is the world of name " + mineConfig.worldName() + " valid?</red>"));
             status = false;
             return;
         }
@@ -152,7 +167,7 @@ public class PacketMine extends AbstractMine {
 
         ProtectedRegion parentRegion = getRegion(mineConfig.parentRegion());
         if(parentRegion == null) {
-            logger.error(AdventureUtil.serialize("Unable to create mine due to parent region " + mineConfig.parentRegion() + " not being found."));
+            logger.error(AdventureUtil.deserialize("Unable to create mine due to parent region " + mineConfig.parentRegion() + " not being found."));
             status = false;
             return;
         }
@@ -161,7 +176,7 @@ public class PacketMine extends AbstractMine {
         for(PacketMineConfig.ChildRegionData childRegionData :  mineConfig.childRegions()) {
             ProtectedRegion childRegion = getRegion(childRegionData.region());
             if(childRegion == null) {
-                logger.warn(AdventureUtil.serialize("Unable to find a child region for " + childRegionData.region() + "."));
+                logger.warn(AdventureUtil.deserialize("Unable to find a child region for " + childRegionData.region() + "."));
                 continue;
             }
 
@@ -170,24 +185,16 @@ public class PacketMine extends AbstractMine {
                 PacketMineConfig.BlockData blockData = childRegionData.blocksAllowed().get(i);
 
                 if(blockData.block() == null || blockData.replacement() == null) {
-                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of a world type or replacement type is not configured for mine " + mineId + "."));
+                    logger.warn(AdventureUtil.deserialize("Invalid block data config at index " + i + ". This is because of a world type or replacement type is not configured for mine " + mineId + "."));
                     continue;
                 }
 
-                @NotNull Optional<BlockType> optionalBlockWorldType = RegistryUtil.getBlockType(logger, blockData.block());
-                @NotNull Optional<BlockType> optionalBlockReplacementType = RegistryUtil.getBlockType(logger, blockData.replacement());
-
-                if(optionalBlockWorldType.isEmpty() || optionalBlockReplacementType.isEmpty()) {
-                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
-                    continue;
-                }
-
-                BlockType worldBlockType = optionalBlockWorldType.get();
-                BlockType replacementBlockType = optionalBlockReplacementType.get();
+                BlockType worldBlockType = blockData.block();
+                BlockType replacementBlockType = blockData.replacement();
                 Material worldMaterial = worldBlockType.asMaterial();
                 Material replacementMaterial = replacementBlockType.asMaterial();
                 if(worldMaterial == null || replacementMaterial == null) {
-                    logger.warn(AdventureUtil.serialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
+                    logger.warn(AdventureUtil.deserialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
                     continue;
                 }
 
@@ -197,7 +204,7 @@ public class PacketMine extends AbstractMine {
                     if(key != null) {
                         lootTable = skyMines.getServer().getLootTable(key);
                     } else {
-                        logger.warn(AdventureUtil.serialize("Unable to get loot table due to a null NamespacedKey at index " + i + " for mine " + mineId + "."));
+                        logger.warn(AdventureUtil.deserialize("Unable to get loot table due to a null NamespacedKey at index " + i + " for mine " + mineId + "."));
                     }
                 }
 
@@ -225,7 +232,7 @@ public class PacketMine extends AbstractMine {
      * @return true if the location is inside the mine's parent region, otherwise false.
      */
     @Override
-    public boolean isLocationInMine(@NotNull Location location) {
+    public boolean isLocationInMine(@NonNull Location location) {
         if(mineWorld == null) return false;
         if(mineRegion == null) return false;
 
@@ -241,7 +248,7 @@ public class PacketMine extends AbstractMine {
      * @return true if the block can be mined, otherwise false.
      */
     @Override
-    public boolean isBlockMineable(@NotNull UUID uuid, @NotNull Location location, @NotNull BlockType blockType) {
+    public boolean isBlockMineable(@NonNull UUID uuid, @NonNull Location location, @NonNull BlockType blockType) {
         if(mineId == null) return false;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) return false;
 
@@ -258,7 +265,7 @@ public class PacketMine extends AbstractMine {
      * @return true if on cooldown, otherwise false.
      */
     @Override
-    public boolean isLocationOnCooldown(@NotNull UUID uuid, @NotNull Location location) {
+    public boolean isLocationOnCooldown(@NonNull UUID uuid, @NonNull Location location) {
         return cooldownManager.isLocationOnCooldown(uuid, location);
     }
 
@@ -272,16 +279,29 @@ public class PacketMine extends AbstractMine {
      * @param blockBreakEvent A BlockBreakEvent
      */
     @Override
-    public void handleBlockBreak(@NotNull BlockBreakEvent blockBreakEvent) {
+    public void handleBlockBreak(@NonNull BlockBreakEvent blockBreakEvent) {
         if(mineId == null) return;
+
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             blockBreakEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            }
+
             return;
         }
 
@@ -293,12 +313,29 @@ public class PacketMine extends AbstractMine {
 
         if(isLocationOnCooldown(uuid, location)) {
             blockBreakEvent.setCancelled(true);
+
             sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+            }
         } else {
             if(!isBlockMineable(uuid, location, blockType)) {
                 blockBreakEvent.setCancelled(true);
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+                }
             }
         }
     }
@@ -310,17 +347,29 @@ public class PacketMine extends AbstractMine {
      * @param blockDropItemEvent A BlockDropItemEvent
      */
     @Override
-    public void handleBlockDropItem(@NotNull BlockDropItemEvent blockDropItemEvent) {
+    public void handleBlockDropItem(@NonNull BlockDropItemEvent blockDropItemEvent) {
         if(mineId == null) return;
 
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             blockDropItemEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            }
+
             return;
         }
 
@@ -381,16 +430,29 @@ public class PacketMine extends AbstractMine {
      * @param playerBucketFillEvent A {@link PlayerBucketFillEvent}
      */
     @Override
-    public void handleBucketFilled(@NotNull PlayerBucketFillEvent playerBucketFillEvent) {
+    public void handleBucketFilled(@NonNull PlayerBucketFillEvent playerBucketFillEvent) {
         if(mineId == null) return;
+
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerBucketFillEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             playerBucketFillEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            }
+
             return;
         }
 
@@ -446,14 +508,25 @@ public class PacketMine extends AbstractMine {
      * @param playerBucketEmptyEvent A {@link PlayerBucketEmptyEvent}
      */
     @Override
-    public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+    public void handleBucketEmptied(@NonNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerBucketEmptyEvent.getPlayer();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         playerBucketEmptyEvent.setCancelled(true);
-        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+
+        // Send the player a message if not on cooldown.
+        if(playerData.shouldSendMessage()) {
+            // Add a 10-second message cooldown
+            playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+            // Send the message
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+        }
     }
 
     /**
@@ -467,11 +540,15 @@ public class PacketMine extends AbstractMine {
      * @param playerInteractEvent A {@link PlayerInteractEvent}.
      */
     @Override
-    public void handlePlayerInteract(@NotNull PlayerInteractEvent playerInteractEvent) {
+    public void handlePlayerInteract(@NonNull PlayerInteractEvent playerInteractEvent) {
         if(mineId == null) return;
+
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -485,7 +562,16 @@ public class PacketMine extends AbstractMine {
 
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             playerInteractEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            }
+
             return;
         }
 
@@ -495,12 +581,29 @@ public class PacketMine extends AbstractMine {
 
         if(isLocationOnCooldown(uuid, location)) {
             playerInteractEvent.setCancelled(true);
+
             sendBulkBlockUpdates(player, uuid);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+            }
         } else {
             if(!isBlockMineable(uuid, location, blockType)) {
                 playerInteractEvent.setCancelled(true);
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+                }
             }
         }
     }
@@ -515,16 +618,29 @@ public class PacketMine extends AbstractMine {
      * @param playerHarvestBlockEvent A {@link PlayerHarvestBlockEvent}.
      */
     @Override
-    public void handlePlayerHarvestBlockEvent(@NotNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
+    public void handlePlayerHarvestBlockEvent(@NonNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
         if(mineId == null) return;
+
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
         if(!mineTimeManager.hasMineTime(uuid, mineId)) {
             playerHarvestBlockEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+            }
+
             return;
         }
 
@@ -579,7 +695,7 @@ public class PacketMine extends AbstractMine {
      * @param blockFertilizeEvent A {@link BlockFertilizeEvent}
      */
     @Override
-    public void handleBlockFertilizeEvent(@NotNull BlockFertilizeEvent blockFertilizeEvent) {}
+    public void handleBlockFertilizeEvent(@NonNull BlockFertilizeEvent blockFertilizeEvent) {}
 
     /**
      * Handles a {@link StructureGrowEvent}
@@ -587,7 +703,15 @@ public class PacketMine extends AbstractMine {
      * @param structureGrowEvent A {@link StructureGrowEvent}
      */
     @Override
-    public void handleStructureGrowEvent(@NotNull StructureGrowEvent structureGrowEvent) {}
+    public void handleStructureGrowEvent(@NonNull StructureGrowEvent structureGrowEvent) {}
+
+    /**
+     * Handles an {@link InventoryMoveItemEvent}
+     * This method does nothing.
+     * @param inventoryMoveItemEvent A {@link InventoryMoveItemEvent}
+     */
+    @Override
+    public void handleHopperMoveItem(@NonNull InventoryMoveItemEvent inventoryMoveItemEvent) {}
 
     /**
      * Handles an {@link EntityChangeBlockEvent}
@@ -595,7 +719,39 @@ public class PacketMine extends AbstractMine {
      * @param entityChangeBlockEvent A {@link EntityChangeBlockEvent}
      */
     @Override
-    public void handleEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent entityChangeBlockEvent) {}
+    public void handleEntityChangeBlockEvent(@NonNull EntityChangeBlockEvent entityChangeBlockEvent) {}
+
+    /**
+     * Handles an {@link HangingPlaceEvent}
+     * This method does nothing.
+     * @param hangingPlaceEvent A {@link HangingPlaceEvent}
+     */
+    @Override
+    public void handleHangingPlace(@NonNull HangingPlaceEvent hangingPlaceEvent) {}
+
+    /**
+     * Handles a {@link HangingBreakEvent}.
+     * This method does nothing.
+     * @param hangingBreakEvent A {@link HangingBreakEvent}.
+     */
+    @Override
+    public void handleHangingBreakEvent(@NonNull HangingBreakEvent hangingBreakEvent) {}
+
+    /**
+     * Handles a {@link HangingBreakByEntityEvent}.
+     * This method does nothing.
+     * @param hangingBreakByEntityEvent A {@link HangingBreakByEntityEvent}.
+     */
+    @Override
+    public void handleHangingBreakByEntityEvent(@NonNull HangingBreakByEntityEvent hangingBreakByEntityEvent) {}
+
+    /**
+     * Handles a {@link PlayerItemFrameChangeEvent}.
+     * This method does nothing.
+     * @param playerItemFrameChangeEvent A {@link PlayerItemFrameChangeEvent}.
+     */
+    @Override
+    public void handlePlayerItemFrameChangeEvent(@NonNull PlayerItemFrameChangeEvent playerItemFrameChangeEvent) {}
 
     /**
      * The event is cancelled regardless if a player initiated it or not.
@@ -603,7 +759,7 @@ public class PacketMine extends AbstractMine {
      * @param blockExplodeEvent A {@link BlockExplodeEvent}
      */
     @Override
-    public void handleBlockExplodeEvent(@Nullable Player player, @NotNull BlockExplodeEvent blockExplodeEvent) {
+    public void handleBlockExplodeEvent(@Nullable Player player, @NonNull BlockExplodeEvent blockExplodeEvent) {
         blockExplodeEvent.setCancelled(true);
     }
 
@@ -613,7 +769,7 @@ public class PacketMine extends AbstractMine {
      * @param entityExplodeEvent An {@link EntityExplodeEvent}
      */
     @Override
-    public void handleEntityExplodeEvent(@Nullable Player player, @NotNull EntityExplodeEvent entityExplodeEvent) {
+    public void handleEntityExplodeEvent(@Nullable Player player, @NonNull EntityExplodeEvent entityExplodeEvent) {
         entityExplodeEvent.setCancelled(true);
     }
 
@@ -623,7 +779,7 @@ public class PacketMine extends AbstractMine {
      * @param blockFromToEvent A {@link BlockFromToEvent}.
      */
     @Override
-    public void handleBlockFromToEvent(@NotNull BlockFromToEvent blockFromToEvent) {
+    public void handleBlockFromToEvent(@NonNull BlockFromToEvent blockFromToEvent) {
         blockFromToEvent.setCancelled(true);
     }
 
@@ -634,14 +790,25 @@ public class PacketMine extends AbstractMine {
      * @param blockPlaceEvent A BlockPlaceEvent
      */
     @Override
-    public void handleBlockPlace(@NotNull BlockPlaceEvent blockPlaceEvent) {
+    public void handleBlockPlace(@NonNull BlockPlaceEvent blockPlaceEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = blockPlaceEvent.getPlayer();
-        Locale locale = localeManager.getLocale();
+        PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         blockPlaceEvent.setCancelled(true);
-        player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+
+        // Send the player a message if not on cooldown.
+        if(playerData.shouldSendMessage()) {
+            // Add a 10-second message cooldown
+            playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+            // Send the message
+            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+        }
     }
 
     /**
@@ -651,7 +818,7 @@ public class PacketMine extends AbstractMine {
      * @param playerMoveEvent A {@link PlayerMoveEvent}.
      */
     @Override
-    public void handlePlayerMoveEvent(@NotNull PlayerMoveEvent playerMoveEvent) {
+    public void handlePlayerMoveEvent(@NonNull PlayerMoveEvent playerMoveEvent) {
         Location from = playerMoveEvent.getFrom();
         Location to = playerMoveEvent.getTo();
 
@@ -672,7 +839,7 @@ public class PacketMine extends AbstractMine {
      * @param playerTeleportEvent A {@link PlayerTeleportEvent}.
      */
     @Override
-    public void handlePlayerTeleportEvent(@NotNull PlayerTeleportEvent playerTeleportEvent) {
+    public void handlePlayerTeleportEvent(@NonNull PlayerTeleportEvent playerTeleportEvent) {
         Location from = playerTeleportEvent.getFrom();
         Location to = playerTeleportEvent.getTo();
 
@@ -692,7 +859,7 @@ public class PacketMine extends AbstractMine {
      * @param playerChunkLoadEvent A {@link PlayerChunkLoadEvent}.
      */
     @Override
-    public void handlePlayerChunkLoad(@NotNull PlayerChunkLoadEvent playerChunkLoadEvent) {
+    public void handlePlayerChunkLoad(@NonNull PlayerChunkLoadEvent playerChunkLoadEvent) {
         Player player = playerChunkLoadEvent.getPlayer();
         UUID uuid = player.getUniqueId();
         Location location = player.getLocation();
@@ -708,7 +875,7 @@ public class PacketMine extends AbstractMine {
      * @param uuid The {@link UUID} of the player.
      */
     @Override
-    public void createAndShowBossBar(@NotNull Player player, @NotNull UUID uuid) {
+    public void createAndShowBossBar(@NonNull Player player, @NonNull UUID uuid) {
         if(mineId == null) return;
 
         long mineTimeSeconds = mineTimeManager.getMineTime(uuid, mineId);
@@ -720,25 +887,25 @@ public class PacketMine extends AbstractMine {
             bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
             bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
         } catch (IllegalArgumentException e) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
             return;
         }
 
         BossBar bossBar;
         if(mineTimeSeconds > 0) {
             if(mineConfig.bossBar().timeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create a boss bar due to invalid boss bar time text."));
+                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create a boss bar due to invalid boss bar time text."));
                 return;
             }
 
-            bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
+            bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         } else {
             if(mineConfig.bossBar().noTimeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create a boss bar due to invalid boss bar no time text."));
+                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create a boss bar due to invalid boss bar no time text."));
                 return;
             }
 
-            bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().noTimeText(), placeholders), 1, bossBarColor, bossBarOverlay);
+            bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().noTimeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         }
 
         bossBarManager.setBossBar(player, uuid, bossBar);
@@ -749,7 +916,7 @@ public class PacketMine extends AbstractMine {
      * @param uuid The {@link UUID} of the player.
      */
     @Override
-    public void updateBossBar(@NotNull UUID uuid) {
+    public void updateBossBar(@NonNull UUID uuid) {
         if(mineId == null) return;
 
         long mineTimeSeconds = mineTimeManager.getMineTime(uuid, mineId);
@@ -760,18 +927,18 @@ public class PacketMine extends AbstractMine {
 
         if(mineTimeSeconds > 0) {
             if(mineConfig.bossBar().timeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update a boss bar due to invalid boss bar time text."));
+                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update a boss bar due to invalid boss bar time text."));
                 return;
             }
 
-            bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().timeText(), placeholders));
+            bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().timeText(), placeholders));
         } else {
             if(mineConfig.bossBar().noTimeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update a boss bar due to invalid boss bar no time text."));
+                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update a boss bar due to invalid boss bar no time text."));
                 return;
             }
 
-            bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().noTimeText(), placeholders));
+            bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().noTimeText(), placeholders));
         }
     }
 
@@ -833,7 +1000,7 @@ public class PacketMine extends AbstractMine {
      * @param player The {@link Player} to send block changes to.
      * @param uuid The {@link UUID} of the player.
      */
-    private void sendBulkBlockUpdates(@NotNull Player player, @NotNull UUID uuid) {
+    private void sendBulkBlockUpdates(@NonNull Player player, @NonNull UUID uuid) {
         Map<Location, BlockData> blockDataMap = cooldownManager.getBlockDataOnCooldown(uuid);
 
         List<BlockState> blockStates = new ArrayList<>();

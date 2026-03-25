@@ -18,6 +18,9 @@
 package com.github.lukesky19.skymines;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.common.abstracts.SkyPlugin;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIListener;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
 import com.github.lukesky19.skymines.commands.SkyMinesCommand;
 import com.github.lukesky19.skymines.database.ConnectionManager;
@@ -29,7 +32,7 @@ import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
 import com.github.lukesky19.skymines.manager.config.SettingsManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.MineManager;
 import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
@@ -37,47 +40,31 @@ import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.manager.task.TaskManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.google.common.collect.ImmutableList;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 /**
  * The main plugin class
  */
-public class SkyMines extends JavaPlugin {
+public class SkyMines extends SkyPlugin {
     private SettingsManager settingsManager;
     private LocaleManager localeManager;
     private MineConfigManager mineConfigManager;
     private GUIConfigManager guiConfigManager;
-    private GUIManager guiManager;
+    private UUIDGUIManager guiManager;
     private MineManager mineManager;
     private MineDataManager mineDataManager;
     private PlayerDataManager playerDataManager;
     private BossBarManager bossBarManager;
     private DatabaseManager databaseManager;
     private TaskManager taskManager;
-
-    // Economy
-    private Economy economy;
-
-    /**
-     * Get the {@link Economy} for the server.
-     * @return The server's {@link Economy}.
-     */
-    public @NotNull Economy getEconomy() {
-        return this.economy;
-    }
 
     /**
      * Default Constructor
@@ -90,23 +77,21 @@ public class SkyMines extends JavaPlugin {
     @Override
     public void onEnable() {
         if(!checkSkyLibVersion()) return;
-        // Check for and set up Vault/Economy.
-        if(!setupEconomy()) return;
 
         // Setup bstats
         int pluginId = 22278;
         new Metrics(this, pluginId);
 
-        // Config Classes
-        settingsManager = new SettingsManager(this);
-        localeManager = new LocaleManager(this, settingsManager);
-        mineConfigManager = new MineConfigManager(this);
-        guiConfigManager = new GUIConfigManager(this);
-
         // Database Classes
         ConnectionManager connectionManager = new ConnectionManager(this);
         QueueManager queueManager = new QueueManager(connectionManager);
         databaseManager = new DatabaseManager(this, connectionManager, queueManager);
+
+        // Config Classes
+        settingsManager = new SettingsManager(this);
+        localeManager = new LocaleManager(this, settingsManager);
+        mineConfigManager = new MineConfigManager(this, databaseManager);
+        guiConfigManager = new GUIConfigManager(this);
 
         // Mine Data Classes
         mineDataManager = new MineDataManager();
@@ -117,18 +102,19 @@ public class SkyMines extends JavaPlugin {
         MineTimeManager mineTimeManager = new MineTimeManager(playerDataManager, bossBarManager);
         CooldownManager cooldownManager = new CooldownManager(this, playerDataManager);
         BlocksManager blocksManager = new BlocksManager(playerDataManager);
+        HookManager hookManager = new HookManager(this);
 
         // Mine Classes
-        mineManager = new MineManager(this, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, bossBarManager, blocksManager);
+        mineManager = new MineManager(this, settingsManager, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, playerDataManager, bossBarManager, blocksManager);
 
         // GUI Classes
-        guiManager = new GUIManager(this);
+        guiManager = new UUIDGUIManager();
 
         // Task Classes
         taskManager = new TaskManager(this, mineDataManager, playerDataManager, mineTimeManager, cooldownManager);
 
         // Register plugin command
-        SkyMinesCommand skyMinesCommand = new SkyMinesCommand(this, localeManager, guiConfigManager, mineConfigManager, guiManager, mineDataManager, mineTimeManager, blocksManager);
+        SkyMinesCommand skyMinesCommand = new SkyMinesCommand(this, localeManager, guiConfigManager, mineConfigManager, guiManager, mineDataManager, mineTimeManager, blocksManager, hookManager);
 
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
                 commands ->
@@ -147,10 +133,14 @@ public class SkyMines extends JavaPlugin {
         pm.registerEvents(new ChunkLoadListener(mineDataManager), this);
         pm.registerEvents(new EntityChangeBlockListener(mineDataManager), this);
         pm.registerEvents(new ExplosionListener(this, mineDataManager), this);
-        pm.registerEvents(new InventoryListener(guiManager), this);
+        pm.registerEvents(new HangingBreakListener(mineDataManager), this);
+        pm.registerEvents(new HangingPlaceListener(mineDataManager), this);
+        pm.registerEvents(new HopperMoveItemListener(mineDataManager), this);
+        pm.registerEvents(new ItemFrameChangeListener(mineDataManager), this);
+        pm.registerEvents(new UUIDGUIListener(guiManager), this);
         pm.registerEvents(new PlayerHarvestBlockListener(mineDataManager), this);
         pm.registerEvents(new PlayerInteractListener(mineDataManager), this);
-        pm.registerEvents(new PlayerJoinListener(mineDataManager, playerDataManager), this);
+        pm.registerEvents(new PlayerJoinListener(mineDataManager, playerDataManager, databaseManager), this);
         pm.registerEvents(new PlayerMoveListener(mineDataManager), this);
         pm.registerEvents(new PlayerQuitListener(playerDataManager, bossBarManager), this);
         pm.registerEvents(new PlayerTeleportListener(mineDataManager), this);
@@ -161,7 +151,7 @@ public class SkyMines extends JavaPlugin {
         List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers().stream().filter(player -> player.isOnline() && player.isConnected()).toList());
         onlinePlayers.forEach(player ->
                 playerDataManager.loadPlayerData(player.getUniqueId()).thenAccept(v -> {
-                    AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                    Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                     if(mine != null) {
                         mine.createAndShowBossBar(player, player.getUniqueId());
                     }
@@ -173,7 +163,7 @@ public class SkyMines extends JavaPlugin {
      */
     @Override
     public void onDisable() {
-        guiManager.closeOpenGUIs(true);
+        if(guiManager != null) guiManager.closeOpenGUIs(true);
 
         if(taskManager != null) {
             taskManager.stopMineTask();
@@ -184,14 +174,15 @@ public class SkyMines extends JavaPlugin {
             mineManager.clearMines(true);
         }
 
-        playerDataManager.savePlayerData().thenAccept(result -> {
-            if(playerDataManager != null) {
-                List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers().stream().filter(player -> player.isOnline() && player.isConnected()).toList());
-                onlinePlayers.forEach(player -> bossBarManager.removeBossBar(player, player.getUniqueId()));
-            }
+        if(playerDataManager != null) {
+            List<Player> onlinePlayers = ImmutableList.copyOf(this.getServer().getOnlinePlayers());
 
-            if(databaseManager != null) databaseManager.handlePluginDisable();
-        });
+            playerDataManager.savePlayerData().thenAccept(result -> {
+                onlinePlayers.forEach(player -> bossBarManager.removeBossBar(player, player.getUniqueId()));
+
+                if(databaseManager != null) databaseManager.handlePluginDisable();
+            });
+        }
     }
 
     /**
@@ -201,8 +192,8 @@ public class SkyMines extends JavaPlugin {
     public void reload(boolean onEnable) {
         guiManager.closeOpenGUIs(false);
 
-        settingsManager.reload();
-        localeManager.reload();
+        settingsManager.loadConfiguration();
+        localeManager.loadConfiguration();
         guiConfigManager.reload();
         mineConfigManager.reload();
         mineManager.reload();
@@ -213,7 +204,7 @@ public class SkyMines extends JavaPlugin {
 
             // Show boss bars to players in mines
             for(Player onlinePlayer : this.getServer().getOnlinePlayers()) {
-                AbstractMine mine = mineDataManager.getMineByLocation(onlinePlayer.getLocation());
+                Mine mine = mineDataManager.getMineByLocation(onlinePlayer.getLocation());
                 if(mine == null) continue;
                 if(mine.getMineId() == null) continue;
 
@@ -223,6 +214,11 @@ public class SkyMines extends JavaPlugin {
 
         taskManager.startMineTask();
         taskManager.startSaveTask();
+    }
+
+    @Override
+    public void reload() {
+        this.reload(false);
     }
 
     /**
@@ -237,30 +233,12 @@ public class SkyMines extends JavaPlugin {
             String[] splitVersion = version.split("\\.");
             int second = Integer.parseInt(splitVersion[1]);
 
-            if(second >= 3) {
+            if(second >= 5) {
                 return true;
             }
         }
 
-        this.getComponentLogger().error(AdventureUtil.serialize("SkyLib Version 1.3.0.0 or newer is required to run this plugin."));
-        this.getServer().getPluginManager().disablePlugin(this);
-        return false;
-    }
-
-    /**
-     * Checks for Vault as a dependency and sets up the Economy instance.
-     */
-    private boolean setupEconomy() {
-        if(getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) {
-                this.economy = rsp.getProvider();
-
-                return true;
-            }
-        }
-
-        this.getComponentLogger().error(MiniMessage.miniMessage().deserialize("<red>SkyMines has been disabled due to no Vault dependency found!</red>"));
+        this.getComponentLogger().error(AdventureUtil.deserialize("SkyLib Version 1.5.0.0 or newer is required to run this plugin."));
         this.getServer().getPluginManager().disablePlugin(this);
         return false;
     }

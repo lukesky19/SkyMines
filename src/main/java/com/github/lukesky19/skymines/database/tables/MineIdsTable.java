@@ -19,7 +19,7 @@ package com.github.lukesky19.skymines.database.tables;
 
 import com.github.lukesky19.skylib.api.database.parameter.impl.StringParameter;
 import com.github.lukesky19.skymines.database.QueueManager;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
  * This class is used to create and interface with the mine ids table in the database.
  */
 public class MineIdsTable {
-    private final @NotNull QueueManager queueManager;
-    private final @NotNull String tableName = "skymines_mine_ids";
+    private final @NonNull QueueManager queueManager;
+    private final @NonNull String tableName = "skymines_mine_ids";
 
     /**
      * Default Constructor.
@@ -45,7 +45,7 @@ public class MineIdsTable {
      * Constructor
      * @param queueManager A {@link QueueManager} instance.
      */
-    public MineIdsTable(@NotNull QueueManager queueManager) {
+    public MineIdsTable(@NonNull QueueManager queueManager) {
         this.queueManager = queueManager;
     }
 
@@ -64,7 +64,7 @@ public class MineIdsTable {
      * @param mineId The mine id to insert.
      * @return A {@link CompletableFuture} of type {@link Boolean} where true is successful, otherwise false. If the mine id already exists it will also return false.
      */
-    public @NotNull CompletableFuture<Boolean> insertMineId(@NotNull String mineId) {
+    public @NonNull CompletableFuture<Boolean> insertMineId(@NonNull String mineId) {
         String insertMineIdSql = "INSERT INTO " + tableName + " (mine_id) VALUES (?) ON CONFLICT (mine_id) DO NOTHING";
 
         StringParameter mineIdParameter = new StringParameter(mineId);
@@ -77,7 +77,7 @@ public class MineIdsTable {
      * @param mineId The mine id to remove.
      * @return A {@link CompletableFuture} of type {@link Boolean} where true is successful, otherwise false. If no mine id existed in the table, it will also return false.
      */
-    public @NotNull CompletableFuture<Boolean> removeMineId(@NotNull String mineId) {
+    public @NonNull CompletableFuture<Boolean> removeMineId(@NonNull String mineId) {
         String deleteMineIdSql = "DELETE FROM " + tableName + " WHERE mine_id = ?";
 
         StringParameter mineIdParameter = new StringParameter(mineId);

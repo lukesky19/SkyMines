@@ -19,8 +19,8 @@ package com.github.lukesky19.skymines.data.packet;
 
 import org.bukkit.block.BlockType;
 import org.bukkit.loot.LootTable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the data for replacing a block server-side, sending the client-side material to display, the loot table to replace for suspicious sand/gravel, and the time the block is on cooldown for.
@@ -29,4 +29,4 @@ import org.jetbrains.annotations.Nullable;
  * @param lootTable An optional {@link LootTable} to replace for suspicious sand or gravel.
  * @param cooldownSeconds The cooldown to apply to the player once the {@link BlockType} has been broken.
  */
-public record PacketBlock(@NotNull BlockType worldType, @NotNull BlockType replacementType, @Nullable LootTable lootTable, int cooldownSeconds) {}
+public record PacketBlock(@NonNull BlockType worldType, @NonNull BlockType replacementType, @Nullable LootTable lootTable, int cooldownSeconds) {}

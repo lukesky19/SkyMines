@@ -20,23 +20,27 @@
 
 ## Dependencies
 * SkyLib
-* Vault
 * WorldGuard
 
 ## Soft-Dependencies
 * Multiverse-Core
+* PlayerPoints
+* Vault
 
 ## Commands
 - /skymines help - View the plugin's help message
 - /skymines reload - Command to reload the plugin
 - /skymines time <mine id> - Command for a player to view how much time they have for a mine.
-- /skymines time <mine id> - Command to view mine time remaining for the provided mine id.
+- /skymines time <mine id> <player name> - Command to view mine time remaining for the provided mine id for a player.
 - /skymines add <player name> <mine id> <time> - Command to add time for a player to access a specific mine.
   - The time is formatted like `1d30m`.
 - /skymines remove <player name> <mine id> <time> - Command to remove time for a player to access a specific mine.
   - The time is formatted like `1d30m`.
 - /skymines set <player name> <mine id> <time> - Command to set the time for a player to access a specific mine.
   - The time is formatted like `1d30m`.
+- /skymines blocks unlock <player name> <mine id> <block> - Unlock a block for the player and mine id.
+- /skymines blocks lock <player name> <mine id> <block> - Lock a block for the player and mine id.
+- /skymines blocks reset <player name> <mine id>- Lock all unlocked blocks for the player and mine id.
 - /skymines preview \[mine id] - Open the GUI to preview free blocks that can be accessed for the world-style mines.
 - /skymines shop \[mine id]- Open the GUI to unlock blocks for the world-style mines.
 
@@ -45,11 +49,12 @@
 - `skymines.commands.skymines.reload` - The permission to access /skymines reload.
 - `skymines.commands.skymines.help` - The permission to access /skymines help.
 - `skymines.commands.skymines.time` - The permission to access /skymines time.
-- `skymines.commands.skymines.time.add` - The permission to access /skymines add.
-- `skymines.commands.skymines.time.remove` - The permission to access /skymines remove.
-- `skymines.commands.skymines.time.set` - The permission to access /skymines set.
+- `skymines.commands.skymines.time.add` - The permission to access /skymines time add.
+- `skymines.commands.skymines.time.remove` - The permission to access /skymines time remove.
+- `skymines.commands.skymines.time.set` - The permission to access /skymines time set.
 - `skymines.commands.skymines.preview` - The permission to access /skymines preview.
 - `skymines.commands.skymines.shop` - The permission to access /skymines shop.
+- `skymines.commands.skymines.blocks` - The permission to access /skymines blocks.
 
 ## Issues, Bugs, or Suggestions
 * Please create a new [Github Issue](https://github.com/lukesky19/SkyMines/issues) with your issue, bug, or suggestion.
@@ -59,7 +64,7 @@
 ## FAQ
 Q: What versions does this plugin support?
 
-A: 1.21.4, 1.21.5, 1.21.6, 1.21.7, and 1.21.8.
+A: 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, and 1.21.11.
 
 Q: Are there any plans to support any other versions?
 

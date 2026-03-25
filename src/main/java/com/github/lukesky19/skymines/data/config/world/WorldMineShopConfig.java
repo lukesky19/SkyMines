@@ -20,14 +20,14 @@ package com.github.lukesky19.skymines.data.config.world;
 import com.github.lukesky19.skylib.api.gui.GUIType;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * This record contains the configuration to create the shop GUI and free blocks GUI.
- * @param configVersion The config version of the file.
+ * @param version The config version.
  * @param guiType The {@link GUIType} to display.
  * @param guiName The name of the GUI to show in the Inventory.
  * @param itemsPerPage The items per page to display.
@@ -35,21 +35,23 @@ import java.util.List;
  * @param nextPage The next page button configuration.
  * @param prevPage The previous page button configuration.
  * @param exit The exit button configuration.
+ * @param currency The currency toggle button.
  * @param dummyButtons A {@link List} of {@link ButtonConfig} to display in the GUI. These buttons are like filler, but can have a configured slot.
  * @param slots The slots to display items in.
  */
 @ConfigSerializable
-public record WorldMineGUIConfig(
-        @Nullable String configVersion,
+public record WorldMineShopConfig(
+        int version,
         @Nullable GUIType guiType,
         @Nullable String guiName,
         @Nullable Integer itemsPerPage,
-        @NotNull WorldMineGUIConfig.ButtonConfig filler,
-        @NotNull WorldMineGUIConfig.ButtonConfig nextPage,
-        @NotNull WorldMineGUIConfig.ButtonConfig prevPage,
-        @NotNull WorldMineGUIConfig.ButtonConfig exit,
-        @NotNull List<ButtonConfig> dummyButtons,
-        @NotNull List<Integer> slots) {
+        WorldMineShopConfig.ButtonConfig filler,
+        WorldMineShopConfig.ButtonConfig nextPage,
+        WorldMineShopConfig.ButtonConfig prevPage,
+        WorldMineShopConfig.ButtonConfig exit,
+        WorldMineShopConfig.ButtonConfig currency,
+        @NonNull List<ButtonConfig> dummyButtons,
+        @NonNull List<Integer> slots) {
     /**
      * This record contains the config to display buttons in the GUI.
      * @param slot The slot to display the button at.
@@ -58,5 +60,5 @@ public record WorldMineGUIConfig(
     @ConfigSerializable
     public record ButtonConfig(
             @Nullable Integer slot,
-            @NotNull ItemStackConfig displayItem) {}
+            @NonNull ItemStackConfig displayItem) {}
 }

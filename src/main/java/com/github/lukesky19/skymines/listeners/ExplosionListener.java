@@ -19,7 +19,7 @@ package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.github.lukesky19.skymines.util.BlockTypeUtils;
 import com.github.lukesky19.skymines.util.ItemTypeUtils;
 import org.bukkit.Location;
@@ -42,8 +42,8 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -52,17 +52,17 @@ import java.util.*;
  * {@link BlockExplodeEvent} and {@link EntityExplodeEvent} to determine if a player initiated the explosions.
  */
 public class ExplosionListener implements Listener {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull Map<UUID, List<UUID>> playerInitiatedEntityExplosions = new HashMap<>();
-    private final @NotNull Map<UUID, List<Location>> playerInitiatedBlockExplosions = new HashMap<>();
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull Map<UUID, List<UUID>> playerInitiatedEntityExplosions = new HashMap<>();
+    private final @NonNull Map<UUID, List<Location>> playerInitiatedBlockExplosions = new HashMap<>();
 
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public ExplosionListener(@NotNull SkyMines skyMines, @NotNull MineDataManager mineDataManager) {
+    public ExplosionListener(@NonNull SkyMines skyMines, @NonNull MineDataManager mineDataManager) {
         this.skyMines = skyMines;
         this.mineDataManager = mineDataManager;
     }
@@ -198,7 +198,7 @@ public class ExplosionListener implements Listener {
 
                     @Nullable Player player = skyMines.getServer().getPlayer(playerId);
 
-                    AbstractMine mine = mineDataManager.getMineByLocation(location);
+                    Mine mine = mineDataManager.getMineByLocation(location);
                     if(mine != null) {
                         mine.handleBlockExplodeEvent(player, blockExplodeEvent);
                     }
@@ -214,7 +214,7 @@ public class ExplosionListener implements Listener {
         }
 
         // If a player did not initiate the explosion, pass the BlockExplodeEvent to the mine without a player if applicable.
-        AbstractMine mine = mineDataManager.getMineByLocation(location);
+        Mine mine = mineDataManager.getMineByLocation(location);
         if(mine != null) {
             mine.handleBlockExplodeEvent(null, blockExplodeEvent);
         }
@@ -260,7 +260,7 @@ public class ExplosionListener implements Listener {
 
                     @Nullable Player player = skyMines.getServer().getPlayer(playerId);
 
-                    AbstractMine mine = mineDataManager.getMineByLocation(entityExplodeEvent.getLocation());
+                    Mine mine = mineDataManager.getMineByLocation(entityExplodeEvent.getLocation());
                     if(mine != null) {
                         mine.handleEntityExplodeEvent(player, entityExplodeEvent);
                     }
@@ -276,7 +276,7 @@ public class ExplosionListener implements Listener {
         }
 
         // If a player did not initiate the explosion, pass the EntityExplodeEvent to the mine without a player if applicable.
-        AbstractMine mine = mineDataManager.getMineByLocation(entityExplodeEvent.getLocation());
+        Mine mine = mineDataManager.getMineByLocation(entityExplodeEvent.getLocation());
         if(mine != null) {
             mine.handleEntityExplodeEvent(null, entityExplodeEvent);
         }
@@ -345,7 +345,7 @@ public class ExplosionListener implements Listener {
      * @param playerId The player's {@link UUID}.
      * @param location The {@link Location}.
      */
-    private void addLocationToPlayerInitiatedBlockExplosions(@NotNull UUID playerId, @NotNull Location location) {
+    private void addLocationToPlayerInitiatedBlockExplosions(@NonNull UUID playerId, @NonNull Location location) {
         List<Location> locationList = playerInitiatedBlockExplosions.getOrDefault(playerId, new ArrayList<>());
 
         locationList.add(location);
@@ -358,7 +358,7 @@ public class ExplosionListener implements Listener {
      * @param playerId The player's {@link UUID}.
      * @param location The {@link Location}.
      */
-    private void removeLocationFromPlayerInitiatedBlockExplosions(@NotNull UUID playerId, @NotNull Location location) {
+    private void removeLocationFromPlayerInitiatedBlockExplosions(@NonNull UUID playerId, @NonNull Location location) {
         if(!playerInitiatedBlockExplosions.containsKey(playerId)) return;
 
         List<Location> locationList = playerInitiatedBlockExplosions.get(playerId);
@@ -378,7 +378,7 @@ public class ExplosionListener implements Listener {
      * @param playerId The player's {@link UUID}.
      * @param entityId The entity's {@link UUID}.
      */
-    private void addEntityIdToPlayerInitiatedEntityExplosions(@NotNull UUID playerId, @NotNull UUID entityId) {
+    private void addEntityIdToPlayerInitiatedEntityExplosions(@NonNull UUID playerId, @NonNull UUID entityId) {
         List<UUID> entityIdsList = playerInitiatedEntityExplosions.getOrDefault(playerId, new ArrayList<>());
 
         entityIdsList.add(entityId);
@@ -391,7 +391,7 @@ public class ExplosionListener implements Listener {
      * @param playerId The player's {@link UUID}.
      * @param entityId The entity's {@link UUID}.
      */
-    private void removeEntityIdFromPlayerInitiatedEntityExplosions(@NotNull UUID playerId, @NotNull UUID entityId) {
+    private void removeEntityIdFromPlayerInitiatedEntityExplosions(@NonNull UUID playerId, @NonNull UUID entityId) {
         if(!playerInitiatedEntityExplosions.containsKey(playerId)) return;
 
         List<UUID> entityIdsList = playerInitiatedEntityExplosions.get(playerId);
@@ -411,7 +411,7 @@ public class ExplosionListener implements Listener {
      * @param block The {@link Block} for the respawn anchor.
      * @return true if at max charges, otherwise false. Will return false if not a respawn anchor.
      */
-    private boolean isRespawnAnchorChargesMax(@NotNull Block block) {
+    private boolean isRespawnAnchorChargesMax(@NonNull Block block) {
         if(block.getBlockData() instanceof RespawnAnchor respawnAnchor) {
             return respawnAnchor.getCharges() == respawnAnchor.getMaximumCharges();
         }

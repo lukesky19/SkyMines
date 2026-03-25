@@ -25,7 +25,7 @@ import com.github.lukesky19.skymines.database.tables.TimesTable;
 import com.github.lukesky19.skymines.database.tables.UnlockedBlocksTable;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -34,10 +34,10 @@ import java.util.concurrent.CompletableFuture;
  * This class manages player data.
  */
 public class PlayerDataManager {
-    private final @NotNull ComponentLogger logger;
-    private final @NotNull DatabaseManager databaseManager;
+    private final @NonNull ComponentLogger logger;
+    private final @NonNull DatabaseManager databaseManager;
 
-    private final @NotNull Map<UUID, PlayerData> playerDataMap = new HashMap<>();
+    private final @NonNull Map<UUID, PlayerData> playerDataMap = new HashMap<>();
 
     /**
      * Default Constructor.
@@ -55,7 +55,7 @@ public class PlayerDataManager {
      * @param skyMines A {@link SkyMines} instance.
      * @param databaseManager A {@link DatabaseManager} instance.
      */
-    public PlayerDataManager(@NotNull SkyMines skyMines, @NotNull DatabaseManager databaseManager) {
+    public PlayerDataManager(@NonNull SkyMines skyMines, @NonNull DatabaseManager databaseManager) {
         this.logger = skyMines.getComponentLogger();
         this.databaseManager = databaseManager;
     }
@@ -65,19 +65,15 @@ public class PlayerDataManager {
      * @param uuid The {@link UUID} of the player.
      * @return The {@link PlayerData} for the player.
      */
-    public @NotNull PlayerData getPlayerData(@NotNull UUID uuid) {
-        @NotNull PlayerData playerData = playerDataMap.getOrDefault(uuid, new PlayerData());
-
-        playerDataMap.put(uuid, playerData);
-
-        return playerData;
+    public @NonNull PlayerData getPlayerData(@NonNull UUID uuid) {
+        return playerDataMap.computeIfAbsent(uuid, playerId -> new PlayerData());
     }
 
     /**
      * Get the {@link Map} mapping {@link UUID} to {@link PlayerData}.
      * @return A {@link Map} mapping {@link UUID} to {@link PlayerData}
      */
-    public @NotNull Map<UUID, PlayerData> getPlayerDataMap() {
+    public @NonNull Map<UUID, PlayerData> getPlayerDataMap() {
         return playerDataMap;
     }
 
@@ -86,10 +82,10 @@ public class PlayerDataManager {
      * @param uuid The {@link UUID} of the player.
      * @return A {@link CompletableFuture} containing a {@link Boolean} where true means all data saved successfully and false for any errors.
      */
-    public @NotNull CompletableFuture<Boolean> savePlayerData(@NotNull UUID uuid) {
+    public @NonNull CompletableFuture<Boolean> savePlayerData(@NonNull UUID uuid) {
         PlayerData playerData = playerDataMap.get(uuid);
         if(playerData == null) {
-            logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " as they have no player data stored."));
+            logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " as they have no player data stored."));
             return CompletableFuture.completedFuture(false);
         }
 
@@ -106,7 +102,7 @@ public class PlayerDataManager {
                     return allTimesSuccessful && allBlocksSuccessful;
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                    logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                     return false;
                 });
     }
@@ -115,7 +111,7 @@ public class PlayerDataManager {
      * Save all player data to the database.
      * @return A {@link CompletableFuture} containing a {@link Boolean} where true means all data saved successfully and false for any errors.
      */
-    public @NotNull CompletableFuture<Boolean> savePlayerData() {
+    public @NonNull CompletableFuture<Boolean> savePlayerData() {
         TimesTable timesTable = databaseManager.getTimesTable();
         UnlockedBlocksTable unlockedBlocksTable = databaseManager.getUnlockedBlocksTable();
 
@@ -127,12 +123,12 @@ public class PlayerDataManager {
 
             CompletableFuture<Boolean> resultFuture = timeFuture
                     .thenCombine(blocksFuture, (timeResults, blockResults) -> {
-                        boolean allTimesSuccessful = timeResults.stream().allMatch(result -> result);
-                        boolean allBlocksSuccessful = blockResults.stream().allMatch(result -> result);
+                        boolean allTimesSuccessful = timeResults.stream().allMatch(result -> result.equals(true));
+                        boolean allBlocksSuccessful = blockResults.stream().allMatch(result -> result.equals(true));
                         return allTimesSuccessful && allBlocksSuccessful;
                     })
                     .exceptionally(e -> {
-                        logger.error(AdventureUtil.serialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                        logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                         return false;
                     });
 
@@ -148,7 +144,7 @@ public class PlayerDataManager {
      * @param uuid The {@link UUID} to load player data for.
      * @return A {@link CompletableFuture} of type {@link Void} when complete.
      */
-    public @NotNull CompletableFuture<Void> loadPlayerData(@NotNull UUID uuid) {
+    public @NonNull CompletableFuture<Void> loadPlayerData(@NonNull UUID uuid) {
         TimesTable timesTable = databaseManager.getTimesTable();
         UnlockedBlocksTable unlockedBlocksTable = databaseManager.getUnlockedBlocksTable();
 
@@ -163,7 +159,7 @@ public class PlayerDataManager {
                     playerDataMap.put(uuid, playerData);
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.serialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
+                    logger.error(AdventureUtil.deserialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
                     return null;
                 });
     }
@@ -173,7 +169,12 @@ public class PlayerDataManager {
      * @param uuid The {@link UUID} of the player to save and unload player data for.
      * @return A {@link CompletableFuture} of type {@link Void} when complete.
      */
-    public @NotNull CompletableFuture<Void> unloadPlayerData(@NotNull UUID uuid) {
-        return savePlayerData(uuid).thenAccept(result -> playerDataMap.remove(uuid));
+    public @NonNull CompletableFuture<Void> unloadPlayerData(@NonNull UUID uuid) {
+        return savePlayerData(uuid)
+                .thenAccept(result -> playerDataMap.remove(uuid))
+                .exceptionally(ex -> {
+                    System.err.println("Failed to save player data. " + ex.getMessage());
+                    return null;
+                });
     }
 }

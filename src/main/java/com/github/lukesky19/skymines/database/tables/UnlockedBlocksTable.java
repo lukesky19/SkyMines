@@ -27,7 +27,7 @@ import com.github.lukesky19.skymines.database.QueueManager;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Type;
 import java.sql.SQLException;
@@ -38,9 +38,9 @@ import java.util.concurrent.CompletableFuture;
  * This class is used to create and interface with the unlocked blocks table in the database.
  */
 public class UnlockedBlocksTable {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull QueueManager queueManager;
-    private final @NotNull String tableName = "skymines_unlocked_blocks";
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull QueueManager queueManager;
+    private final @NonNull String tableName = "skymines_unlocked_blocks";
 
     /**
      * Default Constructor.
@@ -57,7 +57,7 @@ public class UnlockedBlocksTable {
      * @param skyMines A {@link SkyMines} instance.
      * @param queueManager A {@link QueueManager} instance.
      */
-    public UnlockedBlocksTable(@NotNull SkyMines skyMines, @NotNull QueueManager queueManager) {
+    public UnlockedBlocksTable(@NonNull SkyMines skyMines, @NonNull QueueManager queueManager) {
         this.skyMines = skyMines;
         this.queueManager = queueManager;
     }
@@ -69,7 +69,7 @@ public class UnlockedBlocksTable {
         String tableCreationSql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "mine_id TEXT NOT NULL, " + // Unique
-                "player_id LONG NOT NULL DEFAULT 0, " + // Unique
+                "player_id TEXT NOT NULL DEFAULT 0, " + // Unique
                 "unlocked_blocks TEXT NOT NULL DEFAULT 0, " +
                 "last_updated LONG NOT NULL DEFAULT 0, " +
                 "FOREIGN KEY (mine_id) REFERENCES skymines_mine_ids(mine_id) ON UPDATE CASCADE ON DELETE CASCADE, " +
@@ -86,7 +86,7 @@ public class UnlockedBlocksTable {
      * @param uuid The {@link UUID} of the player.
      * @return A {@link Map} mapping mine ids to unlocked blocks as a {@link List} of {@link BlockType}s.
      */
-    public @NotNull CompletableFuture<@NotNull Map<String, List<BlockType>>> loadUnlockedBlocks(@NotNull UUID uuid) {
+    public @NonNull CompletableFuture<@NonNull Map<String, List<BlockType>>> loadUnlockedBlocks(@NonNull UUID uuid) {
         String selectSql = "SELECT mine_id, unlocked_blocks FROM " + tableName + " WHERE player_id = ?";
         UUIDParameter uuidParameter = new UUIDParameter(uuid);
 
@@ -125,8 +125,8 @@ public class UnlockedBlocksTable {
      * @return A {@link CompletableFuture} containing a {@link List} of {@link Boolean} with the results.
      * The list will contain false if an operation failed.
      */
-    public @NotNull CompletableFuture<List<Boolean>> saveUnlockedBlocks(@NotNull UUID uuid, @NotNull Map<String, List<BlockType>> data) {
-        Map<String, List<Parameter<?>>> sqlStatementsAndParameters = new HashMap<>();
+    public @NonNull CompletableFuture<List<Boolean>> saveUnlockedBlocks(@NonNull UUID uuid, @NonNull Map<String, List<BlockType>> data) {
+        List<List<Parameter<?>>> listOfParameterLists = new ArrayList<>();
         String insertOrUpdateSql = "INSERT INTO " + tableName + " (mine_id, player_id, unlocked_blocks, last_updated) " +
                 "VALUES (?, ?, ?, ?) " +
                 "ON CONFLICT (mine_id, player_id) DO UPDATE SET " +
@@ -144,19 +144,13 @@ public class UnlockedBlocksTable {
 
             List<Parameter<?>> parameterList = List.of(mineIdParameter, playerIdParameter, unlockedBlocksParameter, lastUpdatedParameter, unlockedBlocksParameter, lastUpdatedParameter, lastUpdatedParameter);
 
-            sqlStatementsAndParameters.put(insertOrUpdateSql, parameterList);
+            listOfParameterLists.add(parameterList);
         });
 
-        return queueManager.queueBulkWriteTransaction(sqlStatementsAndParameters).thenApply(list -> {
+        return queueManager.queueBulkWriteTransaction(insertOrUpdateSql, listOfParameterLists).thenApply(list -> {
                     List<Boolean> results = new ArrayList<>();
 
-                    list.forEach(rowsUpdated -> {
-                        if(rowsUpdated > 0) {
-                            results.add(true);
-                        } else  {
-                            results.add(false);
-                        }
-                    });
+                    list.forEach(rowsUpdated -> results.add(rowsUpdated > 0));
 
                     return results;
                 }

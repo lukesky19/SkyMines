@@ -25,7 +25,7 @@ import com.github.lukesky19.skymines.util.PluginUtils;
 import org.bukkit.Location;
 import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 import java.util.UUID;
@@ -34,8 +34,8 @@ import java.util.UUID;
  * This class manages the block cooldowns for players.
  */
 public class CooldownManager {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull PlayerDataManager playerDataManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull PlayerDataManager playerDataManager;
 
     /**
      * Default Constructor.
@@ -53,7 +53,7 @@ public class CooldownManager {
      * @param skyMines A {@link SkyMines} instance.
      * @param playerDataManager A {@link PlayerDataManager} instance.
      */
-    public CooldownManager(@NotNull SkyMines skyMines, @NotNull PlayerDataManager playerDataManager) {
+    public CooldownManager(@NonNull SkyMines skyMines, @NonNull PlayerDataManager playerDataManager) {
         this.skyMines = skyMines;
         this.playerDataManager = playerDataManager;
     }
@@ -64,8 +64,8 @@ public class CooldownManager {
      * @param location The {@link Location} to check.
      * @return true if on cooldown, otherwise false.
      */
-    public boolean isLocationOnCooldown(@NotNull UUID uuid, @NotNull Location location) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public boolean isLocationOnCooldown(@NonNull UUID uuid, @NonNull Location location) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         Location cleanLocation = PluginUtils.getCleanLocation(location);
 
@@ -79,8 +79,8 @@ public class CooldownManager {
      * @param replacementType The {@link BlockType} that is displayed to the client while on cooldown.
      * @param cooldownSeconds The cooldown in seconds.
      */
-    public void addLocationCooldown(@NotNull UUID uuid, @NotNull Location location, @NotNull BlockType replacementType, long cooldownSeconds) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void addLocationCooldown(@NonNull UUID uuid, @NonNull Location location, @NonNull BlockType replacementType, long cooldownSeconds) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         Location cleanLocation = PluginUtils.getCleanLocation(location);
 
@@ -92,8 +92,8 @@ public class CooldownManager {
      * @param uuid The {@link UUID} of the player.
      * @return A {@link Map} mapping {@link Location}s to {@link BlockData}
      */
-    public @NotNull Map<Location, BlockData> getBlockDataOnCooldown(@NotNull UUID uuid) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public @NonNull Map<Location, BlockData> getBlockDataOnCooldown(@NonNull UUID uuid) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         return playerData.getBlockDataOnCooldown();
     }
@@ -103,8 +103,8 @@ public class CooldownManager {
      * @param uuid The {@link UUID} of the player.
      * @param location The {@link Location}.
      */
-    public void decrementLocationCooldown(@NotNull UUID uuid, @NotNull Location location) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void decrementLocationCooldown(@NonNull UUID uuid, @NonNull Location location) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         Location cleanLocation = PluginUtils.getCleanLocation(location);
 

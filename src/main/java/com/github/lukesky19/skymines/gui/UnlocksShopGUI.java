@@ -21,20 +21,22 @@ import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.format.FormatUtil;
 import com.github.lukesky19.skylib.api.gui.GUIButton;
 import com.github.lukesky19.skylib.api.gui.GUIType;
-import com.github.lukesky19.skylib.api.gui.abstracts.ChestGUI;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
+import com.github.lukesky19.skylib.api.gui.templates.ChestGUI;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackBuilder;
 import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
+import com.github.lukesky19.skymines.integration.hooks.EconomyHook;
+import com.github.lukesky19.skymines.integration.hooks.PlayerPointsHook;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
+import com.github.lukesky19.skymines.util.Currency;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.milkbowl.vault.economy.Economy;
 import org.bukkit.block.BlockType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -42,7 +44,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -50,50 +53,53 @@ import java.util.concurrent.CompletableFuture;
 /**
  * This GUI allows players to unlock blocks for a world mine by purchasing them.
  */
-public class UnlocksShopGUI extends ChestGUI {
+public class UnlocksShopGUI extends ChestGUI<UUID> {
     // Plugin Data
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull BlocksManager blocksManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull HookManager hookManager;
     // Player data
-    private final @NotNull UUID uuid;
+    private final @NonNull UUID uuid;
     // Config Data
-    private final @NotNull String mineId;
-    private final @NotNull WorldMineConfig mineConfig;
-    private final @NotNull WorldMineGUIConfig guiConfig;
+    private final @NonNull String mineId;
+    private final @NonNull WorldMineConfig mineConfig;
+    private final @NonNull WorldMineShopConfig guiConfig;
     // GUI data
     private int pageNum = 0;
     private int currentUnlockKey = 0;
     private int numOfUnlocksAdded = 0;
     private int numOfUnlocksErrored = 0;
-    private final @NotNull Map<Integer, Integer> unlocksAddedPerPage = new HashMap<>();
-    private final @NotNull Map<Integer, Integer> unlocksErroredPerPage = new HashMap<>();
+    private final @NonNull Map<Integer, Integer> unlocksAddedPerPage = new HashMap<>();
+    private final @NonNull Map<Integer, Integer> unlocksErroredPerPage = new HashMap<>();
+    private @NonNull Currency currency = Currency.MONEY;
 
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
-     * @param guiManager A {@link GUIManager} instance.
+     * @param guiManager A {@link UUIDGUIManager} instance.
      * @param localeManager A {@link LocaleManager} instance.
      * @param player The {@link Player} this GUI is being created for.
      * @param blocksManager A {@link BlocksManager} instance.
+     * @param hookManager A {@link HookManager} instance.
      * @param mineId The mine id the gui is for.
      * @param mineConfig The {@link WorldMineConfig} for the mine.
-     * @param guiConfig The {@link WorldMineGUIConfig}.
+     * @param guiConfig The {@link WorldMineShopConfig}.
      */
     public UnlocksShopGUI(
-            @NotNull SkyMines skyMines,
-            @NotNull GUIManager guiManager,
-            @NotNull Player player,
-            @NotNull LocaleManager localeManager,
-            @NotNull BlocksManager blocksManager,
-            @NotNull String mineId,
-            @NotNull WorldMineConfig mineConfig,
-            @NotNull WorldMineGUIConfig guiConfig) {
-        super(skyMines, guiManager, player);
-        this.skyMines = skyMines;
+            @NonNull SkyMines skyMines,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull Player player,
+            @NonNull LocaleManager localeManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull HookManager hookManager,
+            @NonNull String mineId,
+            @NonNull WorldMineConfig mineConfig,
+            @NonNull WorldMineShopConfig guiConfig) {
+        super(skyMines, guiManager, player.getUniqueId(), player);
         this.localeManager = localeManager;
         this.uuid = player.getUniqueId();
         this.blocksManager = blocksManager;
+        this.hookManager = hookManager;
         this.mineId = mineId;
         this.mineConfig = mineConfig;
         this.guiConfig = guiConfig;
@@ -106,7 +112,7 @@ public class UnlocksShopGUI extends ChestGUI {
     public boolean create() {
         GUIType guiType = guiConfig.guiType();
         if(guiType == null) {
-            logger.warn(AdventureUtil.serialize("Unable to create the InventoryView for the block unlocks shop due to an invalid GUIType"));
+            logger.warn(AdventureUtil.deserialize("Unable to create the InventoryView for the block unlocks shop due to an invalid GUIType"));
             return false;
         }
 
@@ -125,13 +131,13 @@ public class UnlocksShopGUI extends ChestGUI {
     public boolean update() {
         // If the InventoryView was not created, log a warning and return false.
         if(inventoryView == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add buttons to the GUI as the InventoryView was not created."));
+            logger.warn(AdventureUtil.deserialize("Unable to add buttons to the GUI as the InventoryView was not created."));
             return false;
         }
 
         // If the items per page was not configured log a warning and return false.
         if(guiConfig.itemsPerPage() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add buttons to the GUI as the items per page is not configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add buttons to the GUI as the items per page is not configured."));
             return false;
         }
         int itemsPerPage = guiConfig.itemsPerPage();
@@ -158,6 +164,8 @@ public class UnlocksShopGUI extends ChestGUI {
         if(pageNum > 0) {
             createPreviousPageButton();
         }
+
+        createCurrencyButton();
 
         createExitButton();
 
@@ -189,7 +197,7 @@ public class UnlocksShopGUI extends ChestGUI {
      * @param inventoryCloseEvent An {@link InventoryCloseEvent}
      */
     @Override
-    public void handleClose(@NotNull InventoryCloseEvent inventoryCloseEvent) {
+    public void handleClose(@NonNull InventoryCloseEvent inventoryCloseEvent) {
         if(inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.UNLOADED) || inventoryCloseEvent.getReason().equals(InventoryCloseEvent.Reason.OPEN_NEW)) return;
 
         guiManager.removeOpenGUI(uuid);
@@ -200,28 +208,28 @@ public class UnlocksShopGUI extends ChestGUI {
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleBottomDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleBottomDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryDragEvent An {@link InventoryDragEvent}
      */
     @Override
-    public void handleGlobalDrag(@NotNull InventoryDragEvent inventoryDragEvent) {}
+    public void handleGlobalDrag(@NonNull InventoryDragEvent inventoryDragEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleBottomClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleBottomClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * This method does nothing.
      * @param inventoryClickEvent An {@link InventoryClickEvent}
      */
     @Override
-    public void handleGlobalClick(@NotNull InventoryClickEvent inventoryClickEvent) {}
+    public void handleGlobalClick(@NonNull InventoryClickEvent inventoryClickEvent) {}
 
     /**
      * Create and add the filler buttons.
@@ -233,7 +241,7 @@ public class UnlocksShopGUI extends ChestGUI {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -254,60 +262,107 @@ public class UnlocksShopGUI extends ChestGUI {
      * @param itemsPerPage The number of items to display per page.
      */
     private void createUnlockButtons(int itemsPerPage) {
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
         List<Integer> slots = new ArrayList<>(guiConfig.slots());
 
         while(numOfUnlocksAdded < itemsPerPage) {
-            if (currentUnlockKey >= mineConfig.unlockableBreakable().size() || slots.isEmpty()) return;
+            if(currentUnlockKey >= mineConfig.unlockableBreakable().size() || slots.isEmpty()) return;
 
             WorldMineConfig.UnlockBlockData unlockBlockData = mineConfig.unlockableBreakable().get(currentUnlockKey);
             if(unlockBlockData.blockType() == null) {
-                logger.warn(AdventureUtil.serialize("For mine " + mineId + " a block type is null for unlock key: " + currentUnlockKey));
+                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a block type is null for unlock key: " + currentUnlockKey));
                 handleUnlockError();
                 continue;
             }
 
-            Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, unlockBlockData.blockType());
-            if(optionalBlockType.isEmpty()) {
-                logger.warn(AdventureUtil.serialize("For mine " + mineId + " a block type of name " + unlockBlockData.blockType() + " is invalid for unlock key: " + currentUnlockKey));
+            @Nullable Double money = unlockBlockData.priceData().money();
+            @Nullable Integer points = unlockBlockData.priceData().playerPoints();
+            if((money == null || money <= -1) && (points == null || points <= -1)) {
+                logger.warn(AdventureUtil.deserialize("For mine " + mineId + " a there is no configured buy price for unlock key: " + currentUnlockKey));
                 handleUnlockError();
                 continue;
             }
 
-            Double buyPrice = unlockBlockData.buyPrice();
-            if(buyPrice == null) {
-                logger.warn(AdventureUtil.serialize("For mine " + mineId + " a buy price is invalid for unlock key: " + currentUnlockKey));
-                handleUnlockError();
-                continue;
+            List<TagResolver.Single> lorePlaceholders = new ArrayList<>();
+            if(currency == Currency.MONEY) {
+                String price = money != null && money >= 0 ? String.valueOf(money) : "-1";
+                lorePlaceholders.add(Placeholder.parsed("price", price));
+                lorePlaceholders.add(Placeholder.parsed("currency", locale.worldMineMessages().moneyCurrencyName()));
+            } else {
+                String price = points != null && points >= 0 ? String.valueOf(points) : "-1";
+                lorePlaceholders.add(Placeholder.parsed("price", price));
+                lorePlaceholders.add(Placeholder.parsed("currency", locale.worldMineMessages().playerPointsCurrencyName()));
             }
 
-            List<TagResolver.Single> lorePlaceholders = List.of(Placeholder.parsed("price", String.valueOf(buyPrice)));
-
-            BlockType blockType = optionalBlockType.get();
+            BlockType blockType = unlockBlockData.blockType();
             ItemStackConfig itemStackConfig = blocksManager.isBlockTypeUnlocked(uuid, mineId, blockType)
                     ? unlockBlockData.displayItemUnlocked()
                     : unlockBlockData.displayItemLocked();
 
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, lorePlaceholders);
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, lorePlaceholders);
 
             Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresentOrElse(itemStack -> {
                 GUIButton.Builder guiButtonBuilder = new GUIButton.Builder();
                 guiButtonBuilder.setItemStack(itemStack);
                 guiButtonBuilder.setAction(inventoryClickEvent -> {
-                    @NotNull Economy economy = skyMines.getEconomy();
+                    if(blocksManager.isBlockTypeUnlocked(uuid, mineId, blockType)) return;
 
-                    if(economy.getBalance(player) < buyPrice) {
-                        player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().notEnoughMoney()));
-                        close();
-                        return;
+                    if(currency == Currency.MONEY) {
+                        List<TagResolver.Single> errorMessagePlaceholders = List.of(
+                                Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)),
+                                Placeholder.parsed("currency", locale.worldMineMessages().moneyCurrencyName()));
+
+                        EconomyHook economyHook = hookManager.getHook(EconomyHook.class);
+                        if(!economyHook.isHooked()) {
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockNotPurchasable(), errorMessagePlaceholders));
+                            return;
+                        }
+
+                        if(money == null || money <= -1) {
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockNotPurchasable(), errorMessagePlaceholders));
+                            return;
+                        }
+
+                        if(economyHook.getBalance(player) < money) {
+                            player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().notEnoughCurrency(), errorMessagePlaceholders));
+                            close();
+                            return;
+                        }
+
+                        economyHook.removeFromBalance(player, money);
+                    } else {
+                        List<TagResolver.Single> errorMessagePlaceholders = List.of(
+                                Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)),
+                                Placeholder.parsed("currency", locale.worldMineMessages().playerPointsCurrencyName()));
+
+                        PlayerPointsHook playerPointsHook = hookManager.getHook(PlayerPointsHook.class);
+                        if(!playerPointsHook.isHooked()) {
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockNotPurchasable(), errorMessagePlaceholders));
+                            return;
+                        }
+
+                        if(points == null || points <= -1.0) {
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockNotPurchasable(), errorMessagePlaceholders));
+                            return;
+                        }
+
+                        if(playerPointsHook.getBalance(player) < points) {
+                            player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().notEnoughCurrency(), errorMessagePlaceholders));
+                            close();
+                            return;
+                        }
+
+                        playerPointsHook.removeFromBalance(player, points);
                     }
 
-                    List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)), Placeholder.parsed("mine_id", mineId));
+                    List<TagResolver.Single> successMessagePlaceholders = List.of(
+                            Placeholder.parsed("block_type", FormatUtil.formatBlockTypeName(blockType)),
+                            Placeholder.parsed("mine_id", mineId));
 
                     blocksManager.addUnlockedBlock(uuid, mineId, blockType);
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().blockUnlocked(), successMessagePlaceholders));
 
                     refresh();
                 });
@@ -327,7 +382,7 @@ public class UnlocksShopGUI extends ChestGUI {
     private void createPreviousPageButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.prevPage().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a previous page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a previous page button due to a slot not being configured."));
             return;
         }
 
@@ -336,7 +391,7 @@ public class UnlocksShopGUI extends ChestGUI {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -368,7 +423,7 @@ public class UnlocksShopGUI extends ChestGUI {
     private void createNextPageButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.nextPage().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a next page button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a next page button due to a slot not being configured."));
             return;
         }
 
@@ -377,7 +432,7 @@ public class UnlocksShopGUI extends ChestGUI {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -402,7 +457,7 @@ public class UnlocksShopGUI extends ChestGUI {
     private void createExitButton() {
         // Check if the slot is not configured and send a warning.
         if(guiConfig.exit().slot() == null) {
-            logger.warn(AdventureUtil.serialize("Unable to add a exit button due to a slot not being configured."));
+            logger.warn(AdventureUtil.deserialize("Unable to add a exit button due to a slot not being configured."));
             return;
         }
 
@@ -411,7 +466,7 @@ public class UnlocksShopGUI extends ChestGUI {
 
         // Create the ItemStackBuilder and pass the ItemStackConfig.
         ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-        itemStackBuilder.fromItemStackConfig(itemConfig, player, null, List.of());
+        itemStackBuilder.fromItemStackConfig(itemConfig, player, List.of());
 
         // If an ItemStack was created, create the GUIButton and add it to the GUI.
         Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
@@ -427,19 +482,62 @@ public class UnlocksShopGUI extends ChestGUI {
     }
 
     /**
+     * Create the button to change the currency used.
+     */
+    private void createCurrencyButton() {
+        // Check if the slot is not configured and send a warning.
+        if(guiConfig.currency().slot() == null) {
+            logger.warn(AdventureUtil.deserialize("Unable to add the currency button due to a slot not being configured."));
+            return;
+        }
+
+        Locale locale = localeManager.getConfiguration();
+
+        // Get the ItemStackConfig
+        ItemStackConfig itemConfig = guiConfig.currency().displayItem();
+
+        // Create the ItemStackBuilder and pass the ItemStackConfig.
+        ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
+        itemStackBuilder.fromItemStackConfig(
+                itemConfig,
+                player,
+                List.of(Placeholder.parsed("currency", currency == Currency.MONEY ?
+                        locale.worldMineMessages().moneyCurrencyName() :
+                        locale.worldMineMessages().playerPointsCurrencyName())));
+
+        // If an ItemStack was created, create the GUIButton and add it to the GUI.
+        Optional<ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+        optionalItemStack.ifPresent(itemStack -> {
+            GUIButton.Builder guiButtonBuilder = new GUIButton.Builder();
+            guiButtonBuilder.setItemStack(itemStack);
+            guiButtonBuilder.setAction(event -> {
+                if(currency == Currency.MONEY) {
+                    currency = Currency.PLAYER_POINTS;
+                } else {
+                    currency = Currency.MONEY;
+                }
+
+                refresh();
+            });
+
+            setButton(guiConfig.currency().slot(), guiButtonBuilder.build());
+        });
+    }
+
+    /**
      * Create the dummy buttons for the GUI.
      */
     private void createDummyButtons() {
         guiConfig.dummyButtons().forEach(buttonConfig -> {
             if(buttonConfig.slot() == null) {
-                logger.warn(AdventureUtil.serialize("Unable to add a dummy button to the unlocks shop GUI due to an invalid slot."));
+                logger.warn(AdventureUtil.deserialize("Unable to add a dummy button to the unlocks shop GUI due to an invalid slot."));
                 return;
             }
 
             ItemStackConfig itemStackConfig = buttonConfig.displayItem();
             ItemStackBuilder itemStackBuilder = new ItemStackBuilder(logger);
-            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, null, List.of());
-            Optional<@NotNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
+            itemStackBuilder.fromItemStackConfig(itemStackConfig, player, List.of());
+            Optional<@NonNull ItemStack> optionalItemStack = itemStackBuilder.buildItemStack();
             optionalItemStack.ifPresent(itemStack -> {
                 GUIButton.Builder builder = new GUIButton.Builder();
 

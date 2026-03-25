@@ -19,25 +19,26 @@ package com.github.lukesky19.skymines.mine;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
 import com.github.lukesky19.skylib.api.player.PlayerUtil;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
+import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.manager.config.SettingsManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
 import com.github.lukesky19.skymines.manager.mine.world.PDCManager;
+import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.util.ItemTypeUtils;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
+import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.BlockType;
+import org.bukkit.block.*;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.entity.Entity;
@@ -45,12 +46,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
+import org.bukkit.event.hanging.HangingPlaceEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.event.world.StructureGrowEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 
@@ -62,28 +69,30 @@ import java.util.*;
  * Some actions like liquid flow are disabled.
  * TNT can be allowed only for unlocked or free blocks or disabled all together.
  */
-public class WorldMine extends AbstractMine {
+public class WorldMine implements Mine {
     // SkyMines
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull BlocksManager blocksManager;
-    private final @NotNull BossBarManager bossBarManager;
-    private final @NotNull PDCManager pdcManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull SettingsManager settingsManager;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull BossBarManager bossBarManager;
+    private final @NonNull PDCManager pdcManager;
 
     // Mine Data
     private boolean status = true;
-    private final @NotNull WorldMineConfig mineConfig;
+    private final @NonNull WorldMineConfig mineConfig;
     private @Nullable String mineId;
     private @Nullable World mineWorld;
 
-    private final @NotNull List<BlockType> unlockableBlockTypes = new ArrayList<>();
-    private final @NotNull List<BlockType> freeBlockTypes = new ArrayList<>();
-    private final @NotNull List<BlockType> restrictedPlaceableBlockTypes = new ArrayList<>();
+    private final @NonNull List<BlockType> unlockableBlockTypes = new ArrayList<>();
+    private final @NonNull List<BlockType> freeBlockTypes = new ArrayList<>();
+    private final @NonNull List<BlockType> restrictedPlaceableBlockTypes = new ArrayList<>();
 
     /**
      * Default Constructor.
-     * You should use {@link #WorldMine(SkyMines, LocaleManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
-     * @deprecated You should use {@link #WorldMine(SkyMines, LocaleManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
+     * You should use {@link #WorldMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
+     * @deprecated You should use {@link #WorldMine(SkyMines, SettingsManager, LocaleManager, PlayerDataManager, BlocksManager, BossBarManager, PDCManager, WorldMineConfig)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -94,21 +103,27 @@ public class WorldMine extends AbstractMine {
     /**
      * Constructor
      * @param skyMines A {@link SkyMines} instance.
+     * @param settingsManager A {@link SettingsManager} instance.
      * @param localeManager A {@link LocaleManager} instance.
+     * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      * @param pdcManager A {@link PDCManager} instance.
      * @param mineConfig The {@link WorldMineConfig} to create the mine with.
      */
     public WorldMine(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull BlocksManager blocksManager,
-            @NotNull BossBarManager bossBarManager, 
-            @NotNull PDCManager pdcManager,
-            @NotNull WorldMineConfig mineConfig) {
+            @NonNull SkyMines skyMines, 
+            @NonNull SettingsManager settingsManager,
+            @NonNull LocaleManager localeManager,
+            @NonNull PlayerDataManager playerDataManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull BossBarManager bossBarManager,
+            @NonNull PDCManager pdcManager,
+            @NonNull WorldMineConfig mineConfig) {
         this.skyMines = skyMines;
+        this.settingsManager = settingsManager;
         this.localeManager = localeManager;
+        this.playerDataManager = playerDataManager;
         this.blocksManager = blocksManager;
         this.bossBarManager = bossBarManager;
         this.pdcManager = pdcManager;
@@ -119,44 +134,38 @@ public class WorldMine extends AbstractMine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.serialize("Unable to create a world mine due to a null mine id."));
+            logger.error(AdventureUtil.deserialize("Unable to create a world mine due to a null mine id."));
             status = false;
             return;
         }
 
         if(mineConfig.worldName() == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create a world mine due to a world name not being configured.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to a world name not being configured.</red>"));
             status = false;
             return;
         }
 
         World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
         if(mineWorld == null) {
-            logger.error(AdventureUtil.serialize("<red>Unable to create a world mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to world " + mineConfig.worldName() + " not being found.</red>"));
             status = false;
             return;
         }
         this.mineWorld = mineWorld;
 
-        mineConfig.unlockableBreakable().forEach(blockData -> {
-            String blockTypeName = blockData.blockType();
-            if(blockTypeName != null) {
-                @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
-                optionalBlockType.ifPresent(unlockableBlockTypes::add);
-            }
-        });
+        mineConfig.unlockableBreakable()
+                .stream()
+                .map(WorldMineConfig.UnlockBlockData::blockType)
+                .filter(Objects::nonNull)
+                .forEach(unlockableBlockTypes::add);
 
-        mineConfig.freeBreakable().forEach(blockData -> {
-            if(blockData.blockType() != null) {
-                @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockData.blockType());
-                optionalBlockType.ifPresent(freeBlockTypes::add);
-            }
-        });
+        mineConfig.freeBreakable()
+                .stream()
+                .map(WorldMineConfig.FreeBlockData::blockType)
+                .filter(Objects::nonNull)
+                .forEach(freeBlockTypes::add);
 
-        mineConfig.restrictedPlaceable().forEach(blockTypeName -> {
-            @NotNull Optional<BlockType> optionalBlockType = RegistryUtil.getBlockType(logger, blockTypeName);
-            optionalBlockType.ifPresent(restrictedPlaceableBlockTypes::add);
-        });
+        restrictedPlaceableBlockTypes.addAll(mineConfig.restrictedPlaceable());
     }
 
     /**
@@ -174,7 +183,7 @@ public class WorldMine extends AbstractMine {
      * @return true if the location is inside the mine, otherwise false.
      */
     @Override
-    public boolean isLocationInMine(@NotNull Location location) {
+    public boolean isLocationInMine(@NonNull Location location) {
         if(mineWorld == null) return false;
 
         return location.getWorld().getName().equals(mineWorld.getName());
@@ -193,11 +202,11 @@ public class WorldMine extends AbstractMine {
      * @return true if the block can be mined, otherwise false.
      */
     @Override
-    public boolean isBlockMineable(@NotNull UUID uuid, @NotNull Location location, @NotNull BlockType blockType) {
+    public boolean isBlockMineable(@NonNull UUID uuid, @NonNull Location location, @NonNull BlockType blockType) {
         if(mineId == null) return false;
 
         // Check if the location is a player-placed block
-        if(mineConfig.canBreakPlayerBlocks() != null && mineConfig.canBreakPlayerBlocks()) {
+        if(mineConfig.canBreakPlayerBlocks()) {
             return pdcManager.isBlockPlayerPlaced(location);
         }
 
@@ -215,7 +224,7 @@ public class WorldMine extends AbstractMine {
      * @return Always false.
      */
     @Override
-    public boolean isLocationOnCooldown(@NotNull UUID uuid, @NotNull Location location) {
+    public boolean isLocationOnCooldown(@NonNull UUID uuid, @NonNull Location location) {
         return false;
     }
 
@@ -232,12 +241,15 @@ public class WorldMine extends AbstractMine {
      * @param blockBreakEvent A {@link BlockBreakEvent}.
      */
     @Override
-    public void handleBlockBreak(@NotNull BlockBreakEvent blockBreakEvent) {
+    public void handleBlockBreak(@NonNull BlockBreakEvent blockBreakEvent) {
         if(mineId == null) return;
 
-        Locale locale = localeManager.getLocale();
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ? 
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = blockBreakEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -252,15 +264,25 @@ public class WorldMine extends AbstractMine {
         }
 
         // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be broken
-        if(mineConfig.canBreakPlayerBlocks() != null && mineConfig.canBreakPlayerBlocks() && pdcManager.isBlockPlayerPlaced(location)) {
+        if(mineConfig.canBreakPlayerBlocks() && pdcManager.isBlockPlayerPlaced(location)) {
             if(block.getBlockData() instanceof FlowerBed flowerBed) {
                 // Get the player-placed petal count
                 int playerPlacedPetals = pdcManager.getPetalCountPlacedByPlayer(location);
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    // Cancel the event
                     blockBreakEvent.setCancelled(true);
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    }
+
                     return;
                 }
 
@@ -287,22 +309,48 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockBreakEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
         }
     }
 
@@ -320,10 +368,13 @@ public class WorldMine extends AbstractMine {
      * @param blockDropItemEvent A {@link BlockDropItemEvent}.
      */
     @Override
-    public void handleBlockDropItem(@NotNull BlockDropItemEvent blockDropItemEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handleBlockDropItem(@NonNull BlockDropItemEvent blockDropItemEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = blockDropItemEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -339,15 +390,23 @@ public class WorldMine extends AbstractMine {
         }
 
         // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be broken
-        if(mineConfig.canBreakPlayerBlocks() != null && mineConfig.canBreakPlayerBlocks() && pdcManager.isBlockPlayerPlaced(location)) {
+        if(mineConfig.canBreakPlayerBlocks() && pdcManager.isBlockPlayerPlaced(location)) {
             if(blockState.getBlockData() instanceof FlowerBed flowerBed) {
                 // Get the player-placed petal count
                 int playerPlacedPetals = pdcManager.getPetalCountPlacedByPlayer(location);
 
                 // Check if the block has player-placed petals
                 if(playerPlacedPetals == 0) {
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     blockDropItemEvent.setCancelled(true);
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    }
 
                     // Revert the block state
                     BlockState currentBlockState = location.getBlock().getState(false);
@@ -387,8 +446,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -401,8 +468,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -415,8 +490,16 @@ public class WorldMine extends AbstractMine {
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             blockDropItemEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
 
             // Revert the block state
             BlockState currentBlockState = location.getBlock().getState(false);
@@ -438,10 +521,13 @@ public class WorldMine extends AbstractMine {
      * @param playerBucketFillEvent A {@link PlayerBucketFillEvent}.
      */
     @Override
-    public void handleBucketFilled(@NotNull PlayerBucketFillEvent playerBucketFillEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handleBucketFilled(@NonNull PlayerBucketFillEvent playerBucketFillEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerBucketFillEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -454,7 +540,7 @@ public class WorldMine extends AbstractMine {
         if(isBlockTypeFree(blockType)) return;
 
         // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be broken
-        if(mineConfig.canBreakPlayerBlocks() != null && mineConfig.canBreakPlayerBlocks()) {
+        if(mineConfig.canBreakPlayerBlocks()) {
             if(pdcManager.isBlockPlayerPlaced(location)) {
                 return;
             }
@@ -463,29 +549,65 @@ public class WorldMine extends AbstractMine {
                 return;
             }
 
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerBucketFillEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
@@ -506,13 +628,16 @@ public class WorldMine extends AbstractMine {
      * @param playerBucketEmptyEvent A {@link PlayerBucketEmptyEvent}.
      */
     @Override
-    public void handleBucketEmptied(@NotNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+    public void handleBucketEmptied(@NonNull PlayerBucketEmptyEvent playerBucketEmptyEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
         // Locale
-        Locale locale = localeManager.getLocale();
+        Locale locale = localeManager.getConfiguration();
 
         // Player
         Player player = playerBucketEmptyEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -530,31 +655,67 @@ public class WorldMine extends AbstractMine {
         if(blockType == null) return;
 
         // Check if the mine is configured to allow player placed blocks.
-        if(mineConfig.canPlacePlayerBlocks() == null || !mineConfig.canPlacePlayerBlocks()) {
+        if(!mineConfig.canPlacePlayerBlocks()) {
             playerBucketEmptyEvent.setCancelled(true);
-            player.sendMessage(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed());
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is a restricted block
         if(isBlockTypePlacementRestricted(blockType)) {
             playerBucketEmptyEvent.setCancelled(true);
-            player.sendMessage(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed());
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if player placed blocks are restricted to unlocked and free
-        if(mineConfig.restrictPlaceToUnlockedAndFree() != null && mineConfig.restrictPlaceToUnlockedAndFree()) {
+        if(mineConfig.restrictPlaceToUnlockedAndFree()) {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    }
+
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     playerBucketEmptyEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    }
+
                     return;
                 }
             }
@@ -578,16 +739,22 @@ public class WorldMine extends AbstractMine {
      * @param playerInteractEvent A {@link PlayerInteractEvent}.
      */
     @Override
-    public void handlePlayerInteract(@NotNull PlayerInteractEvent playerInteractEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handlePlayerInteract(@NonNull PlayerInteractEvent playerInteractEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerInteractEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+
+        Action action = playerInteractEvent.getAction();
 
         // Block
         Block block = playerInteractEvent.getClickedBlock();
         if(block == null) return;
+        BlockState blockState = block.getState(false);
         Location location = block.getLocation();
         BlockType blockType = block.getType().asBlockType();
         if(blockType == null) return;
@@ -598,43 +765,140 @@ public class WorldMine extends AbstractMine {
         ItemType itemType = eventItemStack.getType().asItemType();
         if(itemType == null) return;
 
-        // If the ItemType is not a hoe, shovel, bone meal, shears, trial key, ominious trial key, or glass bottle, return.
-        if(!ItemTypeUtils.isItemTypeHoe(itemType)
-                && !ItemTypeUtils.isItemTypeShovel(itemType)
-                && !ItemTypeUtils.isItemTypeBoneMeal(itemType)
-                && !ItemTypeUtils.isItemTypeShears(itemType)
-                && !ItemTypeUtils.isItemTypeKey(itemType)
-                && !ItemTypeUtils.isItemTypeGlassBottle(itemType)) return;
-
         // Allow the block to be mined if the block type is configured to be free
         if(isBlockTypeFree(blockType)) return;
 
-        // If the breaking of player-placed blocks is allowed and the locations is marked as player placed,
-        // check if the block is allowed to be broken
-        if(mineConfig.canBreakPlayerBlocks() != null
-                && mineConfig.canBreakPlayerBlocks()
-                && pdcManager.isBlockPlayerPlaced(location)) {
-            return;
-        }
+        if(action.isRightClick() && blockState instanceof Container container) {
+            // Check container access
+            if(!mineConfig.allowContainerAccess()) {
+                playerInteractEvent.setCancelled(true);
 
-        // Check if the block is unlockable, but not unlocked.
-        if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
-            playerInteractEvent.setCancelled(true);
-            return;
-        }
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
-        // Check if the block is not unlockable and is not unlocked.
-        if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
-            playerInteractEvent.setCancelled(true);
-            return;
-        }
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                }
 
-        // Check if the block type is not unlockable and is unlocked.
-        if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
-            playerInteractEvent.setCancelled(true);
+                return;
+            }
+
+            Inventory containerInventory = container.getInventory();
+            InventoryHolder containerHolder = containerInventory.getHolder();
+
+            if(containerHolder instanceof DoubleChest doubleChest) {
+                if(!(doubleChest.getLeftSide(false) instanceof Container leftContainer
+                        && doubleChest.getRightSide(false) instanceof Container rightContainer)) {
+                    if(mineConfig.canPlacePlayerBlocks()
+                            && mineConfig.containerAccessPlayerOnly()
+                            && !pdcManager.isBlockPlayerPlaced(location)) {
+                        playerInteractEvent.setCancelled(true);
+
+                        // Send the player a message if not on cooldown.
+                        if(playerData.shouldSendMessage()) {
+                            // Add a 10-second message cooldown
+                            playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                            // Send the message
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                        }
+                    }
+                } else {
+                    if(mineConfig.canPlacePlayerBlocks()
+                            && mineConfig.containerAccessPlayerOnly()
+                            && (!pdcManager.isBlockPlayerPlaced(leftContainer.getLocation())
+                                || !pdcManager.isBlockPlayerPlaced(rightContainer.getLocation()))) {
+                        playerInteractEvent.setCancelled(true);
+
+                        // Send the player a message if not on cooldown.
+                        if(playerData.shouldSendMessage()) {
+                            // Add a 10-second message cooldown
+                            playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                            // Send the message
+                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                        }
+                    }
+                }
+            } else {
+                if(mineConfig.canPlacePlayerBlocks()
+                        && mineConfig.containerAccessPlayerOnly()
+                        && !pdcManager.isBlockPlayerPlaced(location)) {
+                    playerInteractEvent.setCancelled(true);
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                    }
+                }
+            }
+        } else {
+            // Normal block interaction checks
+            // If the breaking of player-placed blocks is allowed and the locations is marked as player placed,
+            // check if the block is allowed to be broken
+            if(mineConfig.canBreakPlayerBlocks() && pdcManager.isBlockPlayerPlaced(location)) {
+                return;
+            }
+
+            // If the ItemType is not a hoe, shovel, bone meal, shears, trial key, ominious trial key, or glass bottle, return.
+            if(!ItemTypeUtils.isItemTypeHoe(itemType)
+                    && !ItemTypeUtils.isItemTypeShovel(itemType)
+                    && !ItemTypeUtils.isItemTypeBoneMeal(itemType)
+                    && !ItemTypeUtils.isItemTypeShears(itemType)
+                    && !ItemTypeUtils.isItemTypeKey(itemType)
+                    && !ItemTypeUtils.isItemTypeGlassBottle(itemType)) return;
+
+            // Check if the block is unlockable, but not unlocked.
+            if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
+                playerInteractEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
+                }
+
+                return;
+            }
+
+            // Check if the block is not unlockable and is not unlocked.
+            if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
+                playerInteractEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                }
+
+                return;
+            }
+
+            // Check if the block type is not unlockable and is unlocked.
+            if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
+                playerInteractEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                }
+            }
         }
     }
 
@@ -648,10 +912,13 @@ public class WorldMine extends AbstractMine {
      * @param playerHarvestBlockEvent A {@link PlayerHarvestBlockEvent}.
      */
     @Override
-    public void handlePlayerHarvestBlockEvent(@NotNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handlePlayerHarvestBlockEvent(@NonNull PlayerHarvestBlockEvent playerHarvestBlockEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = playerHarvestBlockEvent.getPlayer();
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -666,30 +933,55 @@ public class WorldMine extends AbstractMine {
         }
 
         // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be broken
-        if(mineConfig.canBreakPlayerBlocks() != null
-                && mineConfig.canBreakPlayerBlocks()
+        if(mineConfig.canBreakPlayerBlocks()
                 && pdcManager.isBlockPlayerPlaced(location)) {
             return;
         }
 
         // Check if the block is unlockable, but not unlocked.
         if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+            }
+
             return;
         }
 
         // Check if the block is not unlockable and is not unlocked.
         if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is not unlockable and is unlocked.
         if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             playerHarvestBlockEvent.setCancelled(true);
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+            }
         }
     }
 
@@ -708,7 +1000,7 @@ public class WorldMine extends AbstractMine {
      * @param blockFertilizeEvent A {@link BlockFertilizeEvent}
      */
     @Override
-    public void handleBlockFertilizeEvent(@NotNull BlockFertilizeEvent blockFertilizeEvent) {
+    public void handleBlockFertilizeEvent(@NonNull BlockFertilizeEvent blockFertilizeEvent) {
         Player player = blockFertilizeEvent.getPlayer();
         if(player == null) {
             blockFertilizeEvent.setCancelled(true);
@@ -731,8 +1023,7 @@ public class WorldMine extends AbstractMine {
             if(isBlockTypeFree(blockType)) continue;
 
             // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be fertilized
-            if(mineConfig.canBreakPlayerBlocks() != null
-                    && mineConfig.canBreakPlayerBlocks()
+            if(mineConfig.canBreakPlayerBlocks()
                     && pdcManager.isBlockPlayerPlaced(location)) {
                 if(blockState.getBlockData() instanceof FlowerBed) {
                     // Get the player-placed petal count
@@ -775,11 +1066,10 @@ public class WorldMine extends AbstractMine {
      * Handles a {@link StructureGrowEvent}.
      * Creative players are ignored.
      * If the block can not be mined according to {@link #isBlockMineable(UUID, Location, BlockType)}, then the block is removed from the list of blocks fertilized.
-     *
      * @param structureGrowEvent A {@link StructureGrowEvent}.
      */
     @Override
-    public void handleStructureGrowEvent(@NotNull StructureGrowEvent structureGrowEvent) {
+    public void handleStructureGrowEvent(@NonNull StructureGrowEvent structureGrowEvent) {
         Player player = structureGrowEvent.getPlayer();
         if(player == null) return;
 
@@ -799,8 +1089,7 @@ public class WorldMine extends AbstractMine {
             if(isBlockTypeFree(blockType)) continue;
 
             // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be fertilized
-            if(mineConfig.canBreakPlayerBlocks() != null
-                    && mineConfig.canBreakPlayerBlocks()
+            if(mineConfig.canBreakPlayerBlocks()
                     && pdcManager.isBlockPlayerPlaced(location)) {
                 if(blockState.getBlockData() instanceof FlowerBed) {
                     // Get the player-placed petal count
@@ -840,6 +1129,41 @@ public class WorldMine extends AbstractMine {
     }
 
     /**
+     * Handles an {@link InventoryMoveItemEvent}.
+     * Prevents hoppers from moving items from or two non-player placed blocks.
+     * @param inventoryMoveItemEvent An {@link InventoryMoveItemEvent}.
+     */
+    @Override
+    public void handleHopperMoveItem(@NonNull InventoryMoveItemEvent inventoryMoveItemEvent) {
+        Inventory sourceInventory = inventoryMoveItemEvent.getSource();
+        Inventory destinationInventory = inventoryMoveItemEvent.getDestination();
+
+        if(sourceInventory.getHolder(false) instanceof Container sourceContainer
+                && destinationInventory.getHolder(false) instanceof Container destinationContainer) {
+            BlockType sourceType = sourceContainer.getType().asBlockType();
+            BlockType destinationType = destinationContainer.getType().asBlockType();
+            if(sourceType == null || destinationType == null) return;
+            Location sourceLocation = sourceContainer.getLocation();
+            Location destinationLocation = destinationContainer.getLocation();
+
+            // Allow the hopper transfer if both blocks can be mined for free
+            if(isBlockTypeFree(sourceType) && isBlockTypeFree(destinationType)) {
+                return;
+            }
+
+            // If players can place blocks and the source and destination blocks are player-placed blocks, allow the transfer
+            if(mineConfig.canPlacePlayerBlocks() && mineConfig.hoppersPlayerBlocksOnly()) {
+                if(pdcManager.isBlockPlayerPlaced(sourceLocation) && pdcManager.isBlockPlayerPlaced(destinationLocation)) {
+                    return;
+                }
+            }
+
+            // Cancel the hopper transfer
+            inventoryMoveItemEvent.setCancelled(true);
+        }
+    }
+
+    /**
      * Handles a {@link EntityChangeBlockEvent}.
      * Non-players are ignored.
      * Creative players are ignored.
@@ -853,13 +1177,17 @@ public class WorldMine extends AbstractMine {
      * @param entityChangeBlockEvent A {@link EntityChangeBlockEvent}.
      */
     @Override
-    public void handleEntityChangeBlockEvent(@NotNull EntityChangeBlockEvent entityChangeBlockEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handleEntityChangeBlockEvent(@NonNull EntityChangeBlockEvent entityChangeBlockEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Entity entity = entityChangeBlockEvent.getEntity();
         if(entity instanceof Player player) {
             if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
             UUID uuid = player.getUniqueId();
+            PlayerData playerData = playerDataManager.getPlayerData(uuid);
+
             Block block = entityChangeBlockEvent.getBlock();
             Location location = block.getLocation();
             BlockType blockType = block.getType().asBlockType();
@@ -873,30 +1201,168 @@ public class WorldMine extends AbstractMine {
             }
 
             // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be broken
-            if(mineConfig.canBreakPlayerBlocks() != null
-                    && mineConfig.canBreakPlayerBlocks()
+            if(mineConfig.canBreakPlayerBlocks()
                     && pdcManager.isBlockPlayerPlaced(location)) {
                 return;
             }
 
             // Check if the block is unlockable, but not unlocked.
             if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                }
+
                 return;
             }
 
             // Check if the block is not unlockable and is not unlocked.
             if(!unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                }
+
                 return;
             }
 
             // Check if the block type is not unlockable and is unlocked.
             if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
-                player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 entityChangeBlockEvent.setCancelled(true);
+
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles a {@link HangingPlaceEvent}.
+     * Cancels hanging placement if not allowed.
+     * @param hangingPlaceEvent A {@link HangingPlaceEvent}.
+     */
+    @Override
+    public void handleHangingPlace(@NonNull HangingPlaceEvent hangingPlaceEvent) {
+        if(!mineConfig.allowEntityPlace()) {
+            @Nullable Player player = hangingPlaceEvent.getPlayer();
+            if(player != null) {
+                if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+
+                PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
+                // Send the player a message if not on cooldown.
+                if(playerData.shouldSendMessage()) {
+                    Locale locale = localeManager.getConfiguration();
+
+                    long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                            settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                }
+            }
+
+            hangingPlaceEvent.setCancelled(true);
+        }
+    }
+
+    /**
+     * Handles a {@link HangingBreakEvent}.
+     * Prevents hanging removal if configured.
+     * @param hangingBreakEvent A {@link HangingBreakEvent}.
+     */
+    @Override
+    public void handleHangingBreakEvent(@NonNull HangingBreakEvent hangingBreakEvent) {
+        if(hangingBreakEvent instanceof HangingBreakByEntityEvent) return;
+
+        if(!mineConfig.allowEntityBreak()) {
+            hangingBreakEvent.setCancelled(true);
+        }
+    }
+
+    /**
+     * Handles a {@link HangingBreakByEntityEvent}.
+     * Creative players are ignored.
+     * Prevents hanging removal if configured.
+     * @param hangingBreakByEntityEvent A {@link HangingBreakByEntityEvent}.
+     */
+    @Override
+    public void handleHangingBreakByEntityEvent(@NonNull HangingBreakByEntityEvent hangingBreakByEntityEvent) {
+        Entity remover = hangingBreakByEntityEvent.getRemover();
+        if(remover instanceof Player player) {
+            if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+
+            if(!mineConfig.allowEntityBreak()) {
+                hangingBreakByEntityEvent.setCancelled(true);
+
+                PlayerData playerData = playerDataManager.getPlayerData(player.getUniqueId());
+                // Send the player a message if not on cooldown.
+                if (playerData.shouldSendMessage()) {
+                    Locale locale = localeManager.getConfiguration();
+
+                    long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                            settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+
+                    // Add a 10-second message cooldown
+                    playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                    // Send the message
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                }
+            }
+        } else {
+            if(!mineConfig.allowEntityBreak()) {
+                hangingBreakByEntityEvent.setCancelled(true);
+                return;
+            }
+
+            if(mineConfig.entityBreakPlayerOnly()) {
+                if(!(hangingBreakByEntityEvent.getRemover() instanceof Player)) {
+                    hangingBreakByEntityEvent.setCancelled(true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles a {@link PlayerItemFrameChangeEvent}.
+     * Cancels item frame item insertion or removal if not allowed.
+     * @param playerItemFrameChangeEvent A {@link PlayerItemFrameChangeEvent}.
+     */
+    @Override
+    public void handlePlayerItemFrameChangeEvent(@NonNull PlayerItemFrameChangeEvent playerItemFrameChangeEvent) {
+        Player player = playerItemFrameChangeEvent.getPlayer();
+        if(player.getGameMode().equals(GameMode.CREATIVE)) return;
+
+        PlayerItemFrameChangeEvent.ItemFrameChangeAction action = playerItemFrameChangeEvent.getAction();
+
+        if(action.equals(PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE)) {
+            if(!mineConfig.allowItemFrameItemInsertion()) {
+                playerItemFrameChangeEvent.setCancelled(true);
+            }
+        } else if(action.equals(PlayerItemFrameChangeEvent.ItemFrameChangeAction.REMOVE)) {
+            if(!mineConfig.allowItemFrameItemRemoval()) {
+                playerItemFrameChangeEvent.setCancelled(true);
             }
         }
     }
@@ -917,7 +1383,7 @@ public class WorldMine extends AbstractMine {
      * @param blockExplodeEvent A {@link BlockExplodeEvent}
      */
     @Override
-    public void handleBlockExplodeEvent(@Nullable Player player, @NotNull BlockExplodeEvent blockExplodeEvent) {
+    public void handleBlockExplodeEvent(@Nullable Player player, @NonNull BlockExplodeEvent blockExplodeEvent) {
         // If the explosion is not player initiated, cancel the event.
         // The explosion is treated as not player initiated if they not online or are not connected.
         if(player == null || !player.isOnline() || !player.isConnected()) {
@@ -929,7 +1395,7 @@ public class WorldMine extends AbstractMine {
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         // If player initiated explosions are not allowed, cancel the event.
-        if(mineConfig.allowPlayerExplosions() == null || !mineConfig.allowPlayerExplosions()) {
+        if(!mineConfig.allowPlayerExplosions()) {
             blockExplodeEvent.setCancelled(true);
             return;
         }
@@ -948,8 +1414,7 @@ public class WorldMine extends AbstractMine {
             if(isBlockTypeFree(blockType)) continue;
 
             // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be fertilized
-            if(mineConfig.canBreakPlayerBlocks() != null
-                    && mineConfig.canBreakPlayerBlocks()
+            if(mineConfig.canBreakPlayerBlocks()
                     && pdcManager.isBlockPlayerPlaced(location)) {
                 if(block.getBlockData() instanceof FlowerBed) {
                     // Get the player-placed petal count
@@ -1004,7 +1469,7 @@ public class WorldMine extends AbstractMine {
      * @param entityExplodeEvent A {@link EntityExplodeEvent}
      */
     @Override
-    public void handleEntityExplodeEvent(@Nullable Player player, @NotNull EntityExplodeEvent entityExplodeEvent) {
+    public void handleEntityExplodeEvent(@Nullable Player player, @NonNull EntityExplodeEvent entityExplodeEvent) {
         // If the explosion is not player initiated, cancel the event.
         // The explosion is treated as not player initiated if they not online or are not connected.
         if(player == null || !player.isOnline() || !player.isConnected()) {
@@ -1016,7 +1481,7 @@ public class WorldMine extends AbstractMine {
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         // If player initiated explosions are not allowed, cancel the event.
-        if(mineConfig.allowPlayerExplosions() == null || !mineConfig.allowPlayerExplosions()) {
+        if(!mineConfig.allowPlayerExplosions()) {
             entityExplodeEvent.setCancelled(true);
             return;
         }
@@ -1035,8 +1500,7 @@ public class WorldMine extends AbstractMine {
             if(isBlockTypeFree(blockType)) continue;
 
             // If the breaking of player-placed blocks is allowed and the locations is marked as player placed, check if the block is allowed to be fertilized
-            if(mineConfig.canBreakPlayerBlocks() != null
-                    && mineConfig.canBreakPlayerBlocks()
+            if(mineConfig.canBreakPlayerBlocks()
                     && pdcManager.isBlockPlayerPlaced(location)) {
                 if(block.getBlockData() instanceof FlowerBed) {
                     // Get the player-placed petal count
@@ -1081,7 +1545,7 @@ public class WorldMine extends AbstractMine {
      * @param blockFromToEvent A {@link BlockFromToEvent}
      */
     @Override
-    public void handleBlockFromToEvent(@NotNull BlockFromToEvent blockFromToEvent) {
+    public void handleBlockFromToEvent(@NonNull BlockFromToEvent blockFromToEvent) {
         blockFromToEvent.setCancelled(true);
     }
 
@@ -1095,44 +1559,84 @@ public class WorldMine extends AbstractMine {
      * @param blockPlaceEvent A {@link BlockPlaceEvent}
      */
     @Override
-    public void handleBlockPlace(@NotNull BlockPlaceEvent blockPlaceEvent) {
-        Locale locale = localeManager.getLocale();
+    public void handleBlockPlace(@NonNull BlockPlaceEvent blockPlaceEvent) {
+        long messageCooldownDurationMilliseconds = (settingsManager.getConfiguration() != null ?
+                settingsManager.getConfiguration().messageCooldownDurationSeconds() : 0) * 1000L;
+        Locale locale = localeManager.getConfiguration();
         Player player = blockPlaceEvent.getPlayer();
 
         if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
         UUID uuid = player.getUniqueId();
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
+
         Block block = blockPlaceEvent.getBlock();
         Location location = block.getLocation();
         BlockType blockType = block.getType().asBlockType();
         if(blockType == null) return;
 
         // Check if the mine is configured to allow player placed blocks.
-        if(mineConfig.canPlacePlayerBlocks() == null || !mineConfig.canPlacePlayerBlocks()) {
+        if(!mineConfig.canPlacePlayerBlocks()) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if the block type is a restricted block
         if(isBlockTypePlacementRestricted(blockType)) {
             blockPlaceEvent.setCancelled(true);
-            player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+            // Send the player a message if not on cooldown.
+            if(playerData.shouldSendMessage()) {
+                // Add a 10-second message cooldown
+                playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                // Send the message
+                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+            }
+
             return;
         }
 
         // Check if player placed blocks are restricted to unlocked and free
-        if(mineConfig.restrictPlaceToUnlockedAndFree() != null && mineConfig.restrictPlaceToUnlockedAndFree()) {
+        if(mineConfig.restrictPlaceToUnlockedAndFree()) {
             if(!isBlockTypeFree(blockType)) {
                 if(unlockableBlockTypes.contains(blockType) && !isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                    }
+
                     return;
                 }
 
                 if(!unlockableBlockTypes.contains(blockType) && isBlockTypeUnlocked(uuid, blockType)) {
                     blockPlaceEvent.setCancelled(true);
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+
+                    // Send the player a message if not on cooldown.
+                    if(playerData.shouldSendMessage()) {
+                        // Add a 10-second message cooldown
+                        playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
+
+                        // Send the message
+                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    }
+
                     return;
                 }
             }
@@ -1164,7 +1668,7 @@ public class WorldMine extends AbstractMine {
      * @param playerMoveEvent A {@link PlayerMoveEvent}.
      */
     @Override
-    public void handlePlayerMoveEvent(@NotNull PlayerMoveEvent playerMoveEvent) {
+    public void handlePlayerMoveEvent(@NonNull PlayerMoveEvent playerMoveEvent) {
         Location from = playerMoveEvent.getFrom();
         Location to = playerMoveEvent.getTo();
 
@@ -1185,7 +1689,7 @@ public class WorldMine extends AbstractMine {
      * @param playerTeleportEvent A {@link PlayerTeleportEvent}.
      */
     @Override
-    public void handlePlayerTeleportEvent(@NotNull PlayerTeleportEvent playerTeleportEvent) {
+    public void handlePlayerTeleportEvent(@NonNull PlayerTeleportEvent playerTeleportEvent) {
         Location from = playerTeleportEvent.getFrom();
         Location to = playerTeleportEvent.getTo();
 
@@ -1205,7 +1709,7 @@ public class WorldMine extends AbstractMine {
      * @param playerChunkLoadEvent A {@link PlayerChunkLoadEvent}.
      */
     @Override
-    public void handlePlayerChunkLoad(@NotNull PlayerChunkLoadEvent playerChunkLoadEvent) {}
+    public void handlePlayerChunkLoad(@NonNull PlayerChunkLoadEvent playerChunkLoadEvent) {}
 
     /**
      * Create and show the boss bar for this mine to the player.
@@ -1213,7 +1717,7 @@ public class WorldMine extends AbstractMine {
      * @param uuid The {@link UUID} of the player.
      */
     @Override
-    public void createAndShowBossBar(@NotNull Player player, @NotNull UUID uuid) {
+    public void createAndShowBossBar(@NonNull Player player, @NonNull UUID uuid) {
         if(mineId == null) return;
 
         BossBar.Color bossBarColor;
@@ -1222,16 +1726,16 @@ public class WorldMine extends AbstractMine {
             bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
             bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
         } catch (IllegalArgumentException e) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
             return;
         }
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to create boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create boss bar due no text configured."));
             return;
         }
 
-        BossBar bossBar = BossBar.bossBar(AdventureUtil.serialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
+        BossBar bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
 
         bossBarManager.setBossBar(player, uuid, bossBar);
     }
@@ -1241,18 +1745,18 @@ public class WorldMine extends AbstractMine {
      * @param uuid The {@link UUID} of the player.
      */
     @Override
-    public void updateBossBar(@NotNull UUID uuid) {
+    public void updateBossBar(@NonNull UUID uuid) {
         if(mineId == null) return;
 
         BossBar bossBar = bossBarManager.getBossBar(uuid);
         if(bossBar == null) return;
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.serialize("Unable to update boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update boss bar due no text configured."));
             return;
         }
 
-        bossBar.name(AdventureUtil.serialize(mineConfig.bossBar().text()));
+        bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().text()));
     }
 
     /**
@@ -1289,7 +1793,7 @@ public class WorldMine extends AbstractMine {
      * @param blockType The {@link BlockType} to check.
      * @return true if unlocked, otherwise false. Will always return false if {@link #mineId} is null.
      */
-    private boolean isBlockTypeUnlocked(@NotNull UUID uuid, @NotNull BlockType blockType) {
+    private boolean isBlockTypeUnlocked(@NonNull UUID uuid, @NonNull BlockType blockType) {
         if(mineId == null) return false;
 
         return blocksManager.isBlockTypeUnlocked(uuid, mineId, blockType);
@@ -1300,7 +1804,7 @@ public class WorldMine extends AbstractMine {
      * @param blockType The {@link BlockType} to check.
      * @return true if free to mine, otherwise false.
      */
-    private boolean isBlockTypeFree(@NotNull BlockType blockType) {
+    private boolean isBlockTypeFree(@NonNull BlockType blockType) {
         return freeBlockTypes.contains(blockType);
     }
 
@@ -1309,7 +1813,7 @@ public class WorldMine extends AbstractMine {
      * @param blockType The {@link BlockType} to check.
      * @return true if placement is allowed, otherwise false.
      */
-    private boolean isBlockTypePlacementRestricted(@NotNull BlockType blockType) {
+    private boolean isBlockTypePlacementRestricted(@NonNull BlockType blockType) {
         if(!restrictedPlaceableBlockTypes.isEmpty()) {
             return restrictedPlaceableBlockTypes.contains(blockType);
         }

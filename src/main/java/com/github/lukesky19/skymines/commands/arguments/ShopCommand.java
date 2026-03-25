@@ -18,43 +18,45 @@
 package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineGUIConfig;
+import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
 import com.github.lukesky19.skymines.gui.UnlocksShopGUI;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.gui.GUIManager;
+import com.github.lukesky19.skymines.manager.hook.HookManager;
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
 import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class is used to create the shop command argument.
  */
 public class ShopCommand {
-    private final @NotNull SkyMines skyMines;
-    private final @NotNull LocaleManager localeManager;
-    private final @NotNull GUIConfigManager guiConfigManager;
-    private final @NotNull MineConfigManager mineConfigManager;
-    private final @NotNull MineDataManager mineDataManager;
-    private final @NotNull GUIManager guiManager;
-    private final @NotNull BlocksManager blocksManager;
+    private final @NonNull SkyMines skyMines;
+    private final @NonNull LocaleManager localeManager;
+    private final @NonNull GUIConfigManager guiConfigManager;
+    private final @NonNull MineConfigManager mineConfigManager;
+    private final @NonNull MineDataManager mineDataManager;
+    private final @NonNull UUIDGUIManager guiManager;
+    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull HookManager hookManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, GUIManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, GUIManager, BlocksManager)} instead.
+     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
+     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -69,17 +71,19 @@ public class ShopCommand {
      * @param guiConfigManager A {@link GUIConfigManager} instance.
      * @param mineConfigManager A {@link MineConfigManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
-     * @param guiManager A {@link GUIManager} instance.
+     * @param guiManager A {@link UUIDGUIManager} instance.
      * @param blocksManager A {@link BlocksManager} instance.
+     * @param hookManager A {@link HookManager} instance.
      */
     public ShopCommand(
-            @NotNull SkyMines skyMines,
-            @NotNull LocaleManager localeManager,
-            @NotNull GUIConfigManager guiConfigManager,
-            @NotNull MineConfigManager mineConfigManager,
-            @NotNull MineDataManager mineDataManager,
-            @NotNull GUIManager guiManager,
-            @NotNull BlocksManager blocksManager) {
+            @NonNull SkyMines skyMines,
+            @NonNull LocaleManager localeManager,
+            @NonNull GUIConfigManager guiConfigManager,
+            @NonNull MineConfigManager mineConfigManager,
+            @NonNull MineDataManager mineDataManager,
+            @NonNull UUIDGUIManager guiManager,
+            @NonNull BlocksManager blocksManager,
+            @NonNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.guiConfigManager = guiConfigManager;
@@ -87,68 +91,69 @@ public class ShopCommand {
         this.mineDataManager = mineDataManager;
         this.guiManager = guiManager;
         this.blocksManager = blocksManager;
+        this.hookManager = hookManager;
     }
 
     /**
      * Creates the {@link LiteralCommandNode} of type {@link CommandSourceStack} for the shop command argument.
      * @return A {@link LiteralCommandNode} of type {@link CommandSourceStack} for the shop command argument.
      */
-    public @NotNull LiteralCommandNode<CommandSourceStack> createCommand() {
+    public @NonNull LiteralCommandNode<CommandSourceStack> createCommand() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("shop")
             .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines.shop") && ctx.getSender() instanceof Player)
             .executes(ctx -> {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
-                Locale locale = localeManager.getLocale();
-                @Nullable WorldMineGUIConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
+                Locale locale = localeManager.getConfiguration();
+                @Nullable WorldMineShopConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
 
                 if(guiConfig == null) {
-                    logger.warn(AdventureUtil.serialize("The gui config for the world mine shop is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The gui config for the world mine shop is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
-                AbstractMine mine = mineDataManager.getMineByLocation(player.getLocation());
+                Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                 if(mine == null) {
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
                     return 0;
                 }
 
                 @Nullable String mineId = mine.getMineId();
                 if(mineId == null) {
-                    logger.warn(AdventureUtil.serialize("The mine id for a mine is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The mine id for a mine is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                 if(mineConfig == null) {
-                    logger.warn(AdventureUtil.serialize("The mine config for mine id " + mineId + " is invalid."));
-                    player.sendMessage(AdventureUtil.serialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtil.deserialize("The mine config for mine id " + mineId + " is invalid."));
+                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
-                UnlocksShopGUI unlocksShopGUI = new UnlocksShopGUI(skyMines, guiManager, player, localeManager, blocksManager, mineId, mineConfig, guiConfig);
+                UnlocksShopGUI unlocksShopGUI = new UnlocksShopGUI(skyMines, guiManager, player, localeManager, blocksManager, hookManager, mineId, mineConfig, guiConfig);
 
                 boolean creationResult = unlocksShopGUI.create();
                 if(!creationResult) {
-                    logger.error(AdventureUtil.serialize("Unable to create the InventoryView for the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to create the InventoryView for the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 // This method is completed sync, the api returns a CompletableFuture for supporting plugins with async requirements.
                 boolean updateResult = unlocksShopGUI.update();
                 if(!updateResult) {
-                    logger.error(AdventureUtil.serialize("Unable to decorate the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to decorate the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 boolean openResult = unlocksShopGUI.open();
                 if(!openResult) {
-                    logger.error(AdventureUtil.serialize("Unable to open the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.serialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtil.deserialize("Unable to open the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 

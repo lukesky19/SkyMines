@@ -21,20 +21,29 @@ import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
 import com.github.lukesky19.skymines.gui.FreePreviewGUI;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * The config for a world mine.
- * @param configVersion The config version of the file.
+ * @param version The config version.
  * @param mineId The mine id.
  * @param worldName The world name the mine is for.
  * @param canPlacePlayerBlocks Allow the placing of player placed blocks in mines.
  * @param canBreakPlayerBlocks Allow the mining of player placed blocks.
  * @param restrictPlaceToUnlockedAndFree Restricts the breaking and placing of player blocks to unlocked blocks and free blocks.
  * @param allowPlayerExplosions Allow player initiated explosions to destroy unlocked blocks and free blocks.
+ * @param allowEntityBreak Allow entities like item frames and paintings to be destroyed.
+ * @param entityBreakPlayerOnly Only allow players to break entities like item frames and paintings.
+ * @param allowEntityPlace Allow entities like item frames and paintings to be placed.
+ * @param allowItemFrameItemInsertion Allow players to place items in item frames.
+ * @param allowItemFrameItemRemoval Allow players to remove items from item frames.
+ * @param allowContainerAccess Allow access to containers? I.e., Chests
+ * @param containerAccessPlayerOnly Only allow access to player-placed containers? I.e., Shulkers
+ * @param allowHoppers Allow all hoppers to transfer items?
+ * @param hoppersPlayerBlocksOnly Only allow player-placed hoppers to move to or remove from player-placed containers.
  * @param bossBar The boss bar configuration to show while in the mine.
  * @param unlockableBreakable The {@link List} of {@link UnlockBlockData} for the mine.
  * @param freeBreakable A {@link List} of {@link BlockType} for the mine.
@@ -42,31 +51,41 @@ import java.util.List;
  */
 @ConfigSerializable
 public record WorldMineConfig(
-        @Nullable String configVersion,
+        int version,
         @Nullable String mineId,
         @Nullable String worldName,
-        @Nullable Boolean canPlacePlayerBlocks,
-        @Nullable Boolean canBreakPlayerBlocks,
-        @Nullable Boolean restrictPlaceToUnlockedAndFree,
-        @Nullable Boolean allowPlayerExplosions,
-        @NotNull BossBarData bossBar,
-        @NotNull List<UnlockBlockData> unlockableBreakable,
-        @NotNull List<FreeBlockData> freeBreakable,
-        @NotNull List<String> restrictedPlaceable) {
-
+        boolean canPlacePlayerBlocks,
+        boolean canBreakPlayerBlocks,
+        boolean restrictPlaceToUnlockedAndFree,
+        boolean allowPlayerExplosions,
+        boolean allowEntityPlace,
+        boolean allowEntityBreak,
+        boolean entityBreakPlayerOnly,
+        boolean allowItemFrameItemInsertion,
+        boolean allowItemFrameItemRemoval,
+        boolean allowContainerAccess,
+        boolean containerAccessPlayerOnly,
+        boolean allowHoppers,
+        boolean hoppersPlayerBlocksOnly,
+        @NonNull BossBarData bossBar,
+        @NonNull List<UnlockBlockData> unlockableBreakable,
+        @NonNull List<FreeBlockData> freeBreakable,
+        @NonNull List<BlockType> restrictedPlaceable) {
     /**
      * This record contains data to populate the shop to purchase access to blocks.
      * @param blockType The {@link BlockType} to purchase access to.
      * @param displayItemLocked The {@link ItemStackConfig} to create the button displayed in the shop when a block is not yet purchased.
      * @param displayItemUnlocked The {@link ItemStackConfig} to create the button displayed in the shop when a block has been unlocked/purchased.
-     * @param buyPrice The buy price to unlock the block type.
+     * @param priceData The {@link PriceData} to unlock the block type.
+     * @param buyPrice The legacy buy price to unlock the block type. For migration purposes only.
      */
     @ConfigSerializable
     public record UnlockBlockData(
-            @Nullable String blockType,
-            @NotNull ItemStackConfig displayItemLocked,
-            @NotNull ItemStackConfig displayItemUnlocked,
-            @Nullable Double buyPrice) {}
+            @Nullable BlockType blockType,
+            @NonNull ItemStackConfig displayItemLocked,
+            @NonNull ItemStackConfig displayItemUnlocked,
+            @NonNull PriceData priceData,
+            @Deprecated(since = "3.2.0.0") @Nullable Double buyPrice) {}
 
     /**
      * This record contains data to populate the preview gui with free blocks.
@@ -74,7 +93,7 @@ public record WorldMineConfig(
      * @param displayItem The {@link ItemStackConfig} to use for the {@link FreePreviewGUI}.
      */
     @ConfigSerializable
-    public record FreeBlockData(@Nullable String blockType, @NotNull ItemStackConfig displayItem) {}
+    public record FreeBlockData(@Nullable BlockType blockType, @NonNull ItemStackConfig displayItem) {}
 
     /**
      * The data for the boss bar shown to the player while in the mine
@@ -87,4 +106,15 @@ public record WorldMineConfig(
             @Nullable String text,
             @Nullable String color,
             @Nullable String overlay) {}
+
+    /**
+     * The price data for unlocking a block in the mine.
+     * @apiNote The data here is money OR player points, not both.
+     * @param money The money required to unlock the block.
+     * @param playerPoints The player points required to unlock the block.
+     */
+    @ConfigSerializable
+    public record PriceData(
+            @Nullable Double money,
+            @Nullable Integer playerPoints) {}
 }

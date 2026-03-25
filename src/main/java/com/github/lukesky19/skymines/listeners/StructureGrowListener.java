@@ -18,18 +18,18 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.StructureGrowEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class listens to when a player grows a structure and if that location is inside a mine, the event is passed to that mine.
  */
 public class StructureGrowListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -46,7 +46,7 @@ public class StructureGrowListener implements Listener {
      * Constructor
      * @param mineDataManager A MineDataManager instance.
      */
-    public StructureGrowListener(@NotNull MineDataManager mineDataManager) {
+    public StructureGrowListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -56,7 +56,7 @@ public class StructureGrowListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockDrop(StructureGrowEvent structureGrowEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(structureGrowEvent.getLocation());
+        Mine mine = mineDataManager.getMineByLocation(structureGrowEvent.getLocation());
         if(mine != null) {
             mine.handleStructureGrowEvent(structureGrowEvent);
         }

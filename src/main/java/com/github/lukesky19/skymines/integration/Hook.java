@@ -15,21 +15,20 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-package com.github.lukesky19.skymines.manager.gui;
-
-import com.github.lukesky19.skylib.api.gui.AbstractGUIManager;
-import com.github.lukesky19.skymines.SkyMines;
-import org.jetbrains.annotations.NotNull;
+package com.github.lukesky19.skymines.integration;
 
 /**
- * This class manages open GUIs.
+ * This class is implemented to create hooks into different plugins.
  */
-public class GUIManager extends AbstractGUIManager {
+public interface Hook {
     /**
-     * Constructor
-     * @param skyMines A {@link SkyMines} instance.
+     * Attempts to initialize the hook into a plugin.
      */
-    public GUIManager(@NotNull SkyMines skyMines) {
-        super(skyMines);
-    }
+    void initialize();
+
+    /**
+     * Checks if the hook was initialized or not.
+     * @return true if hooked or false.
+     */
+    boolean isHooked();
 }

@@ -18,18 +18,18 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class listens for when an entity changes a block and passes that event to the relevant mine (if any).
  */
 public class EntityChangeBlockListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -46,7 +46,7 @@ public class EntityChangeBlockListener implements Listener {
      * Constructor
      * @param mineDataManager A {@link MineDataManager} instance.
      */
-    public EntityChangeBlockListener(@NotNull MineDataManager mineDataManager) {
+    public EntityChangeBlockListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -56,7 +56,7 @@ public class EntityChangeBlockListener implements Listener {
      */
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent entityChangeBlockEvent) {
-        AbstractMine mine = mineDataManager.getMineByLocation(entityChangeBlockEvent.getBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(entityChangeBlockEvent.getBlock().getLocation());
         if(mine != null) {
             mine.handleEntityChangeBlockEvent(entityChangeBlockEvent);
         }

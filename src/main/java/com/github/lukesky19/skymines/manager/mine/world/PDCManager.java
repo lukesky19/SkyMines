@@ -22,7 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class PDCManager {
      * @param location The {@link Location} to check.
      * @return true if player placed, otherwise false.
      */
-    public boolean isBlockPlayerPlaced(@NotNull Location location) {
+    public boolean isBlockPlayerPlaced(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_placed");
         List<Location> locationsList = pdc.get(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION));
@@ -61,7 +61,7 @@ public class PDCManager {
      * @param location The {@link Location} to check.
      * @return true if player water-logged, otherwise false.
      */
-    public boolean isBlockWaterLoggedByPlayer(@NotNull Location location) {
+    public boolean isBlockWaterLoggedByPlayer(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_water_logged");
         List<Location> locationsList = pdc.get(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION));
@@ -76,7 +76,7 @@ public class PDCManager {
      * @param location The {@link Location} to check.
      * @return The amount of petals placed by a player.
      */
-    public int getPetalCountPlacedByPlayer(@NotNull Location location) {
+    public int getPetalCountPlacedByPlayer(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_petal_count");
         Map<Location, Integer> petalCountByLocation = pdc.get(namespacedKey, DataType.asMap(DataType.LOCATION, PersistentDataType.INTEGER));
@@ -89,9 +89,10 @@ public class PDCManager {
     /**
      * Mark a {@link Location} as player-placed.
      * This data is stored on the Chunk's {@link PersistentDataContainer}.
+     * This data is stored on the Chunk's {@link PersistentDataContainer}.
      * @param location The {@link Location} to mark as player-placed.
      */
-    public void markLocationAsPlayerPlaced(@NotNull Location location) {
+    public void markLocationAsPlayerPlaced(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_placed");
         List<Location> locationsList = new ArrayList<>(pdc.getOrDefault(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION), new ArrayList<>()));
@@ -102,11 +103,30 @@ public class PDCManager {
     }
 
     /**
+     * Clear a {@link Location} as player-placed.
+     * This data is stored on the Chunk's {@link PersistentDataContainer}.
+     * @param location The {@link Location} to remove as player-placed.
+     */
+    public void clearLocationAsPlayerPlaced(@NonNull Location location) {
+        PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
+        NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_placed");
+        List<Location> locationsList = new ArrayList<>(pdc.getOrDefault(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION), new ArrayList<>()));
+
+        locationsList.remove(location);
+
+        if(locationsList.isEmpty()) {
+            pdc.remove(namespacedKey);
+        } else {
+            pdc.set(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION), locationsList);
+        }
+    }
+
+    /**
      * Mark a {@link Location} as player water-logged.
      * This data is stored on the Chunk's {@link PersistentDataContainer}.
      * @param location The {@link Location} to mark as player water-logged.
      */
-    public void markLocationAsPlayerWaterLogged(@NotNull Location location) {
+    public void markLocationAsPlayerWaterLogged(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_water_logged");
         List<Location> locationsList = new ArrayList<>(pdc.getOrDefault(namespacedKey, PersistentDataType.LIST.listTypeFrom(DataType.LOCATION), new ArrayList<>()));
@@ -120,7 +140,7 @@ public class PDCManager {
      * Add 1 to the petal count placed by a player at the provided {@link Location}.
      * @param location The {@link Location} to add to the petal count for.
      */
-    public void addPetalCountPlacedByPlayer(@NotNull Location location) {
+    public void addPetalCountPlacedByPlayer(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_petal_count");
         Map<Location, Integer> petalCountByLocation = new HashMap<>(pdc.getOrDefault(namespacedKey, DataType.asMap(DataType.LOCATION, PersistentDataType.INTEGER), new HashMap<>()));
@@ -136,7 +156,7 @@ public class PDCManager {
      * Remove the stored petal count placed by a player for a particular location.
      * @param location The {@link Location} to remove the petal count for.
      */
-    public void clearPetalCountPlacedByPlayer(@NotNull Location location) {
+    public void clearPetalCountPlacedByPlayer(@NonNull Location location) {
         PersistentDataContainer pdc = location.getChunk().getPersistentDataContainer();
         NamespacedKey namespacedKey = new NamespacedKey("skymines", "player_petal_count");
         Map<Location, Integer> petalCountByLocation = new HashMap<>(pdc.getOrDefault(namespacedKey, DataType.asMap(DataType.LOCATION, PersistentDataType.INTEGER), new HashMap<>()));

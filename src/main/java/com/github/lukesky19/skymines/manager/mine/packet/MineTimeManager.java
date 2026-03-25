@@ -20,7 +20,7 @@ package com.github.lukesky19.skymines.manager.mine.packet;
 import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -28,8 +28,8 @@ import java.util.UUID;
  * This class manages the player's time to use mines.
  */
 public class MineTimeManager {
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull BossBarManager bossBarManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull BossBarManager bossBarManager;
 
     /**
      * Default Constructor.
@@ -47,7 +47,7 @@ public class MineTimeManager {
      * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      */
-    public MineTimeManager(@NotNull PlayerDataManager playerDataManager, @NotNull BossBarManager bossBarManager) {
+    public MineTimeManager(@NonNull PlayerDataManager playerDataManager, @NonNull BossBarManager bossBarManager) {
         this.playerDataManager = playerDataManager;
         this.bossBarManager = bossBarManager;
     }
@@ -59,8 +59,8 @@ public class MineTimeManager {
      * @return true if the player has time for the provided mine id, otherwise false.
      * Will return false if there is no {@link PlayerData} as well.
      */
-    public boolean hasMineTime(@NotNull UUID uuid, @NotNull String mineId) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public boolean hasMineTime(@NonNull UUID uuid, @NonNull String mineId) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         return playerData.hasMineTime(mineId);
     }
@@ -71,8 +71,8 @@ public class MineTimeManager {
      * @param mineId The mine id to get time for.
      * @return The player's time to access the mine. Will return 0 if no {@link PlayerData} exists for the player.
      */
-    public long getMineTime(@NotNull UUID uuid, @NotNull String mineId) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public long getMineTime(@NonNull UUID uuid, @NonNull String mineId) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         return playerData.getMineTime(mineId);
     }
@@ -84,8 +84,8 @@ public class MineTimeManager {
      * @param mineId The mine id to increment mine time for.
      * @param timeSeconds The time in seconds to add.
      */
-    public void incrementMineTime(@NotNull UUID uuid, @NotNull String mineId, long timeSeconds) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void incrementMineTime(@NonNull UUID uuid, @NonNull String mineId, long timeSeconds) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         playerData.incrementMineTime(mineId, timeSeconds);
 
@@ -99,8 +99,8 @@ public class MineTimeManager {
      * @param mineId The mine id to increment mine time for.
      * @param timeSeconds The time in seconds to add.
      */
-    public void decrementMineTime(@NotNull UUID uuid, @NotNull String mineId, long timeSeconds) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void decrementMineTime(@NonNull UUID uuid, @NonNull String mineId, long timeSeconds) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         playerData.decrementMineTime(mineId, timeSeconds);
 
@@ -113,8 +113,8 @@ public class MineTimeManager {
      * @param mineId The id of the mine.
      * @param timeSeconds The time in seconds.
      */
-    public void setMineTime(@NotNull UUID uuid, @NotNull String mineId, long timeSeconds) {
-        @NotNull PlayerData playerData = playerDataManager.getPlayerData(uuid);
+    public void setMineTime(@NonNull UUID uuid, @NonNull String mineId, long timeSeconds) {
+        PlayerData playerData = playerDataManager.getPlayerData(uuid);
 
         playerData.setMineTime(mineId, timeSeconds);
 

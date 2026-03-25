@@ -18,18 +18,18 @@
 package com.github.lukesky19.skymines.listeners;
 
 import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.mine.AbstractMine;
+import com.github.lukesky19.skymines.mine.Mine;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This classes listens for when a block is clicked and if that block is inside a mine, the event is passed to that mine.
  */
 public class PlayerInteractListener implements Listener {
-    private final @NotNull MineDataManager mineDataManager;
+    private final @NonNull MineDataManager mineDataManager;
 
     /**
      * Default Constructor.
@@ -46,7 +46,7 @@ public class PlayerInteractListener implements Listener {
      * Constructor
      * @param mineDataManager A MineDataManager instance.
      */
-    public PlayerInteractListener(@NotNull MineDataManager mineDataManager) {
+    public PlayerInteractListener(@NonNull MineDataManager mineDataManager) {
         this.mineDataManager = mineDataManager;
     }
 
@@ -58,7 +58,7 @@ public class PlayerInteractListener implements Listener {
     public void onBlockClick(PlayerInteractEvent playerInteractEvent) {
         if(playerInteractEvent.getClickedBlock() == null) return;
 
-        AbstractMine mine = mineDataManager.getMineByLocation(playerInteractEvent.getClickedBlock().getLocation());
+        Mine mine = mineDataManager.getMineByLocation(playerInteractEvent.getClickedBlock().getLocation());
         if(mine != null) {
            mine.handlePlayerInteract(playerInteractEvent);
         }

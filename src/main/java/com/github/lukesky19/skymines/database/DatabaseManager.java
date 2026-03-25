@@ -23,7 +23,7 @@ import com.github.lukesky19.skymines.database.tables.MineIdsTable;
 import com.github.lukesky19.skymines.database.tables.PlayerIdsTable;
 import com.github.lukesky19.skymines.database.tables.TimesTable;
 import com.github.lukesky19.skymines.database.tables.UnlockedBlocksTable;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
  * This class manages access to the database table classes and migrating the database as needed.
  */
 public class DatabaseManager extends AbstractDatabaseManager {
-    private final @NotNull PlayerIdsTable playerIdsTable;
-    private final @NotNull MineIdsTable mineIdsTable;
-    private final @NotNull TimesTable timesTable;
-    private final @NotNull UnlockedBlocksTable unlockedBlocksTable;
+    private final @NonNull PlayerIdsTable playerIdsTable;
+    private final @NonNull MineIdsTable mineIdsTable;
+    private final @NonNull TimesTable timesTable;
+    private final @NonNull UnlockedBlocksTable unlockedBlocksTable;
 
     /**
      * Constructor
@@ -47,7 +47,7 @@ public class DatabaseManager extends AbstractDatabaseManager {
      * @param connectionManager Α {@link ConnectionManager} instance.
      * @param queueManager A {@link QueueManager} instance.
      */
-    public DatabaseManager(@NotNull SkyMines skyMines, @NotNull ConnectionManager connectionManager, @NotNull QueueManager queueManager) {
+    public DatabaseManager(@NonNull SkyMines skyMines, @NonNull ConnectionManager connectionManager, @NonNull QueueManager queueManager) {
         super(connectionManager, queueManager);
 
         playerIdsTable = new PlayerIdsTable(queueManager);
@@ -65,10 +65,26 @@ public class DatabaseManager extends AbstractDatabaseManager {
     }
 
     /**
+     * Get the {@link PlayerIdsTable}.
+     * @return The {@link PlayerIdsTable}.
+     */
+    public @NonNull PlayerIdsTable getPlayerIdsTable() {
+        return playerIdsTable;
+    }
+
+    /**
+     * Get the {@link MineIdsTable}.
+     * @return The {@link MineIdsTable}.
+     */
+    public @NonNull MineIdsTable getMineIdsTable() {
+        return mineIdsTable;
+    }
+
+    /**
      * Get the {@link TimesTable}.
      * @return The {@link TimesTable}.
      */
-    public @NotNull TimesTable getTimesTable() {
+    public @NonNull TimesTable getTimesTable() {
         return timesTable;
     }
 
@@ -76,14 +92,14 @@ public class DatabaseManager extends AbstractDatabaseManager {
      * Get the {@link UnlockedBlocksTable}.
      * @return The {@link UnlockedBlocksTable}.
      */
-    public @NotNull UnlockedBlocksTable getUnlockedBlocksTable() {
+    public @NonNull UnlockedBlocksTable getUnlockedBlocksTable() {
         return unlockedBlocksTable;
     }
 
     /**
      * Migrates the legacy times data to the new times table.
      */
-    private @NotNull CompletableFuture<Boolean> migrateTimesTable() {
+    private @NonNull CompletableFuture<Boolean> migrateTimesTable() {
         return timesTable.isLegacyFormat().thenCompose(legacyFormatResult -> {
             if (legacyFormatResult) {
                 return timesTable.getLegacyData().thenCompose(legacyTimesByMineId ->

@@ -17,29 +17,16 @@
 */
 package com.github.lukesky19.skymines.util;
 
-import org.bukkit.Location;
-import org.jspecify.annotations.NonNull;
-
 /**
- * This class contains methods used throughout the plugin.
+ * Currency types supported by the plugin.
  */
-public class PluginUtils {
+public enum Currency {
     /**
-     * Default Constructor. All methods in this class are static.
-     * @deprecated All methods in this class are static.
-     * @throws RuntimeException if this method is used.
+     * The default currency. The currency that uses the economy provided by Vault.
      */
-    @Deprecated
-    public PluginUtils() {
-        throw new RuntimeException("The use of the default constructor is not allowed.");
-    }
-
+    MONEY,
     /**
-     * Create a new {@link Location} that removes the yaw and pitch.
-     * @param location The {@link Location} to clean.
-     * @return A {@link Location} without the yaw and pitch.
+     * The currency that uses player points.
      */
-    public static @NonNull Location getCleanLocation(@NonNull Location location) {
-        return new Location(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    }
+    PLAYER_POINTS
 }

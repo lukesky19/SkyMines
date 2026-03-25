@@ -24,7 +24,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -32,15 +32,15 @@ import java.util.UUID;
  * This class listens to when a player disconnects from the server, unloads their player data and removes the boss bar shown to them (if any).
  */
 public class PlayerQuitListener implements Listener {
-    private final @NotNull PlayerDataManager playerDataManager;
-    private final @NotNull BossBarManager bossBarManager;
+    private final @NonNull PlayerDataManager playerDataManager;
+    private final @NonNull BossBarManager bossBarManager;
 
     /**
      * Constructor
      * @param playerDataManager A {@link PlayerDataManager} instance.
      * @param bossBarManager A {@link BossBarManager} instance.
      */
-    public PlayerQuitListener(@NotNull PlayerDataManager playerDataManager, @NotNull BossBarManager bossBarManager) {
+    public PlayerQuitListener(@NonNull PlayerDataManager playerDataManager, @NonNull BossBarManager bossBarManager) {
         this.playerDataManager = playerDataManager;
         this.bossBarManager = bossBarManager;
     }
@@ -54,6 +54,8 @@ public class PlayerQuitListener implements Listener {
         Player player = playerQuitEvent.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        playerDataManager.unloadPlayerData(uuid).thenAccept(v -> bossBarManager.removeBossBar(player, uuid));
+        playerDataManager.savePlayerData(uuid)
+                .thenAccept(v1 -> playerDataManager.unloadPlayerData(uuid)
+                        .thenAccept(v2 -> bossBarManager.removeBossBar(player, uuid)));
     }
 }

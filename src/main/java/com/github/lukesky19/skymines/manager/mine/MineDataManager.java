@@ -21,8 +21,8 @@ import com.github.lukesky19.skymines.mine.Mine;
 import com.github.lukesky19.skymines.mine.PacketMine;
 import com.github.lukesky19.skymines.mine.WorldMine;
 import org.bukkit.Location;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;

@@ -17,20 +17,21 @@
 */
 package com.github.lukesky19.skymines.manager.config;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
-import com.github.lukesky19.skylib.api.itemstack.ItemStackConfig;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.common.platform.PlatformUtils;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurationNode;
 import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
+import com.github.lukesky19.skylib.libs.configurate.yaml.NodeStyle;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
+import com.github.lukesky19.skylib.paper.api.itemstack.ItemStackConfig;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.world.WorldMinePreviewConfig;
 import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -86,8 +87,8 @@ public class GUIConfigManager {
             skyMines.saveResource("gui/free_preview.yml", false);
         }
 
-        YamlConfigurationLoader shopLoader = ConfigurationUtility.getYamlConfigurationLoader(shopPath);
-        YamlConfigurationLoader previewLoader = ConfigurationUtility.getYamlConfigurationLoader(previewPath);
+        YamlConfigurationLoader shopLoader = createLoader(shopPath);
+        YamlConfigurationLoader previewLoader = createLoader(previewPath);
 
         try {
             ConfigurationNode shopRoot = shopLoader.load();
@@ -106,7 +107,7 @@ public class GUIConfigManager {
                 }
             }
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("<red>Failed to load world mine shop config.</red> " + e.getMessage()));
+            logger.warn(AdventureUtility.plain("Failed to load world mine shop config. Error: " + e.getMessage()));
         }
 
         try {
@@ -127,7 +128,7 @@ public class GUIConfigManager {
                 }
             }
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("<red>Failed to load preview GUI config.</red> " + e.getMessage()));
+            logger.warn(AdventureUtility.plain("Failed to load preview GUI config. Error: " + e.getMessage()));
         }
     }
 
@@ -153,7 +154,7 @@ public class GUIConfigManager {
             }
 
             default -> {
-                logger.error(AdventureUtil.deserialize("Unable to migrate world mine preview config due to an unknown config version."));
+                logger.error(AdventureUtility.plain("Unable to migrate world mine preview config due to an unknown config version."));
                 return null;
             }
         }
@@ -218,7 +219,7 @@ public class GUIConfigManager {
             }
 
             default -> {
-                logger.error(AdventureUtil.deserialize("Unable to migrate world mine shop config due to an unknown config version."));
+                logger.error(AdventureUtility.plain("Unable to migrate world mine shop config due to an unknown config version."));
                 return null;
             }
         }
@@ -232,7 +233,7 @@ public class GUIConfigManager {
         try {
             Path shopPath = Path.of(skyMines.getDataFolder() + File.separator + "gui" + File.separator + "unlocks_shop.yml");
 
-            YamlConfigurationLoader yamlConfigurationLoader = ConfigurationUtility.getYamlConfigurationLoader(shopPath);
+            YamlConfigurationLoader yamlConfigurationLoader = createLoader(shopPath);
 
             ConfigurationNode node = yamlConfigurationLoader.createNode();
 
@@ -240,7 +241,7 @@ public class GUIConfigManager {
 
             yamlConfigurationLoader.save(node);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("Failed to save world mine gui config file. Error: " + e.getMessage()));
+            logger.error(AdventureUtility.plain("Failed to save world mine gui config file. Error: " + e.getMessage()));
         }
     }
 
@@ -252,7 +253,7 @@ public class GUIConfigManager {
         try {
             Path previewPath = Path.of(skyMines.getDataFolder() + File.separator + "gui" + File.separator + "free_preview.yml");
 
-            YamlConfigurationLoader yamlConfigurationLoader = ConfigurationUtility.getYamlConfigurationLoader(previewPath);
+            YamlConfigurationLoader yamlConfigurationLoader = createLoader(previewPath);
 
             ConfigurationNode node = yamlConfigurationLoader.createNode();
 
@@ -260,7 +261,7 @@ public class GUIConfigManager {
 
             yamlConfigurationLoader.save(node);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("Failed to save world mine gui config file. Error: " + e.getMessage()));
+            logger.error(AdventureUtility.plain("Failed to save world mine gui config file. Error: " + e.getMessage()));
         }
     }
 
@@ -274,18 +275,35 @@ public class GUIConfigManager {
 
         if(version == 0) {
             ConfigurationNode legacyVersionNode = root.node("config-version");
-            @Nullable String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
+            String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
             try {
                 switch (legacyVersion) {
                     case "1.1.0.0" -> versionNode.set(2);
 
                     case "1.0.0.0" -> versionNode.set(1);
 
-                    case null, default -> logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                    case null, default -> logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
                 }
             } catch (SerializationException e) {
-                logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
             }
         }
+    }
+
+    /**
+     * Create the {@link YamlConfigurationLoader} for the path provided.
+     * @apiNote {@link PlatformUtils#getSerializers()} are included by default.
+     * @param path The {@link Path}.
+     * @return The {@link YamlConfigurationLoader}.
+     */
+    protected @NonNull YamlConfigurationLoader createLoader(@NonNull Path path) {
+        return YamlConfigurationLoader.builder()
+                .path(path)
+                .nodeStyle(NodeStyle.BLOCK)
+                .indent(4)
+                .defaultOptions(configurationOptions ->
+                        configurationOptions.serializers(builder ->
+                                builder.registerAll(PlatformUtils.getSerializers())))
+                .build();
     }
 }

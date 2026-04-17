@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.manager.player;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.player.PlayerData;
 import com.github.lukesky19.skymines.database.DatabaseManager;
@@ -66,7 +66,7 @@ public class PlayerDataManager {
      * @return The {@link PlayerData} for the player.
      */
     public @NonNull PlayerData getPlayerData(@NonNull UUID uuid) {
-        return playerDataMap.computeIfAbsent(uuid, playerId -> new PlayerData());
+        return playerDataMap.computeIfAbsent(uuid, _ -> new PlayerData());
     }
 
     /**
@@ -85,7 +85,7 @@ public class PlayerDataManager {
     public @NonNull CompletableFuture<Boolean> savePlayerData(@NonNull UUID uuid) {
         PlayerData playerData = playerDataMap.get(uuid);
         if(playerData == null) {
-            logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " as they have no player data stored."));
+            logger.error(AdventureUtility.plain("Failed to save player data for " + uuid + " as they have no player data stored."));
             return CompletableFuture.completedFuture(false);
         }
 
@@ -102,7 +102,7 @@ public class PlayerDataManager {
                     return allTimesSuccessful && allBlocksSuccessful;
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                    logger.error(AdventureUtility.plain("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                     return false;
                 });
     }
@@ -128,7 +128,7 @@ public class PlayerDataManager {
                         return allTimesSuccessful && allBlocksSuccessful;
                     })
                     .exceptionally(e -> {
-                        logger.error(AdventureUtil.deserialize("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
+                        logger.error(AdventureUtility.plain("Failed to save player data for " + uuid + " due to: " + e.getMessage()));
                         return false;
                     });
 
@@ -136,7 +136,7 @@ public class PlayerDataManager {
         });
 
         return CompletableFuture.allOf(saveFutures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> saveFutures.stream().allMatch(CompletableFuture::join));
+                .thenApply(_ -> saveFutures.stream().allMatch(CompletableFuture::join));
     }
 
     /**
@@ -159,7 +159,7 @@ public class PlayerDataManager {
                     playerDataMap.put(uuid, playerData);
                 })
                 .exceptionally(e -> {
-                    logger.error(AdventureUtil.deserialize("Failed to load player data for " + uuid + " due to " + e.getMessage()));
+                    logger.error(AdventureUtility.plain("Failed to load player data for " + uuid + " due to " + e.getMessage()));
                     return null;
                 });
     }
@@ -171,7 +171,7 @@ public class PlayerDataManager {
      */
     public @NonNull CompletableFuture<Void> unloadPlayerData(@NonNull UUID uuid) {
         return savePlayerData(uuid)
-                .thenAccept(result -> playerDataMap.remove(uuid))
+                .thenAccept(_ -> playerDataMap.remove(uuid))
                 .exceptionally(ex -> {
                     System.err.println("Failed to save player data. " + ex.getMessage());
                     return null;

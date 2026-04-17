@@ -17,8 +17,9 @@
 */
 package com.github.lukesky19.skymines.commands.arguments;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.paper.api.adventure.PaperAdventureUtility;
+import com.github.lukesky19.skylib.paper.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
@@ -37,7 +38,6 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -105,31 +105,31 @@ public class ShopCommand {
                 ComponentLogger logger = skyMines.getComponentLogger();
                 Player player = (Player) ctx.getSource().getSender();
                 Locale locale = localeManager.getConfiguration();
-                @Nullable WorldMineShopConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
+                WorldMineShopConfig guiConfig = guiConfigManager.getWorldMineShopConfig();
 
                 if(guiConfig == null) {
-                    logger.warn(AdventureUtil.deserialize("The gui config for the world mine shop is invalid."));
-                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtility.plain("The gui config for the world mine shop is invalid."));
+                    player.sendMessage(PaperAdventureUtility.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 Mine mine = mineDataManager.getMineByLocation(player.getLocation());
                 if(mine == null) {
-                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
+                    player.sendMessage(PaperAdventureUtility.deserialize(player, locale.prefix() + locale.worldMineMessages().guiErrorNotInMine()));
                     return 0;
                 }
 
-                @Nullable String mineId = mine.getMineId();
+                String mineId = mine.getMineId();
                 if(mineId == null) {
-                    logger.warn(AdventureUtil.deserialize("The mine id for a mine is invalid."));
-                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtility.plain("The mine id for a mine is invalid."));
+                    player.sendMessage(PaperAdventureUtility.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
-                @Nullable WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
+                WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
                 if(mineConfig == null) {
-                    logger.warn(AdventureUtil.deserialize("The mine config for mine id " + mineId + " is invalid."));
-                    player.sendMessage(AdventureUtil.deserialize(player, locale.prefix() + locale.guiOpenError()));
+                    logger.warn(AdventureUtility.plain("The mine config for mine id " + mineId + " is invalid."));
+                    player.sendMessage(PaperAdventureUtility.deserialize(player, locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
@@ -137,23 +137,23 @@ public class ShopCommand {
 
                 boolean creationResult = unlocksShopGUI.create();
                 if(!creationResult) {
-                    logger.error(AdventureUtil.deserialize("Unable to create the InventoryView for the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtility.deserialize("Unable to create the InventoryView for the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 // This method is completed sync, the api returns a CompletableFuture for supporting plugins with async requirements.
                 boolean updateResult = unlocksShopGUI.update();
                 if(!updateResult) {
-                    logger.error(AdventureUtil.deserialize("Unable to decorate the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtility.deserialize("Unable to decorate the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 
                 boolean openResult = unlocksShopGUI.open();
                 if(!openResult) {
-                    logger.error(AdventureUtil.deserialize("Unable to open the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.guiOpenError()));
+                    logger.error(AdventureUtility.deserialize("Unable to open the unlocks shop GUI for player " + player.getName() + " due to a configuration error."));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.guiOpenError()));
                     return 0;
                 }
 

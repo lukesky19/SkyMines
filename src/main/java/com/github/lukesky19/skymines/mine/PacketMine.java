@@ -17,8 +17,8 @@
 */
 package com.github.lukesky19.skymines.mine;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.player.PlayerUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.paper.api.player.PlayerUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
@@ -58,8 +58,8 @@ import org.bukkit.event.player.*;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootTable;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -138,20 +138,20 @@ public class PacketMine implements Mine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.deserialize("Unable to create mine due to a null mine id."));
+            logger.error(AdventureUtility.plain("Unable to create mine due to a null mine id."));
             status = false;
             return;
         }
 
         if(mineConfig.worldName() == null) {
-            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to a world name not being configured.</red>"));
+            logger.warn(AdventureUtility.plain("Unable to create mine due to a world name not being configured."));
             status = false;
             return;
         }
 
         World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
         if(mineWorld == null) {
-            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            logger.warn(AdventureUtility.plain("Unable to create mine due to world " + mineConfig.worldName() + " not being found."));
             status = false;
             return;
         }
@@ -159,7 +159,7 @@ public class PacketMine implements Mine {
 
         RegionManager regionManager = WorldGuard.getInstance().getPlatform().getRegionContainer().get(BukkitAdapter.adapt(mineWorld));
         if(regionManager == null) {
-            logger.error(AdventureUtil.deserialize("<red>Unable to create mine due to an invalid region manager. Is the world of name " + mineConfig.worldName() + " valid?</red>"));
+            logger.warn(AdventureUtility.plain("Unable to create mine due to an invalid region manager. Is the world of name " + mineConfig.worldName() + " valid?"));
             status = false;
             return;
         }
@@ -167,7 +167,7 @@ public class PacketMine implements Mine {
 
         ProtectedRegion parentRegion = getRegion(mineConfig.parentRegion());
         if(parentRegion == null) {
-            logger.error(AdventureUtil.deserialize("Unable to create mine due to parent region " + mineConfig.parentRegion() + " not being found."));
+            logger.error(AdventureUtility.plain("Unable to create mine due to parent region " + mineConfig.parentRegion() + " not being found."));
             status = false;
             return;
         }
@@ -176,7 +176,7 @@ public class PacketMine implements Mine {
         for(PacketMineConfig.ChildRegionData childRegionData :  mineConfig.childRegions()) {
             ProtectedRegion childRegion = getRegion(childRegionData.region());
             if(childRegion == null) {
-                logger.warn(AdventureUtil.deserialize("Unable to find a child region for " + childRegionData.region() + "."));
+                logger.warn(AdventureUtility.plain("Unable to find a child region for " + childRegionData.region() + "."));
                 continue;
             }
 
@@ -185,7 +185,7 @@ public class PacketMine implements Mine {
                 PacketMineConfig.BlockData blockData = childRegionData.blocksAllowed().get(i);
 
                 if(blockData.block() == null || blockData.replacement() == null) {
-                    logger.warn(AdventureUtil.deserialize("Invalid block data config at index " + i + ". This is because of a world type or replacement type is not configured for mine " + mineId + "."));
+                    logger.warn(AdventureUtility.plain("Invalid block data config at index " + i + ". This is because of a world type or replacement type is not configured for mine " + mineId + "."));
                     continue;
                 }
 
@@ -194,7 +194,7 @@ public class PacketMine implements Mine {
                 Material worldMaterial = worldBlockType.asMaterial();
                 Material replacementMaterial = replacementBlockType.asMaterial();
                 if(worldMaterial == null || replacementMaterial == null) {
-                    logger.warn(AdventureUtil.deserialize("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
+                    logger.warn(AdventureUtility.plain("Invalid block data config at index " + i + ". This is because of an invalid world or replacement BlockType for mine " + mineId + "."));
                     continue;
                 }
 
@@ -204,7 +204,7 @@ public class PacketMine implements Mine {
                     if(key != null) {
                         lootTable = skyMines.getServer().getLootTable(key);
                     } else {
-                        logger.warn(AdventureUtil.deserialize("Unable to get loot table due to a null NamespacedKey at index " + i + " for mine " + mineId + "."));
+                        logger.warn(AdventureUtility.plain("Unable to get loot table due to a null NamespacedKey at index " + i + " for mine " + mineId + "."));
                     }
                 }
 
@@ -299,7 +299,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             }
 
             return;
@@ -322,7 +322,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
             }
         } else {
             if(!isBlockMineable(uuid, location, blockType)) {
@@ -334,7 +334,7 @@ public class PacketMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
                 }
             }
         }
@@ -367,7 +367,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             }
 
             return;
@@ -450,7 +450,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             }
 
             return;
@@ -525,7 +525,7 @@ public class PacketMine implements Mine {
             playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
             // Send the message
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+            player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
         }
     }
 
@@ -569,7 +569,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             }
 
             return;
@@ -590,7 +590,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().cooldown()));
             }
         } else {
             if(!isBlockMineable(uuid, location, blockType)) {
@@ -602,7 +602,7 @@ public class PacketMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().canNotBreakBlock()));
                 }
             }
         }
@@ -638,7 +638,7 @@ public class PacketMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().mineAccessNoTime()));
             }
 
             return;
@@ -807,7 +807,7 @@ public class PacketMine implements Mine {
             playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
             // Send the message
-            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
+            player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.packetMineMessages().canNotPlaceBlock()));
         }
     }
 
@@ -887,25 +887,25 @@ public class PacketMine implements Mine {
             bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
             bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
         } catch (IllegalArgumentException e) {
-            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
             return;
         }
 
         BossBar bossBar;
         if(mineTimeSeconds > 0) {
             if(mineConfig.bossBar().timeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create a boss bar due to invalid boss bar time text."));
+                skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to create a boss bar due to invalid boss bar time text."));
                 return;
             }
 
-            bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
+            bossBar = BossBar.bossBar(AdventureUtility.deserialize(mineConfig.bossBar().timeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         } else {
             if(mineConfig.bossBar().noTimeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create a boss bar due to invalid boss bar no time text."));
+                skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to create a boss bar due to invalid boss bar no time text."));
                 return;
             }
 
-            bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().noTimeText(), placeholders), 1, bossBarColor, bossBarOverlay);
+            bossBar = BossBar.bossBar(AdventureUtility.deserialize(mineConfig.bossBar().noTimeText(), placeholders), 1, bossBarColor, bossBarOverlay);
         }
 
         bossBarManager.setBossBar(player, uuid, bossBar);
@@ -927,18 +927,18 @@ public class PacketMine implements Mine {
 
         if(mineTimeSeconds > 0) {
             if(mineConfig.bossBar().timeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update a boss bar due to invalid boss bar time text."));
+                skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to update a boss bar due to invalid boss bar time text."));
                 return;
             }
 
-            bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().timeText(), placeholders));
+            bossBar.name(AdventureUtility.deserialize(mineConfig.bossBar().timeText(), placeholders));
         } else {
             if(mineConfig.bossBar().noTimeText() == null) {
-                skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update a boss bar due to invalid boss bar no time text."));
+                skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to update a boss bar due to invalid boss bar no time text."));
                 return;
             }
 
-            bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().noTimeText(), placeholders));
+            bossBar.name(AdventureUtility.deserialize(mineConfig.bossBar().noTimeText(), placeholders));
         }
     }
 
@@ -959,7 +959,7 @@ public class PacketMine implements Mine {
 
                     Map<Location, BlockData> blockDataMap = cooldownManager.getBlockDataOnCooldown(uuid);
                     List<BlockState> blockStates = new ArrayList<>();
-                    blockDataMap.forEach((blockLocation, blockData) -> {
+                    blockDataMap.forEach((blockLocation, _) -> {
                         BlockState blockState = blockLocation.getBlock().getState(true);
                         blockStates.add(blockState);
                     });

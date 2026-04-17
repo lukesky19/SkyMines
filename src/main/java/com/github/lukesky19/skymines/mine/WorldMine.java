@@ -17,8 +17,8 @@
 */
 package com.github.lukesky19.skymines.mine;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.player.PlayerUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.paper.api.player.PlayerUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
@@ -56,8 +56,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -134,20 +134,20 @@ public class WorldMine implements Mine {
         if(mineConfig.mineId() != null) {
             this.mineId = mineConfig.mineId();
         } else {
-            logger.error(AdventureUtil.deserialize("Unable to create a world mine due to a null mine id."));
+            logger.warn(AdventureUtility.plain("Unable to create a world mine due to a null mine id."));
             status = false;
             return;
         }
 
         if(mineConfig.worldName() == null) {
-            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to a world name not being configured.</red>"));
+            logger.warn(AdventureUtility.plain("Unable to create a world mine due to a world name not being configured."));
             status = false;
             return;
         }
 
         World mineWorld = skyMines.getServer().getWorld(mineConfig.worldName());
         if(mineWorld == null) {
-            logger.error(AdventureUtil.deserialize("<red>Unable to create a world mine due to world " + mineConfig.worldName() + " not being found.</red>"));
+            logger.warn(AdventureUtility.plain("Unable to create a world mine due to world " + mineConfig.worldName() + " not being found."));
             status = false;
             return;
         }
@@ -280,7 +280,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     }
 
                     return;
@@ -317,7 +317,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             }
 
             return;
@@ -333,7 +333,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             return;
@@ -349,7 +349,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
         }
     }
@@ -405,7 +405,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                     }
 
                     // Revert the block state
@@ -454,7 +454,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             }
 
             // Revert the block state
@@ -476,7 +476,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             // Revert the block state
@@ -498,7 +498,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             // Revert the block state
@@ -557,7 +557,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             return;
@@ -573,7 +573,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             }
 
             return;
@@ -589,7 +589,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             return;
@@ -605,7 +605,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             return;
@@ -664,7 +664,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             }
 
             return;
@@ -680,7 +680,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             }
 
             return;
@@ -698,7 +698,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
                     }
 
                     return;
@@ -713,7 +713,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
                     }
 
                     return;
@@ -779,7 +779,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                 }
 
                 return;
@@ -802,7 +802,7 @@ public class WorldMine implements Mine {
                             playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                             // Send the message
-                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                            player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                         }
                     }
                 } else {
@@ -818,7 +818,7 @@ public class WorldMine implements Mine {
                             playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                             // Send the message
-                            player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                            player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                         }
                     }
                 }
@@ -834,7 +834,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                     }
                 }
             }
@@ -864,7 +864,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotUnlocked()));
                 }
 
                 return;
@@ -880,7 +880,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                 }
 
                 return;
@@ -896,7 +896,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockInteractionNotAllowed()));
                 }
             }
         }
@@ -948,7 +948,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
             }
 
             return;
@@ -964,7 +964,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
 
             return;
@@ -980,7 +980,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
             }
         }
     }
@@ -1216,7 +1216,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotUnlocked()));
                 }
 
                 return;
@@ -1232,7 +1232,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 }
 
                 return;
@@ -1248,7 +1248,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 }
             }
         }
@@ -1262,7 +1262,7 @@ public class WorldMine implements Mine {
     @Override
     public void handleHangingPlace(@NonNull HangingPlaceEvent hangingPlaceEvent) {
         if(!mineConfig.allowEntityPlace()) {
-            @Nullable Player player = hangingPlaceEvent.getPlayer();
+            Player player = hangingPlaceEvent.getPlayer();
             if(player != null) {
                 if(player.getGameMode().equals(GameMode.CREATIVE)) return;
 
@@ -1278,7 +1278,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
                 }
             }
 
@@ -1327,7 +1327,7 @@ public class WorldMine implements Mine {
                     playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                     // Send the message
-                    player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
+                    player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockBreakNotAllowed()));
                 }
             }
         } else {
@@ -1585,7 +1585,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             }
 
             return;
@@ -1601,7 +1601,7 @@ public class WorldMine implements Mine {
                 playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                 // Send the message
-                player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
             }
 
             return;
@@ -1619,7 +1619,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotUnlocked()));
                     }
 
                     return;
@@ -1634,7 +1634,7 @@ public class WorldMine implements Mine {
                         playerData.setMessageCooldown(System.currentTimeMillis() + messageCooldownDurationMilliseconds);
 
                         // Send the message
-                        player.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
+                        player.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockPlaceNotAllowed()));
                     }
 
                     return;
@@ -1726,16 +1726,16 @@ public class WorldMine implements Mine {
             bossBarColor = BossBar.Color.valueOf(mineConfig.bossBar().color());
             bossBarOverlay = BossBar.Overlay.valueOf(mineConfig.bossBar().overlay());
         } catch (IllegalArgumentException e) {
-            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
+            skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to show boss bar due to a configuration error. " + e.getMessage()));
             return;
         }
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to create boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to create boss bar due no text configured."));
             return;
         }
 
-        BossBar bossBar = BossBar.bossBar(AdventureUtil.deserialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
+        BossBar bossBar = BossBar.bossBar(AdventureUtility.deserialize(mineConfig.bossBar().text()), 1, bossBarColor, bossBarOverlay);
 
         bossBarManager.setBossBar(player, uuid, bossBar);
     }
@@ -1752,11 +1752,11 @@ public class WorldMine implements Mine {
         if(bossBar == null) return;
 
         if(mineConfig.bossBar().text() == null) {
-            skyMines.getComponentLogger().warn(AdventureUtil.deserialize("Unable to update boss bar due no text configured."));
+            skyMines.getComponentLogger().warn(AdventureUtility.deserialize("Unable to update boss bar due no text configured."));
             return;
         }
 
-        bossBar.name(AdventureUtil.deserialize(mineConfig.bossBar().text()));
+        bossBar.name(AdventureUtility.deserialize(mineConfig.bossBar().text()));
     }
 
     /**

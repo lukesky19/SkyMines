@@ -17,8 +17,8 @@
 */
 package com.github.lukesky19.skymines.commands.arguments;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.paper.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
@@ -99,7 +99,7 @@ public class BlocksCommand {
         builder.then(Commands.literal("unlock")
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
+                                .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);
                                     }
@@ -141,7 +141,7 @@ public class BlocksCommand {
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
                                                 return 0;
                                             }
                                             BlockType blockType = optionalBlockType.get();
@@ -150,7 +150,7 @@ public class BlocksCommand {
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                                 return 0;
                                             }
 
@@ -160,14 +160,14 @@ public class BlocksCommand {
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
                                             if(blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyUnlocked(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyUnlocked(), placeholders));
                                                 return 1;
                                             }
 
                                             blocksManager.addUnlockedBlock(targetPlayerId, mineId, blockType);
 
-                                            sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
-                                            targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
+                                            sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
+                                            targetPlayer.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
                                             return 1;
                                         })
                                 )
@@ -178,7 +178,7 @@ public class BlocksCommand {
         builder.then(Commands.literal("lock")
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
+                                .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);
                                     }
@@ -221,7 +221,7 @@ public class BlocksCommand {
                                             if(optionalBlockType.isEmpty()) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("block_type", blockTypeName));
 
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().invalidBlockType(), placeholders));
                                                 return 0;
                                             }
                                             BlockType blockType = optionalBlockType.get();
@@ -230,7 +230,7 @@ public class BlocksCommand {
                                             if(mine == null) {
                                                 List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                                 return 0;
                                             }
 
@@ -240,14 +240,14 @@ public class BlocksCommand {
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
                                             if(!blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
-                                                sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyLocked(), placeholders));
+                                                sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyLocked(), placeholders));
                                                 return 1;
                                             }
 
                                             blocksManager.removeUnlockedBlock(targetPlayerId, mineId, blockType);
 
-                                            sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockLocked(), placeholders));
-                                            targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blockLocked(), placeholders));
+                                            sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockLocked(), placeholders));
+                                            targetPlayer.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockLocked(), placeholders));
                                             return 1;
                                         })
                                 )
@@ -258,7 +258,7 @@ public class BlocksCommand {
         builder.then(Commands.literal("reset")
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .then(Commands.argument("mine_id", StringArgumentType.string())
-                                .suggests((commandContext, suggestionsBuilder) -> {
+                                .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);
                                     }
@@ -282,7 +282,7 @@ public class BlocksCommand {
                                     if(mine == null) {
                                         List<TagResolver.Single> placeholders = List.of(Placeholder.parsed("mine_id", mineId));
 
-                                        sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
+                                        sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.noMineWithId(), placeholders));
                                         return 0;
                                     }
 
@@ -292,8 +292,8 @@ public class BlocksCommand {
 
                                     blocksManager.removeUnlockedBlocks(targetPlayerId, mineId);
 
-                                    sender.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().playerBlocksLocked(), placeholders));
-                                    targetPlayer.sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.worldMineMessages().blocksLocked(), placeholders));
+                                    sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlocksLocked(), placeholders));
+                                    targetPlayer.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blocksLocked(), placeholders));
 
                                     return 1;
                                 })

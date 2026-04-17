@@ -42,7 +42,6 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;
@@ -196,7 +195,7 @@ public class ExplosionListener implements Listener {
                 if(listLocation.equals(location)) {
                     locationIterator.remove();
 
-                    @Nullable Player player = skyMines.getServer().getPlayer(playerId);
+                    Player player = skyMines.getServer().getPlayer(playerId);
 
                     Mine mine = mineDataManager.getMineByLocation(location);
                     if(mine != null) {
@@ -258,7 +257,7 @@ public class ExplosionListener implements Listener {
                 if(listEntityId.equals(explodedEntityId)) {
                     entityIdIterator.remove();
 
-                    @Nullable Player player = skyMines.getServer().getPlayer(playerId);
+                    Player player = skyMines.getServer().getPlayer(playerId);
 
                     Mine mine = mineDataManager.getMineByLocation(entityExplodeEvent.getLocation());
                     if(mine != null) {

@@ -1,9 +1,9 @@
 plugins {
-    java
+    `java-library`
 }
 
 group = "com.github.lukesky19"
-version = "3.2.0.0"
+version = "3.3.0.0"
 
 repositories {
     mavenCentral()
@@ -16,15 +16,20 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14-SNAPSHOT")
+    // Paper
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+
+    // SkyLib
+    compileOnly("com.github.lukesky19:SkyLib:2.0.0.0")
+
+    // Integration
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.16-SNAPSHOT")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
-    compileOnly("com.github.lukesky19:SkyLib:1.5.0.0")
     compileOnly("org.black_ixx:playerpoints:3.3.3")
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
 }
 
 tasks {

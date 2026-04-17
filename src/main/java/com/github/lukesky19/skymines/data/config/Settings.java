@@ -18,7 +18,7 @@
 package com.github.lukesky19.skymines.data.config;
 
 import com.github.lukesky19.skylib.libs.configurate.objectmapping.ConfigSerializable;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The plugin's settings configuration.

@@ -22,8 +22,8 @@ import com.github.lukesky19.skymines.util.PluginUtils;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Location;
 import org.bukkit.block.BlockType;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,7 +154,7 @@ public class PlayerData {
      * @return The cooldown in seconds as a {@link Long} or null if no cooldown.
      */
     public @Nullable Long getLocationCooldownSeconds(@NonNull Location location) {
-        @Nullable BlockData blockData = blockDataByLocation.get(location);
+        BlockData blockData = blockDataByLocation.get(location);
         if(blockData == null) return null;
 
         return blockData.getCooldownSeconds();
@@ -206,7 +206,7 @@ public class PlayerData {
      * @return true if the player has unlocked access to the block, otherwise false. Will also return false if no data is stored for said mine id.
      */
     public boolean isBlockTypeUnlocked(@NonNull String mineId, @NonNull BlockType blockType) {
-        @Nullable List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
+        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
         if(unlockedBlocks == null) return false;
 
         return unlockedBlocks.contains(blockType);
@@ -218,7 +218,7 @@ public class PlayerData {
      * @param blockType The {@link BlockType}.
      */
     public void addUnlockedBlock(@NonNull String mineId, @NonNull BlockType blockType) {
-        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.computeIfAbsent(mineId, id -> new ArrayList<>());
+        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.computeIfAbsent(mineId, _ -> new ArrayList<>());
         unlockedBlocks.add(blockType);
         unlockedBlocksByMineId.put(mineId, unlockedBlocks);
     }
@@ -229,7 +229,7 @@ public class PlayerData {
      * @param blockType The {@link BlockType}.
      */
     public void removeUnlockedBlock(@NonNull String mineId, @NonNull BlockType blockType) {
-        @Nullable List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
+        List<BlockType> unlockedBlocks = unlockedBlocksByMineId.get(mineId);
         if(unlockedBlocks == null) return;
 
         unlockedBlocks.remove(blockType);

@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.commands;
 
-import com.github.lukesky19.skylib.api.gui.impl.UUIDGUIManager;
+import com.github.lukesky19.skylib.paper.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.commands.arguments.*;
 import com.github.lukesky19.skymines.manager.config.GUIConfigManager;

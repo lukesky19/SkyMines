@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.database.tables;
 
-import com.github.lukesky19.skylib.api.database.parameter.impl.StringParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.StringParameter;
 import com.github.lukesky19.skymines.database.QueueManager;
 import org.jspecify.annotations.NonNull;
 

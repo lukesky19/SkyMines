@@ -17,11 +17,11 @@
 */
 package com.github.lukesky19.skymines.database.tables;
 
-import com.github.lukesky19.skylib.api.database.parameter.Parameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.LongParameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.StringParameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.UUIDParameter;
-import com.github.lukesky19.skylib.api.registry.RegistryUtil;
+import com.github.lukesky19.skylib.common.api.database.parameter.Parameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.LongParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.StringParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.UUIDParameter;
+import com.github.lukesky19.skylib.paper.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.database.QueueManager;
 import com.google.gson.Gson;

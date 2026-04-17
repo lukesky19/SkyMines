@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.commands.arguments;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -64,7 +64,7 @@ public class HelpCommand {
                     Locale locale = localeManager.getConfiguration();
 
                     for (String msg : locale.help()) {
-                        sender.sendMessage(AdventureUtil.deserialize(msg));
+                        sender.sendMessage(AdventureUtility.deserialize(msg));
                     }
 
                     return 1;

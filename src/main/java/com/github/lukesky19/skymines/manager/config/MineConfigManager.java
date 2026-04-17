@@ -17,11 +17,12 @@
 */
 package com.github.lukesky19.skymines.manager.config;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
-import com.github.lukesky19.skylib.api.configurate.ConfigurationUtility;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
+import com.github.lukesky19.skylib.common.platform.PlatformUtils;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurateException;
 import com.github.lukesky19.skylib.libs.configurate.ConfigurationNode;
 import com.github.lukesky19.skylib.libs.configurate.serialize.SerializationException;
+import com.github.lukesky19.skylib.libs.configurate.yaml.NodeStyle;
 import com.github.lukesky19.skylib.libs.configurate.yaml.YamlConfigurationLoader;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.packet.PacketMineConfig;
@@ -29,8 +30,8 @@ import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
 import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.database.tables.MineIdsTable;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,7 +101,7 @@ public class MineConfigManager {
             paths.filter(Files::isRegularFile)
                     .forEach(path -> {
                         PacketMineConfig mineConfig = null;
-                        YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
+                        YamlConfigurationLoader loader = createLoader(path);
                         String fileName = path.toFile().getName();
 
                         try {
@@ -110,11 +111,11 @@ public class MineConfigManager {
 
                             mineConfig = root.get(PacketMineConfig.class);
                         } catch (ConfigurateException e) {
-                            logger.warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
+                            logger.warn(AdventureUtility.plain("Failed to load packet mine config for " + path.toFile()));
                         }
 
                         if(mineConfig != null) {
-                            @Nullable PacketMineConfig migratedMineConfig = migratePacketMineConfig(mineConfig, fileName);
+                            PacketMineConfig migratedMineConfig = migratePacketMineConfig(mineConfig, fileName);
                             if(migratedMineConfig != null) {
                                 if(mineConfig != migratedMineConfig) {
                                     savePacketMineConfig(path, migratedMineConfig);
@@ -125,13 +126,13 @@ public class MineConfigManager {
 
                                     packetMineConfigs.put(migratedMineConfig.mineId(), migratedMineConfig);
                                 } else {
-                                    logger.warn(AdventureUtil.deserialize("Failed to load packet mine config for " + path.toFile()));
+                                    logger.warn(AdventureUtility.plain("Failed to load packet mine config for " + path.toFile()));
                                 }
                             } else {
-                                logger.warn(AdventureUtil.deserialize("Failed to migrate packet mine config for " + fileName));
+                                logger.warn(AdventureUtility.plain("Failed to migrate packet mine config for " + fileName));
                             }
                         } else {
-                            logger.warn(AdventureUtil.deserialize("Failed to load packet mine config for " + fileName));
+                            logger.warn(AdventureUtility.plain("Failed to load packet mine config for " + fileName));
                         }
                     });
         } catch (IOException e) {
@@ -141,7 +142,7 @@ public class MineConfigManager {
         try(Stream<Path> paths = Files.walk(Paths.get(skyMines.getDataFolder() + File.separator + "mines" + File.separator + "world"))) {
             for(Path path : paths.filter(Files::isRegularFile).toList()) {
                 WorldMineConfig mineConfig;
-                YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
+                YamlConfigurationLoader loader = createLoader(path);
                 String fileName = path.toFile().getName();
 
                 try {
@@ -151,14 +152,14 @@ public class MineConfigManager {
 
                     mineConfig = root.get(WorldMineConfig.class);
                 } catch (ConfigurateException e) {
-                    logger.warn(AdventureUtil.deserialize("Failed to load world mine config for " + fileName));
+                    logger.warn(AdventureUtility.plain("Failed to load world mine config for " + fileName));
                     continue;
                 }
 
                 if(mineConfig != null) {
-                    @Nullable WorldMineConfig migratedMineConfig = migrateWorldMineConfig(mineConfig, fileName);
+                    WorldMineConfig migratedMineConfig = migrateWorldMineConfig(mineConfig, fileName);
                     if(migratedMineConfig == null) {
-                        logger.warn(AdventureUtil.deserialize("Failed to migrate world mine config for " + fileName));
+                        logger.warn(AdventureUtility.plain("Failed to migrate world mine config for " + fileName));
                         continue;
                     }
 
@@ -171,10 +172,10 @@ public class MineConfigManager {
 
                         worldMineConfigMap.put(migratedMineConfig.mineId(), migratedMineConfig);
                     } else {
-                        logger.warn(AdventureUtil.deserialize("The world mine config for " + fileName + " has an invalid mine id."));
+                        logger.warn(AdventureUtility.plain("The world mine config for " + fileName + " has an invalid mine id."));
                     }
                 } else {
-                    logger.warn(AdventureUtil.deserialize("Failed to load world mine config for " + fileName));
+                    logger.warn(AdventureUtility.plain("Failed to load world mine config for " + fileName));
                 }
             }
         } catch (IOException e) {
@@ -205,7 +206,7 @@ public class MineConfigManager {
             }
 
             default -> {
-                logger.warn(AdventureUtil.deserialize("Unable to migrate packet mine config due to an unknown config version for " + packetMineConfig.version() + " in file " + fileName));
+                logger.warn(AdventureUtility.plain("Unable to migrate packet mine config due to an unknown config version for " + packetMineConfig.version() + " in file " + fileName));
                 return null;
             }
         }
@@ -281,7 +282,7 @@ public class MineConfigManager {
             }
 
             default -> {
-                logger.warn(AdventureUtil.deserialize("Unable to migrate world mine config due to an unknown config version for " + worldMineConfig.version() + " in file " + fileName));
+                logger.warn(AdventureUtility.plain("Unable to migrate world mine config due to an unknown config version for " + worldMineConfig.version() + " in file " + fileName));
                 return null;
             }
         }
@@ -293,7 +294,7 @@ public class MineConfigManager {
      */
     private void savePacketMineConfig(@NonNull Path path, @NonNull PacketMineConfig packetMineConfig) {
         try {
-            YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
+            YamlConfigurationLoader loader = createLoader(path);
 
             ConfigurationNode node = loader.createNode();
 
@@ -301,7 +302,7 @@ public class MineConfigManager {
 
             loader.save(node);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("Failed to save packet mine config file. Error: " + e.getMessage()));
+            logger.error(AdventureUtility.plain("Failed to save packet mine config file. Error: " + e.getMessage()));
         }
     }
 
@@ -311,7 +312,7 @@ public class MineConfigManager {
      */
     private void saveWorldMineConfig(@NonNull Path path, @NonNull WorldMineConfig worldMineConfig) {
         try {
-            YamlConfigurationLoader loader = ConfigurationUtility.getYamlConfigurationLoader(path);
+            YamlConfigurationLoader loader = createLoader(path);
 
             ConfigurationNode node = loader.createNode();
 
@@ -319,7 +320,7 @@ public class MineConfigManager {
 
             loader.save(node);
         } catch (ConfigurateException e) {
-            logger.error(AdventureUtil.deserialize("Failed to save world mine config file. Error: " + e.getMessage()));
+            logger.error(AdventureUtility.plain("Failed to save world mine config file. Error: " + e.getMessage()));
         }
     }
 
@@ -333,15 +334,15 @@ public class MineConfigManager {
 
         if(version == 0) {
             ConfigurationNode legacyVersionNode = root.node("config-version");
-            @Nullable String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
+            String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
             try {
                 switch (legacyVersion) {
                     case "3.0.0.0" -> versionNode.set(3);
 
-                    case null, default -> logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                    case null, default -> logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
                 }
             } catch (SerializationException e) {
-                logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
             }
         }
     }
@@ -356,18 +357,35 @@ public class MineConfigManager {
 
         if(version == 0) {
             ConfigurationNode legacyVersionNode = root.node("config-version");
-            @Nullable String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
+            String legacyVersion = legacyVersionNode.virtual() ? null : legacyVersionNode.getString();
             try {
                 switch (legacyVersion) {
                     case "1.1.0.0" -> versionNode.set(2);
 
                     case "1.0.0.0" -> versionNode.set(1);
 
-                    case null, default -> logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                    case null, default -> logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
                 }
             } catch (SerializationException e) {
-                logger.warn(AdventureUtil.deserialize("Failed to convert String-based version to numeric version"));
+                logger.warn(AdventureUtility.plain("Failed to convert String-based version to numeric version"));
             }
         }
+    }
+
+    /**
+     * Create the {@link YamlConfigurationLoader} for the path provided.
+     * @apiNote {@link PlatformUtils#getSerializers()} are included by default.
+     * @param path The {@link Path}.
+     * @return The {@link YamlConfigurationLoader}.
+     */
+    protected @NonNull YamlConfigurationLoader createLoader(@NonNull Path path) {
+        return YamlConfigurationLoader.builder()
+                .path(path)
+                .nodeStyle(NodeStyle.BLOCK)
+                .indent(4)
+                .defaultOptions(configurationOptions ->
+                        configurationOptions.serializers(builder ->
+                                builder.registerAll(PlatformUtils.getSerializers())))
+                .build();
     }
 }

@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.commands.arguments;
 
-import com.github.lukesky19.skylib.api.adventure.AdventureUtil;
+import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.data.config.Locale;
 import com.github.lukesky19.skymines.manager.config.LocaleManager;
@@ -67,7 +67,7 @@ public class ReloadCommand {
 
                     skyMines.reload(false);
 
-                    ctx.getSource().getSender().sendMessage(AdventureUtil.deserialize(locale.prefix() + locale.reload()));
+                    ctx.getSource().getSender().sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.reload()));
 
                     return 1;
                 });

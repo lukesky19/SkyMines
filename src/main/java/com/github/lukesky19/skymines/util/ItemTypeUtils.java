@@ -19,8 +19,8 @@ package com.github.lukesky19.skymines.util;
 
 import org.bukkit.block.BlockType;
 import org.bukkit.inventory.ItemType;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 

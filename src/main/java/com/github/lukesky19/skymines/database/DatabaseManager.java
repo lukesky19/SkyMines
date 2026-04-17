@@ -17,7 +17,7 @@
 */
 package com.github.lukesky19.skymines.database;
 
-import com.github.lukesky19.skylib.api.database.AbstractDatabaseManager;
+import com.github.lukesky19.skylib.common.api.database.AbstractDatabaseManager;
 import com.github.lukesky19.skymines.SkyMines;
 import com.github.lukesky19.skymines.database.tables.MineIdsTable;
 import com.github.lukesky19.skymines.database.tables.PlayerIdsTable;
@@ -58,7 +58,7 @@ public class DatabaseManager extends AbstractDatabaseManager {
         playerIdsTable.createTable();
         mineIdsTable.createTable();
 
-        migrateTimesTable().thenAccept(result -> {
+        migrateTimesTable().thenAccept(_ -> {
             timesTable.createTable();
             unlockedBlocksTable.createTable();
         });
@@ -103,7 +103,7 @@ public class DatabaseManager extends AbstractDatabaseManager {
         return timesTable.isLegacyFormat().thenCompose(legacyFormatResult -> {
             if (legacyFormatResult) {
                 return timesTable.getLegacyData().thenCompose(legacyTimesByMineId ->
-                        timesTable.dropTable().thenCompose(dropTableResult -> {
+                        timesTable.dropTable().thenCompose(_ -> {
                             Map<String, Map<UUID, Long>> updatedData = legacyTimesByMineId.entrySet().stream()
                                 .collect(Collectors.toMap(
                                         Map.Entry::getKey,
@@ -114,22 +114,22 @@ public class DatabaseManager extends AbstractDatabaseManager {
                                                 ))
                                 ));
 
-                        return timesTable.createTable().thenCompose(v -> {
+                        return timesTable.createTable().thenCompose(_ -> {
                             List<CompletableFuture<Boolean>> mineIdFutures = new ArrayList<>();
                             List<CompletableFuture<Boolean>> playerIdFutures = new ArrayList<>();
 
                             updatedData.forEach((mineId, playerData) -> {
                                 mineIdFutures.add(mineIdsTable.insertMineId(mineId));
-                                playerData.forEach((uuid, time) -> {
+                                playerData.forEach((uuid, _) -> {
                                     playerIdFutures.add(playerIdsTable.insertPlayerId(uuid));
                                 });
                             });
 
                             CompletableFuture<Void> allFutures = CompletableFuture.allOf(
                                     mineIdFutures.toArray(new CompletableFuture[0])
-                            ).thenCombine(CompletableFuture.allOf(playerIdFutures.toArray(new CompletableFuture[0])), (v1, v2) -> null);
+                            ).thenCombine(CompletableFuture.allOf(playerIdFutures.toArray(new CompletableFuture[0])), (_, _) -> null);
 
-                            return allFutures.thenCompose(v1 -> timesTable.saveMineTimes(updatedData)
+                            return allFutures.thenCompose(_ -> timesTable.saveMineTimes(updatedData)
                                     .thenApply(results -> !results.contains(false)));
                         });
                 }));

@@ -23,8 +23,8 @@ import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
 import com.github.lukesky19.skymines.mine.Mine;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 

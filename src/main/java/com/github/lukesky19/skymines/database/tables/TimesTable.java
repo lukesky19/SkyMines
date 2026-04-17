@@ -17,10 +17,10 @@
 */
 package com.github.lukesky19.skymines.database.tables;
 
-import com.github.lukesky19.skylib.api.database.parameter.Parameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.LongParameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.StringParameter;
-import com.github.lukesky19.skylib.api.database.parameter.impl.UUIDParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.Parameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.LongParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.StringParameter;
+import com.github.lukesky19.skylib.common.api.database.parameter.impl.UUIDParameter;
 import com.github.lukesky19.skymines.database.QueueManager;
 import org.jspecify.annotations.NonNull;
 
@@ -70,7 +70,7 @@ public class TimesTable {
         String mineIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_mine_ids ON " + tableName + "(mine_id)";
         String playerIdsIndexSql = "CREATE INDEX IF NOT EXISTS idx_" + tableName + "_player_ids ON " + tableName + "(player_id)";
 
-        return queueManager.queueBulkWriteTransaction(List.of(tableCreationSql, mineIdsIndexSql, playerIdsIndexSql)).thenAccept(result -> {});
+        return queueManager.queueBulkWriteTransaction(List.of(tableCreationSql, mineIdsIndexSql, playerIdsIndexSql)).thenAccept(_ -> {});
     }
 
     /**
@@ -256,7 +256,7 @@ public class TimesTable {
                 .thenApply(result -> {
                     return result > 0;
                 })
-                .exceptionally(e -> {
+                .exceptionally(_ -> {
                     return false;
                 });
     }

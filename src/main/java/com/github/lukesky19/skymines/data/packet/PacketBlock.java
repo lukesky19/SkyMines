@@ -19,8 +19,8 @@ package com.github.lukesky19.skymines.data.packet;
 
 import org.bukkit.block.BlockType;
 import org.bukkit.loot.LootTable;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Contains the data for replacing a block server-side, sending the client-side material to display, the loot table to replace for suspicious sand/gravel, and the time the block is on cooldown for.

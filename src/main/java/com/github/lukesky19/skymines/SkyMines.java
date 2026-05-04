@@ -22,25 +22,33 @@ import com.github.lukesky19.skylib.libs.bstats.bukkit.Metrics;
 import com.github.lukesky19.skylib.paper.api.gui.impl.UUIDGUIListener;
 import com.github.lukesky19.skylib.paper.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skylib.paper.api.plugin.SkyPlugin;
+import com.github.lukesky19.skymines.bossbar.BossBarManager;
 import com.github.lukesky19.skymines.commands.SkyMinesCommand;
 import com.github.lukesky19.skymines.database.ConnectionManager;
 import com.github.lukesky19.skymines.database.DatabaseManager;
 import com.github.lukesky19.skymines.database.QueueManager;
-import com.github.lukesky19.skymines.listeners.*;
-import com.github.lukesky19.skymines.manager.bossbar.BossBarManager;
-import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
-import com.github.lukesky19.skymines.manager.config.LocaleManager;
-import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.config.SettingsManager;
-import com.github.lukesky19.skymines.manager.hook.HookManager;
-import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.manager.mine.MineManager;
-import com.github.lukesky19.skymines.manager.mine.packet.CooldownManager;
-import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
-import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.manager.player.PlayerDataManager;
-import com.github.lukesky19.skymines.manager.task.TaskManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.gui.GUIConfigManager;
+import com.github.lukesky19.skymines.integration.HookManager;
+import com.github.lukesky19.skymines.listeners.block.*;
+import com.github.lukesky19.skymines.listeners.chunk.ChunkLoadListener;
+import com.github.lukesky19.skymines.listeners.connection.PlayerJoinListener;
+import com.github.lukesky19.skymines.listeners.connection.PlayerQuitListener;
+import com.github.lukesky19.skymines.listeners.entity.ItemFrameChangeListener;
+import com.github.lukesky19.skymines.listeners.hopper.HopperMoveItemListener;
+import com.github.lukesky19.skymines.listeners.player.PlayerInteractListener;
+import com.github.lukesky19.skymines.listeners.player.PlayerMoveListener;
+import com.github.lukesky19.skymines.listeners.player.PlayerTeleportListener;
+import com.github.lukesky19.skymines.locale.LocaleManager;
+import com.github.lukesky19.skymines.mine.MineConfigManager;
+import com.github.lukesky19.skymines.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.MineManager;
+import com.github.lukesky19.skymines.mine.interfaces.Mine;
+import com.github.lukesky19.skymines.player.CooldownManager;
+import com.github.lukesky19.skymines.player.MineBlockManager;
+import com.github.lukesky19.skymines.player.MineTimeManager;
+import com.github.lukesky19.skymines.player.PlayerDataManager;
+import com.github.lukesky19.skymines.settings.SettingsManager;
+import com.github.lukesky19.skymines.task.TaskManager;
 import com.google.common.collect.ImmutableList;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.entity.Player;
@@ -95,13 +103,15 @@ public class SkyMines extends SkyPlugin {
         // Mine Data Classes
         mineDataManager = new MineDataManager();
 
-        // PlayerData classes
+        // Integration
+        HookManager hookManager = new HookManager(this);
+
+        // Player Data Management classes
         playerDataManager = new PlayerDataManager(this, databaseManager);
         bossBarManager = new BossBarManager(playerDataManager, mineDataManager);
         MineTimeManager mineTimeManager = new MineTimeManager(playerDataManager, bossBarManager);
         CooldownManager cooldownManager = new CooldownManager(this, playerDataManager);
-        BlocksManager blocksManager = new BlocksManager(playerDataManager);
-        HookManager hookManager = new HookManager(this);
+        MineBlockManager blocksManager = new MineBlockManager(settingsManager, playerDataManager, hookManager);
 
         // Mine Classes
         mineManager = new MineManager(this, settingsManager, localeManager, mineConfigManager, mineDataManager, cooldownManager, mineTimeManager, playerDataManager, bossBarManager, blocksManager);

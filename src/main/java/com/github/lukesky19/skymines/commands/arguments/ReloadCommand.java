@@ -19,8 +19,8 @@ package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.data.config.Locale;
-import com.github.lukesky19.skymines.manager.config.LocaleManager;
+import com.github.lukesky19.skymines.locale.Locale;
+import com.github.lukesky19.skymines.locale.LocaleManager;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;

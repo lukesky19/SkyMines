@@ -19,11 +19,11 @@ package com.github.lukesky19.skymines.commands.arguments;
 
 import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skylib.common.api.time.TimeUtil;
-import com.github.lukesky19.skymines.data.config.Locale;
-import com.github.lukesky19.skymines.manager.config.LocaleManager;
-import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.manager.mine.packet.MineTimeManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.locale.Locale;
+import com.github.lukesky19.skymines.locale.LocaleManager;
+import com.github.lukesky19.skymines.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.interfaces.Mine;
+import com.github.lukesky19.skymines.player.MineTimeManager;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;

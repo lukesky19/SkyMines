@@ -21,17 +21,17 @@ import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skylib.paper.api.adventure.PaperAdventureUtility;
 import com.github.lukesky19.skylib.paper.api.gui.impl.UUIDGUIManager;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.data.config.Locale;
-import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.data.config.world.WorldMineShopConfig;
-import com.github.lukesky19.skymines.gui.UnlocksShopGUI;
-import com.github.lukesky19.skymines.manager.config.GUIConfigManager;
-import com.github.lukesky19.skymines.manager.config.LocaleManager;
-import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.hook.HookManager;
-import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.gui.GUIConfigManager;
+import com.github.lukesky19.skymines.gui.config.WorldMineShopConfig;
+import com.github.lukesky19.skymines.gui.guis.UnlocksShopGUI;
+import com.github.lukesky19.skymines.integration.HookManager;
+import com.github.lukesky19.skymines.locale.Locale;
+import com.github.lukesky19.skymines.locale.LocaleManager;
+import com.github.lukesky19.skymines.mine.MineConfigManager;
+import com.github.lukesky19.skymines.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.config.WorldMineConfig;
+import com.github.lukesky19.skymines.mine.interfaces.Mine;
+import com.github.lukesky19.skymines.player.MineBlockManager;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -50,13 +50,13 @@ public class ShopCommand {
     private final @NonNull MineConfigManager mineConfigManager;
     private final @NonNull MineDataManager mineDataManager;
     private final @NonNull UUIDGUIManager guiManager;
-    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull MineBlockManager blocksManager;
     private final @NonNull HookManager hookManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
-     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, BlocksManager, HookManager)} instead.
+     * You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, MineBlockManager, HookManager)} instead.
+     * @deprecated You should use {@link #ShopCommand(SkyMines, LocaleManager, GUIConfigManager, MineConfigManager, MineDataManager, UUIDGUIManager, MineBlockManager, HookManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -72,7 +72,7 @@ public class ShopCommand {
      * @param mineConfigManager A {@link MineConfigManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
      * @param guiManager A {@link UUIDGUIManager} instance.
-     * @param blocksManager A {@link BlocksManager} instance.
+     * @param blocksManager A {@link MineBlockManager} instance.
      * @param hookManager A {@link HookManager} instance.
      */
     public ShopCommand(
@@ -82,7 +82,7 @@ public class ShopCommand {
             @NonNull MineConfigManager mineConfigManager,
             @NonNull MineDataManager mineDataManager,
             @NonNull UUIDGUIManager guiManager,
-            @NonNull BlocksManager blocksManager,
+            @NonNull MineBlockManager blocksManager,
             @NonNull HookManager hookManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;

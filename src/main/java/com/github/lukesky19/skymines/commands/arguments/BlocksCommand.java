@@ -20,13 +20,14 @@ package com.github.lukesky19.skymines.commands.arguments;
 import com.github.lukesky19.skylib.common.api.adventure.AdventureUtility;
 import com.github.lukesky19.skylib.paper.api.registry.RegistryUtil;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.data.config.Locale;
-import com.github.lukesky19.skymines.data.config.world.WorldMineConfig;
-import com.github.lukesky19.skymines.manager.config.LocaleManager;
-import com.github.lukesky19.skymines.manager.config.MineConfigManager;
-import com.github.lukesky19.skymines.manager.mine.MineDataManager;
-import com.github.lukesky19.skymines.manager.mine.world.BlocksManager;
-import com.github.lukesky19.skymines.mine.Mine;
+import com.github.lukesky19.skymines.locale.Locale;
+import com.github.lukesky19.skymines.locale.LocaleManager;
+import com.github.lukesky19.skymines.mine.MineConfigManager;
+import com.github.lukesky19.skymines.mine.MineDataManager;
+import com.github.lukesky19.skymines.mine.config.WorldMineConfig;
+import com.github.lukesky19.skymines.mine.interfaces.Mine;
+import com.github.lukesky19.skymines.player.MineBlockManager;
+import com.github.lukesky19.skymines.util.enums.BlockUnlockResult;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -54,12 +55,12 @@ public class BlocksCommand {
     private final @NonNull LocaleManager localeManager;
     private final @NonNull MineConfigManager mineConfigManager;
     private final @NonNull MineDataManager mineDataManager;
-    private final @NonNull BlocksManager blocksManager;
+    private final @NonNull MineBlockManager blocksManager;
 
     /**
      * Default Constructor.
-     * You should use {@link #BlocksCommand(SkyMines, LocaleManager, MineConfigManager, MineDataManager, BlocksManager)} instead.
-     * @deprecated You should use {@link #BlocksCommand(SkyMines, LocaleManager, MineConfigManager, MineDataManager, BlocksManager)} instead.
+     * You should use {@link #BlocksCommand(SkyMines, LocaleManager, MineConfigManager, MineDataManager, MineBlockManager)} instead.
+     * @deprecated You should use {@link #BlocksCommand(SkyMines, LocaleManager, MineConfigManager, MineDataManager, MineBlockManager)} instead.
      * @throws RuntimeException if used.
      */
     @Deprecated
@@ -69,18 +70,19 @@ public class BlocksCommand {
 
     /**
      * Constructor
+     *
      * @param skyMines A {@link SkyMines} instance.
      * @param localeManager A {@link LocaleManager} instance.
      * @param mineConfigManager A {@link MineConfigManager} instance.
      * @param mineDataManager A {@link MineDataManager} instance.
-     * @param blocksManager A {@link BlocksManager} instance.
+     * @param blocksManager A {@link MineBlockManager} instance.
      */
     public BlocksCommand(
             @NonNull SkyMines skyMines,
             @NonNull LocaleManager localeManager,
             @NonNull MineConfigManager mineConfigManager,
             @NonNull MineDataManager mineDataManager,
-            @NonNull BlocksManager blocksManager) {
+            @NonNull MineBlockManager blocksManager) {
         this.skyMines = skyMines;
         this.localeManager = localeManager;
         this.mineConfigManager = mineConfigManager;
@@ -98,7 +100,7 @@ public class BlocksCommand {
 
         builder.then(Commands.literal("unlock")
                 .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
+                        .then(Commands.argument("mine_id", StringArgumentType.word())
                                 .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);
@@ -107,7 +109,7 @@ public class BlocksCommand {
                                     return suggestionsBuilder.buildFuture();
                                 })
 
-                                .then(Commands.argument("block_type", StringArgumentType.string())
+                                .then(Commands.argument("block_type", StringArgumentType.greedyString())
                                         .suggests((commandContext, suggestionsBuilder) -> {
                                                 String mineId = commandContext.getArgument("mine_id", String.class);
                                                 WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
@@ -133,7 +135,6 @@ public class BlocksCommand {
                                             // Target Player
                                             PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("player", PlayerSelectorArgumentResolver.class);
                                             Player targetPlayer = targetResolver.resolve(ctx.getSource()).getFirst();
-                                            UUID targetPlayerId = targetPlayer.getUniqueId();
 
                                             // Block Type
                                             String blockTypeName = ctx.getArgument("block_type", String.class);
@@ -159,15 +160,22 @@ public class BlocksCommand {
                                                     Placeholder.parsed("mine_id", mineId),
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
-                                            if(blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
+                                            if(blocksManager.isBlockTypeUnlocked(targetPlayer, mineId, blockType)) {
                                                 sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyUnlocked(), placeholders));
                                                 return 1;
                                             }
 
-                                            blocksManager.addUnlockedBlock(targetPlayerId, mineId, blockType);
+                                            BlockUnlockResult result = blocksManager.addUnlockedBlock(targetPlayer, mineId, blockType);
+                                            switch(result) {
+                                                case INVALID_SETTINGS -> sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlockSettingsError(), placeholders));
+                                                case INVALID_USER -> sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlockUserError(), placeholders));
+                                                case PLAYER_EXCLUDED -> sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlockExcluded(), placeholders));
+                                                case SUCCESS -> {
+                                                    sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
+                                                    targetPlayer.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
+                                                }
+                                            }
 
-                                            sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().playerBlockUnlocked(), placeholders));
-                                            targetPlayer.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockUnlocked(), placeholders));
                                             return 1;
                                         })
                                 )
@@ -177,7 +185,7 @@ public class BlocksCommand {
 
         builder.then(Commands.literal("lock")
                 .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
+                        .then(Commands.argument("mine_id", StringArgumentType.word())
                                 .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);
@@ -187,7 +195,7 @@ public class BlocksCommand {
                                 })
 
 
-                                .then(Commands.argument("block_type", StringArgumentType.string())
+                                .then(Commands.argument("block_type", StringArgumentType.greedyString())
                                         .suggests((commandContext, suggestionsBuilder) -> {
                                             String mineId = commandContext.getArgument("mine_id", String.class);
                                             WorldMineConfig mineConfig = mineConfigManager.getWorldMineConfig(mineId);
@@ -239,7 +247,7 @@ public class BlocksCommand {
                                                     Placeholder.parsed("mine_id", mineId),
                                                     Placeholder.parsed("player", targetPlayer.getName()));
 
-                                            if(!blocksManager.isBlockTypeUnlocked(targetPlayerId, mineId, blockType)) {
+                                            if(!blocksManager.isBlockTypeUnlocked(targetPlayer, mineId, blockType)) {
                                                 sender.sendMessage(AdventureUtility.deserialize(locale.prefix() + locale.worldMineMessages().blockAlreadyLocked(), placeholders));
                                                 return 1;
                                             }
@@ -257,7 +265,7 @@ public class BlocksCommand {
 
         builder.then(Commands.literal("reset")
                 .then(Commands.argument("player", ArgumentTypes.player())
-                        .then(Commands.argument("mine_id", StringArgumentType.string())
+                        .then(Commands.argument("mine_id", StringArgumentType.word())
                                 .suggests((_, suggestionsBuilder) -> {
                                     for(String mineId : mineDataManager.getMineIdsWithBlockUnlocks()) {
                                         suggestionsBuilder.suggest(mineId);

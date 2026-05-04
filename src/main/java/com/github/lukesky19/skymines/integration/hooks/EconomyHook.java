@@ -17,8 +17,8 @@
 */
 package com.github.lukesky19.skymines.integration.hooks;
 
+import com.github.lukesky19.skylib.common.api.integration.Hook;
 import com.github.lukesky19.skymines.SkyMines;
-import com.github.lukesky19.skymines.integration.Hook;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;

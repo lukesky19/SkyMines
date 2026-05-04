@@ -23,6 +23,7 @@
 * WorldGuard
 
 ## Soft-Dependencies
+* LuckPerms
 * Multiverse-Core
 * PlayerPoints
 * Vault

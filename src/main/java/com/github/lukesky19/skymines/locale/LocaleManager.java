@@ -125,9 +125,22 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
     @Override
     public @Nullable Locale migrateConfiguration(@NonNull Locale locale) {
         switch(locale.version()) {
-            case 7 -> {
+            case 8 -> {
                 // Latest version, do nothing
                 return locale;
+            }
+
+            case 7 -> {
+                return new Locale(
+                        8,
+                        locale.prefix(),
+                        locale.help(),
+                        locale.reload(),
+                        locale.noMineWithId(),
+                        locale.guiOpenError(),
+                        locale.packetMineMessages(),
+                        locale.worldMineMessages(),
+                        locale.timeMessage());
             }
 
             case 6 -> {
@@ -424,7 +437,7 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
      */
     private void createDefaultLocale() {
         DEFAULT_LOCALE = new Locale(
-                5,
+                8,
                 "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>",
                 List.of(
                         "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>",
@@ -433,13 +446,15 @@ public class LocaleManager extends SimpleConfigManager<Locale> {
                         "<aqua><bold>List of Commands:</bold></aqua>",
                         "<white>/</white><aqua>skymines</aqua> <yellow>help</yellow>",
                         "<white>/</white><aqua>skymines</aqua> <yellow>reload</yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow> <yellow><player></yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>add</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>remove</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>set</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>get</yellow> <yellow><mine_id></yellow> <yellow>[player]</yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>add</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>remove</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>set</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>",
                         "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>unlock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>",
-                        "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>lock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>"),
+                        "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>lock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>reset</yellow> <yellow><player></yellow> <yellow><mine_id></yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>preview</yellow> <yellow>[mine id]</yellow>",
+                        "<white>/</white><aqua>skymines</aqua> <yellow>shop</yellow> <yellow>[mine id]</yellow>"),
                 "<aqua>The plugin has reloaded successfully.</aqua>",
                 "<red>There is no mine with that name.",
                 "<red>Unable to open this GUI because of a configuration error.</red>",

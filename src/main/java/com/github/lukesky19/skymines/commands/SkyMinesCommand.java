@@ -99,7 +99,7 @@ public final class SkyMinesCommand {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal("skymines")
                 .requires(ctx -> ctx.getSender().hasPermission("skymines.commands.skymines"));
 
-        TimeCommand timeCommand = new TimeCommand(localeManager, mineDataManager, mineTimeManager);
+        TimeCommand timeCommand = new TimeCommand(skyMines.getComponentLogger(), localeManager, mineDataManager, mineTimeManager);
         BlocksCommand blocksCommand = new BlocksCommand(skyMines, localeManager, mineConfigManager, mineDataManager, blocksManager);
         HelpCommand helpCommand = new HelpCommand(localeManager);
         ReloadCommand reloadCommand = new ReloadCommand(skyMines, localeManager);

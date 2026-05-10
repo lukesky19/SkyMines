@@ -1,4 +1,4 @@
-config-version: 3.2.0.0
+config-version: 8
 prefix: "<yellow><bold>SkyMines</bold></yellow><gray> ▪ </gray>"
 help:
     - "<aqua>SkyMines is developed by <white><bold>lukeskywlker19</bold></white>.</aqua>"
@@ -7,11 +7,10 @@ help:
     - "<aqua><bold>List of Commands:</bold></aqua>"
     - "<white>/</white><aqua>skymines</aqua> <yellow>help</yellow>"
     - "<white>/</white><aqua>skymines</aqua> <yellow>reload</yellow>"
-    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow>"
-    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow><mine_id></yellow> <yellow><player></yellow>"
-    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>add</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>"
-    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>remove</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>"
-    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>set</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><time in seconds></yellow>"
+    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>get</yellow> <yellow><mine_id></yellow> <yellow>[player]</yellow>"
+    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>add</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>"
+    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>remove</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>"
+    - "<white>/</white><aqua>skymines</aqua> <yellow>time</yellow> <yellow>set</yellow> <yellow><mine_id></yellow> <yellow><player></yellow> <yellow><time in seconds></yellow>"
     - "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>unlock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>"
     - "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>lock</yellow> <yellow><player></yellow> <yellow><mine_id></yellow> <yellow><block></yellow>"
     - "<white>/</white><aqua>skymines</aqua> <yellow>blocks</yellow> <yellow>reset</yellow> <yellow><player></yellow> <yellow><mine_id></yellow>"

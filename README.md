@@ -31,14 +31,14 @@
 ## Commands
 - /skymines help - View the plugin's help message
 - /skymines reload - Command to reload the plugin
-- /skymines time <mine id> - Command for a player to view how much time they have for a mine.
-- /skymines time <mine id> <player name> - Command to view mine time remaining for the provided mine id for a player.
-- /skymines add <player name> <mine id> <time> - Command to add time for a player to access a specific mine.
-  - The time is formatted like `1d30m`.
-- /skymines remove <player name> <mine id> <time> - Command to remove time for a player to access a specific mine.
-  - The time is formatted like `1d30m`.
-- /skymines set <player name> <mine id> <time> - Command to set the time for a player to access a specific mine.
-  - The time is formatted like `1d30m`.
+- /skymines time get <mine id> - Command for a player to view how much time they have for a mine.
+- /skymines time get <mine id> <player name> - Command to view mine time remaining for the provided mine id for a player.
+- /skymines add <mine id> <player name> <time> - Command to add time for a player to access a specific mine.
+  - The time can be in seconds (`30`) or formatted like `1d30m`.
+- /skymines remove <mine id> <player name> <time> - Command to remove time for a player to access a specific mine.
+  - The time can be in seconds (`30`) or formatted like `1d30m`.
+- /skymines set <mine id> <player name> <time> - Command to set the time for a player to access a specific mine.
+  - The time can be in seconds (`30`) or formatted like `1d30m`.
 - /skymines blocks unlock <player name> <mine id> <block> - Unlock a block for the player and mine id.
 - /skymines blocks lock <player name> <mine id> <block> - Lock a block for the player and mine id.
 - /skymines blocks reset <player name> <mine id>- Lock all unlocked blocks for the player and mine id.
@@ -53,6 +53,7 @@
 - `skymines.commands.skymines.time.add` - The permission to access /skymines time add.
 - `skymines.commands.skymines.time.remove` - The permission to access /skymines time remove.
 - `skymines.commands.skymines.time.set` - The permission to access /skymines time set.
+- `skymines.commands.skymines.time.get` - The permission to access /skymines time get.
 - `skymines.commands.skymines.preview` - The permission to access /skymines preview.
 - `skymines.commands.skymines.shop` - The permission to access /skymines shop.
 - `skymines.commands.skymines.blocks` - The permission to access /skymines blocks.

@@ -88,15 +88,14 @@ public class TaskManager {
     public void startMineTask() {
         mineTask = skyMines.getServer().getScheduler().runTaskTimer(skyMines, () -> {
             Map<String, Mine> minesMap = new HashMap<>(mineDataManager.getMinesMap());
+            Map<UUID, PlayerData> playerDataMap = new HashMap<>(playerDataManager.getPlayerDataMap());
 
             for(Map.Entry<String, Mine> mineEntry : minesMap.entrySet()) {
                 String mineId = mineEntry.getKey();
                 Mine mine = mineEntry.getValue();
-                Map<UUID, PlayerData> playerDataMap = new HashMap<>(playerDataManager.getPlayerDataMap());
 
                 for(Map.Entry<UUID, PlayerData> playerDataEntry : playerDataMap.entrySet()) {
                     UUID uuid = playerDataEntry.getKey();
-                    PlayerData playerData = playerDataEntry.getValue();
 
                     Player player = skyMines.getServer().getPlayer(uuid);
                     if(player == null || !player.isOnline() || !player.isConnected()) continue;
@@ -107,13 +106,21 @@ public class TaskManager {
                             mineTimeManager.decrementMineTime(uuid, mineId, 1);
                         }
                     }
-
-                    // Decrement block cooldowns
-                    List<Location> locationsOnCooldown = new ArrayList<>(playerData.getBlockDataOnCooldown().keySet().stream().toList());
-                    locationsOnCooldown.forEach(location -> {
-                        cooldownManager.decrementLocationCooldown(uuid, location);
-                    });
                 }
+            }
+
+            for(Map.Entry<UUID, PlayerData> playerDataEntry : playerDataMap.entrySet()) {
+                UUID uuid = playerDataEntry.getKey();
+                PlayerData playerData = playerDataEntry.getValue();
+
+                Player player = skyMines.getServer().getPlayer(uuid);
+                if(player == null || !player.isOnline() || !player.isConnected()) continue;
+
+                // Decrement block cooldowns
+                List<Location> locationsOnCooldown = new ArrayList<>(playerData.getBlockDataOnCooldown().keySet().stream().toList());
+                locationsOnCooldown.forEach(location -> {
+                    cooldownManager.decrementLocationCooldown(uuid, location);
+                });
             }
         }, 20L, 20L);
     }
